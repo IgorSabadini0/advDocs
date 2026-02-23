@@ -55,7 +55,7 @@ app.post('/auth', async (req, res) => {
         const [rows] = await db.query(verificarDB, [user, password]);
 
         if (rows.length === 0) {
-            return res.status(401).json({ mensagem: 'E-mail ou senha inválidos. ' });
+            return res.status(401).json({ mensagem: 'Usuário ou senha inválidos. ' });
         }
 
         const usuario = rows[0];
