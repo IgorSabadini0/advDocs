@@ -1,50 +1,27 @@
 // --- ESTADO DA APLICAÇÃO ---
 let currentFilter = 'all';
-let searchTimeout = null; 
+let searchTimeout = null;
+const API_URL = "http://192.168.0.150:3000";
 
-// --- DADOS MOCKADOS ---
-const mockData = [
-    {
-        id: 1,
-        tipo: 'pasta',
-        titulo: 'Processo Civil - João Silva',
-        cliente: 'João Silva',
-        numero: 'P-2024-001',
-        data: '2024-01-15',
-        status: 'Em andamento',
-        descricao: 'Processo relacionado a questões contratuais'
-    },
-    {
-        id: 2,
-        tipo: 'cliente',
-        titulo: 'Maria Santos',
-        cliente: 'Maria Santos',
-        numero: 'C-2024-045',
-        data: '2024-02-20',
-        status: 'Ativo',
-        descricao: 'Cliente com múltiplos processos em andamento'
-    },
-    {
-        id: 3,
-        tipo: 'documento',
-        titulo: 'Contrato de Prestação de Serviços',
-        cliente: 'Empresa XYZ Ltda',
-        numero: 'DOC-2024-123',
-        data: '2024-03-10',
-        status: 'Assinado',
-        descricao: 'Contrato de prestação de serviços jurídicos'
-    },
-    {
-        id: 4,
-        tipo: 'pasta',
-        titulo: 'Processo Trabalhista - Funcionários',
-        cliente: 'Empresa ABC',
-        numero: 'P-2024-078',
-        data: '2024-01-28',
-        status: 'Em análise',
-        descricao: 'Processo trabalhista coletivo'
-    }
-];
+// --- DADOS CLIENTES ---
+
+const tipo = document.getElementById('tipo').value;
+const titulo = document.getElementById('titulo').value;
+const cliente = document.getElementById('cliente').value;
+const numero = document.getElementById('numero').value;
+const status = document.getElementById('status').value;
+const descricao = document.getElementById('descricao').value;
+
+const clientes = fetch(`${API_URL}/clientes`, {
+    method: 'GET'
+});
+
+const criarClientes = fetch(`${API_URL}/clientes`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tipo, titulo, cliente, numero, status, drescricao })
+});
+
 
 // --- LÓGICA CENTRAL UNIFICADA ---
 const executarBuscaEFiltro = async (isInitialLoad = false) => {
@@ -63,9 +40,9 @@ const executarBuscaEFiltro = async (isInitialLoad = false) => {
     // UI: Loading
     // Mostramos loading para dar feedback, exceto se você quiser que o load inicial seja instantâneo
     showLoading(true);
-    
+
     // Esconde a GRADE de resultados, mas NÃO os filtros (os filtros devem estar fora do 'resultsContainer' no HTML)
-    hideResults(); 
+    hideResults();
     hideEmptyState();
 
     // Simular delay de API (reduzido para 400ms para ficar mais ágil)
@@ -75,7 +52,7 @@ const executarBuscaEFiltro = async (isInitialLoad = false) => {
 
     try {
         // --- FILTRAGEM ---
-        const resultados = mockData.filter(item => {
+        const resultados = clientes.filter(item => {
             // 1. Verifica a Categoria (Aba selecionada)
             const matchTipo = currentFilter === 'all' || item.tipo === currentFilter;
 
@@ -99,8 +76,8 @@ const executarBuscaEFiltro = async (isInitialLoad = false) => {
         } else {
             // Se não encontrou nada, preparamos uma mensagem útil
             const nomeFiltro = traduzirTipo(currentFilter);
-            
-            
+
+
             if (query) {
                 // Caso tenha pesquisado algo que não existe na categoria atual
                 showEmptyState(`
@@ -135,11 +112,11 @@ const filterResults = (filter) => {
     const botoes = document.querySelectorAll('.filter-btn');
     botoes.forEach(btn => {
         btn.classList.remove('active');
-        
+
         // Lógica flexível para encontrar o botão certo pelo texto
         const btnText = btn.textContent.trim().toLowerCase();
         const map = { 'all': 'todos', 'pasta': 'pastas', 'cliente': 'clientes', 'documento': 'documentos' };
-        
+
         if (map[filter] === btnText || (filter === 'all' && btnText === 'todos')) {
             btn.classList.add('active');
         }
@@ -235,10 +212,10 @@ const hideResults = () => {
 const showEmptyState = (messageHTML) => {
     const emptyState = document.getElementById('emptyState');
     const p = emptyState.querySelector('p');
-    
+
     // Usamos innerHTML para permitir negrito ou quebras de linha na mensagem
     if (p) p.innerHTML = messageHTML;
-    
+
     emptyState.style.display = 'block';
     setTimeout(() => emptyState.classList.add('show'), 10);
 };
@@ -285,7 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
     searchInput.addEventListener('input', () => {
         clearTimeout(searchTimeout);
         const query = searchInput.value.trim();
-        
+
         // Se o campo for limpo, busca imediatamente (para restaurar a lista completa).
         // Se estiver digitando, espera 500ms.
         const delay = query.length === 0 ? 0 : 500;

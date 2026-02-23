@@ -1,6 +1,6 @@
 const submit = document.getElementById("submit");
 
-const API_URL = "http://192.168.0.117:3000";
+const API_URL = "http://192.168.0.150:3000";
 
 const acess = async () => {
     const user = document.getElementById('user').value;

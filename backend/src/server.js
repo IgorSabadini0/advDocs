@@ -23,11 +23,28 @@ app.use(cors());
 const staticPath = path.join(__dirname, '../../frontend/src');
 
 app.use(express.static(staticPath));
+
 // ---------------------  G E T  => LISTAR  ---------------------
 
 app.get('/', (req, res) => {
     res.redirect('pages/auth/index.html');
 })
+
+app.get('/clientes', async (req, res) => {
+    try {
+        const puxarDados = "SELECT * FROM clientes";
+        const [dados] = await db.query(puxarDados);
+        res.status(200).json(dados);
+    } catch (error) {
+        console.log(`Erro ao puxar dados: ${error}`);
+        res.status(500).send("Erro interno no servidor")
+    }
+});
+
+app.post('/clientes', (req, res) => {
+    const { tipo, titulo, cliente, numero, status, drescricao } = req.body;
+
+});
 
 app.post('/auth', async (req, res) => {
     const user = req.body.user;
