@@ -12,6 +12,10 @@ const numero = document.getElementById('numero').value;
 const status = document.getElementById('status').value;
 const descricao = document.getElementById('descricao').value;
 
+const adicionar = () => {
+    createClientCard();
+}
+
 const clientes = fetch(`${API_URL}/clientes`, {
     method: 'GET'
 });
@@ -153,6 +157,18 @@ const displayResults = (results) => {
         container.classList.add('show');
     }, 10);
 };
+
+const createClientCard = (titulo, nome, tipo, numero, status, descricao) => {
+    const card = document.createElement('div');
+    card.className = 'client-card';
+
+    card.innerHTML = `
+        <div class="card-header">
+            <div class="card-icon">
+                <input type="text">
+        </div>
+    `
+}
 
 const createResultCard = (item, index) => {
     const card = document.createElement('div');

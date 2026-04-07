@@ -89,7 +89,8 @@ body {
     box-shadow: 0 0 0 3px rgba(218, 176, 99, 0.1);
 }
 
-.lupa {
+.lupa,
+.add {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -102,24 +103,28 @@ body {
     cursor: pointer;
 }
 
-.lupa:hover {
+.lupa:hover,
+.add:hover {
     border-color: var(--gold-primary);
     background: var(--gold-primary);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(218, 176, 99, 0.3);
 }
 
-.lupa:hover i {
+.lupa:hover i,
+.add:hover i {
     color: #FFFFFF;
 }
 
-.lupa i {
+.lupa i,
+.add i {
     font-size: 1.2rem;
     color: var(--gold-primary);
     transition: var(--transition-fast);
 }
 
-.btn-lupa {
+.btn-lupa,
+.btn-add {
     background: none;
     border: none;
     padding: 0;
@@ -246,12 +251,29 @@ body {
     animation: fadeInUp 0.5s ease forwards;
 }
 
-.result-card:nth-child(1) { animation-delay: 0.1s; }
-.result-card:nth-child(2) { animation-delay: 0.2s; }
-.result-card:nth-child(3) { animation-delay: 0.3s; }
-.result-card:nth-child(4) { animation-delay: 0.4s; }
-.result-card:nth-child(5) { animation-delay: 0.5s; }
-.result-card:nth-child(6) { animation-delay: 0.6s; }
+.result-card:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.result-card:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.result-card:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.result-card:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+.result-card:nth-child(5) {
+    animation-delay: 0.5s;
+}
+
+.result-card:nth-child(6) {
+    animation-delay: 0.6s;
+}
 
 .result-card:hover {
     transform: translateY(-5px);
@@ -424,7 +446,9 @@ body {
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .loading-text {
@@ -438,6 +462,7 @@ body {
         opacity: 0;
         transform: translateY(20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -445,9 +470,12 @@ body {
 }
 
 @keyframes pulse {
-    0%, 100% {
+
+    0%,
+    100% {
         opacity: 1;
     }
+
     50% {
         opacity: 0.5;
     }
@@ -554,7 +582,8 @@ body {
 /* 1. Configuração do Container Pai */
 .header-controls {
     display: flex;
-    flex-direction: column; /* Celular: um embaixo do outro */
+    flex-direction: column;
+    /* Celular: um embaixo do outro */
     gap: 20px;
     margin-bottom: 30px;
     width: 100%;
@@ -566,7 +595,8 @@ body {
 }
 
 .brand-logo img {
-    height: 55px; /* Altura da logo */
+    height: 55px;
+    /* Altura da logo */
     width: auto;
     display: block;
 }
@@ -579,26 +609,32 @@ body {
 }
 
 /* 4. Regras para Telas Grandes (Tablet/PC - acima de 768px) */
-@media (min-width: 1000px) { /* Aumentei um pouco para caber tudo na linha */
-    
+@media (min-width: 1000px) {
+    /* Aumentei um pouco para caber tudo na linha */
+
     .header-controls {
-        flex-direction: row; /* Coloca tudo lado a lado */
+        flex-direction: row;
+        /* Coloca tudo lado a lado */
         align-items: center;
         justify-content: space-between;
     }
 
     .brand-logo {
-        display: block; /* Mostra a logo */
-        margin-right: 20px; /* Espaço entre logo e pesquisa */
+        display: block;
+        /* Mostra a logo */
+        margin-right: 20px;
+        /* Espaço entre logo e pesquisa */
     }
 
     /* A pesquisa ocupa o espaço que sobrar no meio */
     .header-controls .search-bar {
         flex: 1;
-        max-width: 600px; /* Limita a largura para não ficar gigante */
+        max-width: 600px;
+        /* Limita a largura para não ficar gigante */
     }
 
     .filter-buttons {
-        width: auto; /* Botões ocupam apenas o espaço necessário */
+        width: auto;
+        /* Botões ocupam apenas o espaço necessário */
     }
 }

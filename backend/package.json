@@ -1,9 +1,12 @@
 {
+  "scripts": {
+    "start": "node src/server.js"
+  },
   "dependencies": {
     "cors": "^2.8.6",
-    "dotenv": "^17.2.3",
+    "dotenv": "^17.3.1",
     "express": "^5.2.1",
-    "mysql2": "^3.16.2"
+    "mysql2": "^3.18.1"
   },
   "type": "module"
 }

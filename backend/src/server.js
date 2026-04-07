@@ -7,7 +7,6 @@ import db from './config/db.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { error } from 'console';
-import { create } from 'domain';
 
 config();
 
@@ -62,7 +61,7 @@ app.post('/auth', async (req, res) => {
 
         return res.status(200).json({
             mensagem: 'Login efetuado com sucesso',
-            redirectUrl: '/pages/main/index.html',
+            redirectUrl: 'main/index.html',
             usuario: {
                 id: usuario.id,
                 nome: usuario.user

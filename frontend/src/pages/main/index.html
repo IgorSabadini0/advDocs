@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Relação de Pastas - Palhares Ferreira Advocacia</title>
+    <title>Relação de Pastas | Palhares Ferreira Advocacia</title>
     <link rel="stylesheet" href="css/pastas.css">
     <link rel="shortcut icon" href="assets/logo.svg" type="image/svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -36,6 +36,11 @@
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </button>
                 </div>
+                <div class="add">
+                    <button class="btn-add" onclick="adicionar()" aria-label="Adicionar">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
                 <div class="logout">
                     <input type="button" value="Sair" onclick="sair()">
                 </div>
@@ -49,6 +54,16 @@
             </div>
 
         </div>
+
+        <div class="clientes-add">
+            <label for="titulo">Título</label>
+            <input type="text" id="titulo">
+            <label for="nome">Nome</label>
+            <input type="text" id="nome">
+            <label for="tipo">Tipo</label>
+            <input type="text" id="tipo">
+        </div>
+
         <div class="loading" id="loading">
             <div class="spinner"></div>
             <p class="loading-text">Buscando documentos...</p>
