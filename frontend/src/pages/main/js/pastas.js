@@ -1,7 +1,7 @@
 // --- ESTADO DA APLICAÇÃO ---
 let currentFilter = 'all';
 let searchTimeout = null;
-const API_URL = "http://192.168.0.150:3000";
+const API_URL = "http://192.168.15.6:3000";
 
 // --- DADOS CLIENTES ---
 
@@ -20,11 +20,11 @@ const clientes = fetch(`${API_URL}/clientes`, {
     method: 'GET'
 });
 
-const criarClientes = fetch(`${API_URL}/clientes`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ tipo, titulo, cliente, numero, status, drescricao })
-});
+// const criarClientes = fetch(`${API_URL}/clientes`, {
+//     method: 'POST',
+//     headers: { 'Content-Type': 'application/json' },
+//     body: JSON.stringify({ tipo, titulo, cliente, numero, status, drescricao })
+// });
 
 
 // --- LÓGICA CENTRAL UNIFICADA ---

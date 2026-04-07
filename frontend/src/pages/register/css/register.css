@@ -1,0 +1,44 @@
+/* --- 1. Variáveis e Reset (Base do Design System) --- */
+:root {
+    --bg-body: #151923;
+    --bg-card: #151923;
+    --gold-primary: #dab063;
+    --gold-hover: #c29b54;
+    --text-main: #979797;
+    --text-light: #666666;
+    --text-dark: #333333;
+    --text-logo: #b1b1b1;
+    --font-title: 'Playfair Display', serif;
+    --font-body: 'Montserrat', sans-serif;
+    --border-color: #252b36;
+    --shadow: 0 8px 16px rgba(0, 0, 0, .35), 0 2px 6px rgba(0, 0, 0, .25);
+    --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.12);
+    --transition-slow: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    --transition-fast: all 0.3s ease;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background-color: var(--bg-body);
+    color: var(--text-main);
+    font-family: var(--font-body);
+    line-height: 1.6;
+    overflow-x: hidden;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    min-height: 100vh;
+}

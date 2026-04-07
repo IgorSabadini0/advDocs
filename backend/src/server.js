@@ -61,7 +61,7 @@ app.post('/auth', async (req, res) => {
 
         return res.status(200).json({
             mensagem: 'Login efetuado com sucesso',
-            redirectUrl: 'main/index.html',
+            redirectUrl: '/pages/main/index.html',
             usuario: {
                 id: usuario.id,
                 nome: usuario.user
