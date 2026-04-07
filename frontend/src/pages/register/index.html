@@ -6,6 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registrar Pasta | Palhares Ferreira Advocacia</title>
     <link rel="stylesheet" href="css/register.css">
+    <link rel="shortcut icon" href="../../assets/logo.svg" type="image/svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Inter:wght@400;600&display=swap"
+        rel="stylesheet">
+    <script src="https://kit.fontawesome.com/a8f4be2bb0.js" crossorigin="anonymous"></script>
 </head>
 
 <body>
@@ -13,15 +19,46 @@
         <div class="brand-logo">
             <img src="../../assets/logo.svg" alt="Logo Palhares Ferreira">
         </div>
+
         <div class="clientes-add">
-            <label for="titulo">Título</label>
-            <input type="text" id="titulo">
-            <label for="nome">Nome</label>
-            <input type="text" id="nome">
-            <label for="tipo">Tipo</label>
-            <input type="text" id="tipo">
+            <label for="titulo">Título da Pasta / Documento</label>
+            <input type="text" id="titulo" placeholder="Ex: Ação Revisional - Nome do Cliente">
+
+            <label for="nome">Nome do Cliente</label>
+            <input type="text" id="nome" placeholder="Nome completo do cliente">
+
+            <label for="tipo">Tipo de Registro</label>
+            <select name="tipo" id="tipo">
+                <option value="" disabled selected hidden>Selecione o tipo...</option>
+                <option value="pasta">Pasta</option>
+                <option value="cliente">Cliente</option>
+                <option value="document">Documento</option>
+            </select>
+
+            <label for="numero">Número de Identificação</label>
+            <input type="text" id="numero" placeholder="Ex: 0001-2026 / Processo nº">
+
+            <label for="status">Status Atual</label>
+            <select name="status" id="status">
+                <option value="" disabled selected hidden>Selecione o status...</option>
+                <option value="active">Ativo</option>
+                <option value="progress">Em andamento</option>
+                <option value="archived">Arquivado</option>
+            </select>
+
+            <label for="descricao">Descrição Adicional</label>
+            <input type="text" id="descricao" placeholder="Breve resumo sobre o caso">
+
+            <button class="btn-save" onclick="salvarRegistro()">
+                <i class="fa-solid fa-floppy-disk"></i> Salvar Registro
+            </button>
         </div>
+
+        <a href="../main/index.html" class="back-link">
+            <i class="fa-solid fa-arrow-left"></i> Voltar para a listagem
+        </a>
     </div>
+
     <script src="js/register.js"></script>
 </body>
 
