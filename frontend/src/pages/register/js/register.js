@@ -1,1 +1,1 @@
-import { API_URL } from "../../../services/variables.js"
+const API_URL = 'http://localhost:3000';

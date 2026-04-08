@@ -1,7 +1,6 @@
 const submit = document.getElementById("submit");
 
-import { API_URL } from "../../../services/variables";
-
+const API_URL = 'http://localhost:3000';
 const acess = async () => {
     const user = document.getElementById('user').value;
     const password = document.getElementById('password').value;

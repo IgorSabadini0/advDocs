@@ -1,7 +1,7 @@
 // --- ESTADO DA APLICAÇÃO ---
 let currentFilter = 'all';
 let searchTimeout = null;
-import { API_URL } from "../../../services/variables";
+const API_URL = 'http://localhost:3000';
 
 // --- DADOS CLIENTES ---
 
@@ -12,19 +12,19 @@ const numero = document.getElementById('numero').value;
 const status = document.getElementById('status').value;
 const descricao = document.getElementById('descricao').value;
 
-const adicionar = () => {
-    createClientCard();
+function adicionar() {
+    window.location.href = '../register';
 }
 
 const clientes = fetch(`${API_URL}/clientes`, {
     method: 'GET'
 });
 
-// const criarClientes = fetch(`${API_URL}/clientes`, {
-//     method: 'POST',
-//     headers: { 'Content-Type': 'application/json' },
-//     body: JSON.stringify({ tipo, titulo, cliente, numero, status, drescricao })
-// });
+const criarClientes = fetch(`${API_URL}/clientes`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tipo, titulo, cliente, numero, status, drescricao })
+});
 
 
 // --- LÓGICA CENTRAL UNIFICADA ---
@@ -157,18 +157,6 @@ const displayResults = (results) => {
         container.classList.add('show');
     }, 10);
 };
-
-const createClientCard = (titulo, nome, tipo, numero, status, descricao) => {
-    const card = document.createElement('div');
-    card.className = 'client-card';
-
-    card.innerHTML = `
-        <div class="card-header">
-            <div class="card-icon">
-                <input type="text">
-        </div>
-    `
-}
 
 const createResultCard = (item, index) => {
     const card = document.createElement('div');
