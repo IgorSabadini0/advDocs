@@ -36,12 +36,22 @@ app.get('/clientes', async (req, res) => {
         res.status(200).json(dados);
     } catch (error) {
         console.log(`Erro ao puxar dados: ${error}`);
-        res.status(500).send("Erro interno no servidor")
+        res.status(500).send("Erro interno no servidor");
     }
 });
 
-app.post('/clientes', (req, res) => {
-    const { tipo, titulo, cliente, numero, status, drescricao } = req.body;
+app.post('/register', async (req, res) => {
+    try {
+        const { titulo, nome, tipo, numero, status, descricao } = req.body;
+        const inserirDados = "INSERT INTO clientes (titulo, nome, tipo, numero, status, descricao) VALUES (?, ?, ?, ?, ?, ?)";
+        const [rows] = await db.query(inserirDados, [titulo, nome, tipo, numero, status, descricao]);
+
+        return res.status(201).json({ mensagem: 'Registro criado com sucesso', id: rows.insertId });
+    }
+    catch (error) {
+        console.log(`Erro ao registrar cadastro: ${error}`);
+        res.status(500).send("Erro interno no servidor");
+    }
 
 });
 
