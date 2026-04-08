@@ -18,17 +18,18 @@
     <div class="container">
         <div class="brand-logo">
             <img src="../../assets/logo.svg" alt="Logo Palhares Ferreira">
+            <span class="title-page">Registrar Pasta</span>
         </div>
 
         <div class="clientes-add">
-            <label for="titulo">Título da Pasta / Documento</label>
-            <input type="text" id="titulo" placeholder="Ex: Ação Revisional - Nome do Cliente">
+            <label for="titulo">Título da Pasta / Documento <span class="obrigatorio">*</span></label>
+            <input type="text" id="titulo" required placeholder="Ex: Ação Revisional - Nome do Cliente">
 
-            <label for="nome">Nome do Cliente</label>
-            <input type="text" id="nome" placeholder="Nome completo do cliente">
+            <label for="nome">Nome do Cliente <span class="obrigatorio">*</span></label>
+            <input type="text" id="nome" required placeholder="Nome completo do cliente">
 
-            <label for="tipo">Tipo de Registro</label>
-            <select name="tipo" id="tipo">
+            <label for="tipo">Tipo de Registro <span class="obrigatorio">*</span></label>
+            <select name="tipo" id="tipo" required>
                 <option value="" disabled selected hidden>Selecione o tipo...</option>
                 <option value="pasta">Pasta</option>
                 <option value="cliente">Cliente</option>
@@ -41,9 +42,8 @@
             <label for="status">Status Atual</label>
             <select name="status" id="status">
                 <option value="" disabled selected hidden>Selecione o status...</option>
-                <option value="active">Ativo</option>
-                <option value="progress">Em andamento</option>
-                <option value="archived">Arquivado</option>
+                <option value="Ativo">Ativo</option>
+                <option value="Arquivado">Arquivado</option>
             </select>
 
             <label for="descricao">Descrição Adicional</label>
@@ -52,6 +52,10 @@
             <button class="btn-save" onclick="salvarRegistro()">
                 <i class="fa-solid fa-floppy-disk"></i> Salvar Registro
             </button>
+        </div>
+
+        <div class="status-message">
+            <p id="response"></p>
         </div>
 
         <a href="../main/index.html" class="back-link">

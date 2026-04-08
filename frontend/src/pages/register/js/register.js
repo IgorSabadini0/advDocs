@@ -17,9 +17,29 @@ const salvarRegistro = async () => {
         descricao
     };
 
-    fetch(`${API_URL}/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(registro)
-    });
+    try {
+        const response = await fetch(`${API_URL}/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(registro)
+        });
+
+        if (response.ok) {
+            titulo = '';
+            nome = '';
+            tipo = '';
+            numero = '';
+            status = '';
+            descricao = '';
+            const statusMessage = document.getElementById('response');
+            statusMessage.textContent = 'Registro salvo com sucesso!';
+            statusMessage.style.color = '#28a745';
+        } else {
+            const statusMessage = document.getElementById('response');
+            statusMessage.textContent = 'Erro ao salvar registro. Tente novamente.';
+            statusMessage.style.color = '#dc3545';
+        }
+    } catch (error) {
+        console.error('Erro ao salvar registro:', error);
+    }
 }

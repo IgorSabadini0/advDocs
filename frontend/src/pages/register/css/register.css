@@ -50,6 +50,15 @@ body {
     width: auto;
 }
 
+.title-page {
+    display: flex;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-top: 10px;
+}
+
 /* --- Formulário --- */
 .clientes-add {
     display: flex;
@@ -92,6 +101,11 @@ body {
 .clientes-add input:focus {
     border-color: var(--gold-primary);
     box-shadow: 0 0 0 3px rgba(218, 176, 99, 0.1);
+}
+
+.obrigatorio {
+    color: #dc3545;
+    margin-left: 4px;
 }
 
 /* --- Botão (Baseado no .btn-view do pastas.css) --- */
@@ -171,6 +185,13 @@ body {
 
 .back-link:hover {
     color: var(--gold-primary);
+}
+
+#response {
+    text-align: center;
+    margin-top: 15px;
+    font-size: 0.95rem;
+    font-weight: 600;
 }
 
 /* Responsividade */
