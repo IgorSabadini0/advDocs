@@ -1,6 +1,6 @@
 const submit = document.getElementById("submit");
 
-const API_URL = "http://192.168.15.6:3000";
+import { API_URL } from "../../../services/variables";
 
 const acess = async () => {
     const user = document.getElementById('user').value;
@@ -10,13 +10,12 @@ const acess = async () => {
     const response = await fetch(`${API_URL}/auth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user, password }) // Envia os dados de verdade
+        body: JSON.stringify({ user, password })
     });
 
     const data = await response.json();
 
     if (response.ok) {
-        // O redirecionamento acontece aqui no cliente!
         window.location.href = data.redirectUrl;
     } else {
         status.innerText = data.mensagem;

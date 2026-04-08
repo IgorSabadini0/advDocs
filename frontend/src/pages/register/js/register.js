@@ -1,0 +1,1 @@
+import { API_URL } from "../../../services/variables.js"

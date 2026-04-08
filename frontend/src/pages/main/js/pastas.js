@@ -1,7 +1,7 @@
 // --- ESTADO DA APLICAÇÃO ---
 let currentFilter = 'all';
 let searchTimeout = null;
-const API_URL = "http://192.168.15.6:3000";
+import { API_URL } from "../../../services/variables";
 
 // --- DADOS CLIENTES ---
 
