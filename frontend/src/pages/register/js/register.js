@@ -27,19 +27,19 @@ const salvarRegistro = async () => {
         });
 
         if (response.ok) {
-            titulo = '';
-            numeroPasta = '';
-            nome = '';
-            tipo = '';
-            numeroProc = '';
-            status = '';
-            descricao = '';
+            document.getElementById('titulo').value = '';
+            document.getElementById('numeroPasta').value = '';
+            document.getElementById('nome').value = '';
+            document.getElementById('tipo').value = '';
+            document.getElementById('numeroProc').value = '';
+            document.getElementById('status').value = '';
+            document.getElementById('descricao').value = '';
             const statusMessage = document.getElementById('response');
-            statusMessage.textContent = 'Registro salvo com sucesso!';
+            statusMessage.textContent = '✅ Registro salvo com sucesso!';
             statusMessage.style.color = '#28a745';
         } else {
             const statusMessage = document.getElementById('response');
-            statusMessage.textContent = 'Erro ao salvar registro. Tente novamente.';
+            statusMessage.textContent = '❌ Erro ao salvar registro. Tente novamente.';
             statusMessage.style.color = '#dc3545';
         }
     } catch (error) {
