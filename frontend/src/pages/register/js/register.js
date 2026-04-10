@@ -2,8 +2,8 @@ const API_URL = 'http://localhost:3000';
 
 const salvarRegistro = async () => {
     const titulo = document.getElementById('titulo').value;
-    const numeroPasta = document.getElementById('numeroPasta').value;
     const nome = document.getElementById('nome').value;
+    const numeroPasta = document.getElementById('numeroPasta').value;
     const tipo = document.getElementById('tipo').value;
     const numeroProc = document.getElementById('numeroProc').value;
     const status = document.getElementById('status').value;
@@ -11,8 +11,8 @@ const salvarRegistro = async () => {
 
     const registro = {
         titulo,
-        numeroPasta,
         nome,
+        numeroPasta,
         tipo,
         numeroProc,
         status,
