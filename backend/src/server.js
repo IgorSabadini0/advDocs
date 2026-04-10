@@ -42,9 +42,9 @@ app.get('/clientes', async (req, res) => {
 
 app.post('/register', async (req, res) => {
     try {
-        const { titulo, nome, tipo, numero, status, descricao } = req.body;
-        const inserirDados = "INSERT INTO clientes (titulo, nome, tipo, numero, status, descricao) VALUES (?, ?, ?, ?, ?, ?)";
-        const [rows] = await db.query(inserirDados, [titulo, nome, tipo, numero, status, descricao]);
+        const { titulo, nome, numeroPasta, tipo, numeroProc, status, descricao } = req.body;
+        const inserirDados = "INSERT INTO clientes (titulo, nome,numeroPasta, tipo, numeroProc, status, descricao) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        const [rows] = await db.query(inserirDados, [titulo, nome, numeroPasta, tipo, numeroProc, status, descricao]);
 
         return res.status(201).json({ mensagem: 'Registro criado com sucesso', id: rows.insertId });
     }

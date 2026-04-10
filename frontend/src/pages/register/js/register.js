@@ -2,17 +2,19 @@ const API_URL = 'http://localhost:3000';
 
 const salvarRegistro = async () => {
     const titulo = document.getElementById('titulo').value;
+    const numeroPasta = document.getElementById('numeroPasta').value;
     const nome = document.getElementById('nome').value;
     const tipo = document.getElementById('tipo').value;
-    const numero = document.getElementById('numero').value;
+    const numeroProc = document.getElementById('numeroProc').value;
     const status = document.getElementById('status').value;
     const descricao = document.getElementById('descricao').value;
 
     const registro = {
-        tipo,
         titulo,
+        numeroPasta,
         nome,
-        numero,
+        tipo,
+        numeroProc,
         status,
         descricao
     };
@@ -26,9 +28,10 @@ const salvarRegistro = async () => {
 
         if (response.ok) {
             titulo = '';
+            numeroPasta = '';
             nome = '';
             tipo = '';
-            numero = '';
+            numeroProc = '';
             status = '';
             descricao = '';
             const statusMessage = document.getElementById('response');
