@@ -19,6 +19,10 @@ function adicionar() {
     window.location.href = '../register';
 }
 
+function excluir() {
+    window.location.href = '../delete';
+}
+
 // --- BUSCAR DADOS DO BANCO ---
 const carregarDados = async () => {
     try {
@@ -279,6 +283,7 @@ const viewItem = (id, tipo) => {
                 <div class="modal-section">
                     <h3>Informações Gerais</h3>
                     <div class="modal-info-grid">
+                        <div class="modal-info-item"><strong>ID do Sistema:</strong> <span>#${escapeHtml(item.id || 'N/A')}</span></div> 
                         <div class="modal-info-item"><strong>Título:</strong> <span>${escapeHtml(item.titulo || 'N/A')}</span></div>
                         <div class="modal-info-item"><strong>Nome:</strong> <span>${escapeHtml(item.nome || 'N/A')}</span></div>
                         <div class="modal-info-item"><strong>Número da Pasta:</strong> <span>${escapeHtml(item.numeroPasta || 'N/A')}</span></div>

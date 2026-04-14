@@ -32,14 +32,25 @@
                         onkeypress="handleKeyPress(event)">
                 </div>
                 <div class="lupa">
-                    <button class="btn-lupa" onclick="buscar()" aria-label="Buscar">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                    </button>
+                    <abbr title="Pesquisar pastas, clientes ou documentos" style="text-decoration: none;">
+                        <button class="btn-lupa" onclick="buscar()" aria-label="Buscar">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </button>
+                    </abbr>
                 </div>
                 <div class="add">
-                    <button class="btn-add" onclick="adicionar()" aria-label="Adicionar">
-                        <i class="fa-solid fa-plus"></i>
-                    </button>
+                    <abbr title="Adicionar nova pasta, cliente ou documento" style="text-decoration: none;">
+                        <button class="btn-add" onclick="adicionar()" aria-label="Adicionar">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                    </abbr>
+                </div>
+                <div class="delete" style="text-decoration: none;">
+                    <abbr title="Excluir pasta, cliente ou documento">
+                        <button class="btn-delete" onclick="excluir()" aria-label="Excluir">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </abbr>
                 </div>
                 <div class="logout">
                     <input type="button" value="Sair" onclick="sair()">

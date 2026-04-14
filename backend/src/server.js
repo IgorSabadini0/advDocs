@@ -55,6 +55,19 @@ app.post('/register', async (req, res) => {
 
 });
 
+app.delete('/delete/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const deletarDados = "DELETE FROM clientes WHERE id = ?";
+        await db.query(deletarDados, [id]);
+        return res.status(200).json({ mensagem: 'Registro excluído com sucesso' });
+    } catch (error) {
+        console.log(`Erro ao excluir registro: ${error}`);
+        res.status(500).send("Erro interno no servidor");
+    }
+});
+
+
 app.post('/auth', async (req, res) => {
     const user = req.body.user;
     const password = req.body.password;

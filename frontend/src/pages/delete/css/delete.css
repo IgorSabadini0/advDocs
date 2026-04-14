@@ -1,0 +1,163 @@
+/* --- delete.css --- */
+
+:root {
+    --bg-body: #151923;
+    --bg-card: #151923;
+    --gold-primary: #dab063;
+    --danger-color: #dc3545;
+    /* Cor de alerta para exclusão */
+    --text-main: #979797;
+    --text-light: #666666;
+    --text-dark: #e5e7eb;
+    --border-color: #252b36;
+    --shadow: 0 8px 16px rgba(0, 0, 0, .35), 0 2px 6px rgba(0, 0, 0, .25);
+    --font-body: 'Inter', 'Montserrat', sans-serif;
+    --transition-fast: all 0.3s ease;
+}
+
+body {
+    background-color: var(--bg-body);
+    color: var(--text-main);
+    font-family: var(--font-body);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    /* Zera a margem padrão do navegador */
+}
+
+.container {
+    width: 100%;
+    max-width: 500px;
+    padding: 40px;
+    background: var(--bg-card);
+    border-radius: 15px;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow);
+    margin: 20px auto;
+    display: flex;
+    flex-direction: column;
+}
+
+/* --- Logo --- */
+.brand-logo {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.brand-logo img {
+    height: 60px;
+    width: auto;
+}
+
+.title-page {
+    display: flex;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-top: 10px;
+}
+
+/* --- Formulário de Exclusão --- */
+.clientes-delete {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+    align-items: stretch;
+}
+
+.clientes-delete label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--gold-primary);
+    margin-bottom: -12px;
+    text-align: left;
+}
+
+.clientes-delete input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 14px 16px;
+    background-color: #1a1f2b;
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-dark);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    transition: var(--transition-fast);
+    outline: none;
+}
+
+.clientes-delete input:focus {
+    border-color: var(--gold-primary);
+    box-shadow: 0 0 0 3px rgba(218, 176, 99, 0.1);
+}
+
+.obrigatorio {
+    color: var(--danger-color);
+    margin-left: 4px;
+}
+
+/* --- Botão Excluir --- */
+.btn-delete {
+    margin-top: 10px;
+    padding: 15px;
+    border: 1px solid var(--danger-color);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--danger-color);
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    /* Espaço entre o ícone do FontAwesome e o texto */
+}
+
+.btn-delete:hover {
+    background: var(--danger-color);
+    color: #fff;
+    border-color: transparent;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+/* Link de voltar */
+.back-link {
+    display: block;
+    text-align: center;
+    margin-top: 20px;
+    color: var(--text-light);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: var(--transition-fast);
+}
+
+.back-link:hover {
+    color: var(--gold-primary);
+}
+
+/* --- Mensagem de Retorno --- */
+#mensagem {
+    text-align: center;
+    margin-top: 5px;
+    margin-bottom: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+/* Responsividade */
+@media (max-width: 480px) {
+    .container {
+        padding: 25px 20px;
+    }
+}

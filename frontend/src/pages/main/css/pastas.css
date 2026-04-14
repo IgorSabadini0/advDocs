@@ -90,6 +90,7 @@ body {
 }
 
 .lupa,
+.delete,
 .add {
     display: flex;
     justify-content: center;
@@ -104,6 +105,7 @@ body {
 }
 
 .lupa:hover,
+.delete:hover,
 .add:hover {
     border-color: var(--gold-primary);
     background: var(--gold-primary);
@@ -112,11 +114,13 @@ body {
 }
 
 .lupa:hover i,
+.delete:hover i,
 .add:hover i {
     color: #FFFFFF;
 }
 
 .lupa i,
+.delete i,
 .add i {
     font-size: 1.2rem;
     color: var(--gold-primary);
@@ -124,6 +128,7 @@ body {
 }
 
 .btn-lupa,
+.btn-delete,
 .btn-add {
     background: none;
     border: none;
