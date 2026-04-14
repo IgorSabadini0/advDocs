@@ -91,12 +91,3 @@ const host = process.env.HOST_SERVER;
 app.listen(port, host, () => {
     console.log(`Servidor rodando em http://localhost:${port}`);
 });
-/* 
-    Criar nossa API de Usuários
-
-    -Criar um usuário
-    -Listar todos os usuarios
-    -Editar um usuario
-    -Deletar um usuario
-
-*/

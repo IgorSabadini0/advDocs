@@ -1,39 +1,40 @@
 // --- ESTADO DA APLICAÇÃO ---
 let currentFilter = 'all';
 let searchTimeout = null;
+let clientes = []; // Agora é um array que receberá os dados do banco
 const API_URL = 'http://localhost:3000';
 
-// --- DADOS CLIENTES ---
-
-const tipo = document.getElementById('tipo').value;
-const titulo = document.getElementById('titulo').value;
-const cliente = document.getElementById('cliente').value;
-const numero = document.getElementById('numero').value;
-const status = document.getElementById('status').value;
-const descricao = document.getElementById('descricao').value;
+// --- VARIÁVEIS DE FORMULÁRIO ---
+// DICA: Capturar o ".value" aqui fora só pega o valor no momento que a página carrega (geralmente vazio).
+// O ideal é colocar essas consts dentro da função que vai de fato enviar os dados para o banco.
+const titulo = document.getElementById('titulo')?.value;
+const nome = document.getElementById('nome')?.value;
+const numeroPasta = document.getElementById('numeroPasta')?.value;
+const tipo = document.getElementById('tipo')?.value;
+const numeroProc = document.getElementById('numeroProc')?.value;
+const status = document.getElementById('status')?.value;
+const descricao = document.getElementById('descricao')?.value;
 
 function adicionar() {
     window.location.href = '../register';
 }
 
-const clientes = fetch(`${API_URL}/clientes`, {
-    method: 'GET'
-});
-
-const criarClientes = fetch(`${API_URL}/clientes`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ tipo, titulo, cliente, numero, status, drescricao })
-});
-
+// --- BUSCAR DADOS DO BANCO ---
+const carregarDados = async () => {
+    try {
+        const response = await fetch(`${API_URL}/clientes`); // Presumindo que seja um GET para listar
+        clientes = await response.json();
+    } catch (error) {
+        console.error('Erro ao buscar dados da API:', error);
+        clientes = []; // Garante que seja um array mesmo se der erro
+    }
+};
 
 // --- LÓGICA CENTRAL UNIFICADA ---
 const executarBuscaEFiltro = async (isInitialLoad = false) => {
     const searchInput = document.getElementById('search');
     const query = searchInput.value.trim().toLowerCase();
 
-    // Regra: Se tem texto, precisa ter pelo menos 2 caracteres.
-    // Mas se estiver vazio (query.length === 0), deixamos passar para mostrar TUDO (cenário inicial ou limpar busca).
     if (query.length > 0 && query.length < 2) {
         if (!isInitialLoad) {
             showEmptyState('Digite pelo menos 2 caracteres para pesquisar.');
@@ -41,31 +42,24 @@ const executarBuscaEFiltro = async (isInitialLoad = false) => {
         return;
     }
 
-    // UI: Loading
-    // Mostramos loading para dar feedback, exceto se você quiser que o load inicial seja instantâneo
     showLoading(true);
-
-    // Esconde a GRADE de resultados, mas NÃO os filtros (os filtros devem estar fora do 'resultsContainer' no HTML)
     hideResults();
     hideEmptyState();
 
-    // Simular delay de API (reduzido para 400ms para ficar mais ágil)
     if (!isInitialLoad) {
         await new Promise(resolve => setTimeout(resolve, 400));
     }
 
     try {
-        // --- FILTRAGEM ---
+        // --- FILTRAGEM COM AS NOVAS VARIÁVEIS ---
         const resultados = clientes.filter(item => {
-            // 1. Verifica a Categoria (Aba selecionada)
             const matchTipo = currentFilter === 'all' || item.tipo === currentFilter;
 
-            // 2. Verifica o Texto (Input)
-            // Se input vazio, retorna true (mostra tudo da categoria).
             const matchTexto = query === '' || (
-                item.titulo.toLowerCase().includes(query) ||
-                (item.cliente && item.cliente.toLowerCase().includes(query)) ||
-                item.numero.toLowerCase().includes(query) ||
+                (item.titulo && item.titulo.toLowerCase().includes(query)) ||
+                (item.nome && item.nome.toLowerCase().includes(query)) ||
+                (item.numeroPasta && item.numeroPasta.toLowerCase().includes(query)) ||
+                (item.numeroProc && item.numeroProc.toLowerCase().includes(query)) ||
                 (item.descricao && item.descricao.toLowerCase().includes(query))
             );
 
@@ -74,22 +68,16 @@ const executarBuscaEFiltro = async (isInitialLoad = false) => {
 
         showLoading(false);
 
-        // --- EXIBIÇÃO ---
         if (resultados.length > 0) {
             displayResults(resultados);
         } else {
-            // Se não encontrou nada, preparamos uma mensagem útil
             const nomeFiltro = traduzirTipo(currentFilter);
-
-
             if (query) {
-                // Caso tenha pesquisado algo que não existe na categoria atual
                 showEmptyState(`
                     <strong style="display:block; margin-bottom: 8px;">Nenhum resultado para "${query}" em "${nomeFiltro}".</strong>
                     <span style="font-size: 0.9em; color: #666;">Tente selecionar outra aba de filtro acima.</span>
                 `);
             } else {
-                // Caso a categoria esteja vazia mesmo
                 showEmptyState(`Nenhum item cadastrado na categoria "${nomeFiltro}".`);
             }
         }
@@ -102,22 +90,16 @@ const executarBuscaEFiltro = async (isInitialLoad = false) => {
 };
 
 // --- GATILHOS (EVENT HANDLERS) ---
-
-// 1. Chamada pelo Input de Busca
 const buscar = () => {
     executarBuscaEFiltro();
 };
 
-// 2. Chamada pelos Botões de Filtro
 const filterResults = (filter) => {
     currentFilter = filter;
 
-    // Atualiza visual dos botões (active class)
     const botoes = document.querySelectorAll('.filter-btn');
     botoes.forEach(btn => {
         btn.classList.remove('active');
-
-        // Lógica flexível para encontrar o botão certo pelo texto
         const btnText = btn.textContent.trim().toLowerCase();
         const map = { 'all': 'todos', 'pasta': 'pastas', 'cliente': 'clientes', 'documento': 'documentos' };
 
@@ -126,42 +108,36 @@ const filterResults = (filter) => {
         }
     });
 
-    // Ao clicar no filtro, executamos a busca imediatamente
-    // O termo que estiver digitado no input será mantido e aplicado no novo filtro!
     executarBuscaEFiltro();
 };
 
 // --- FUNÇÕES DE UI (DOM MANIPULATION) ---
-
 const displayResults = (results) => {
     const resultsGrid = document.getElementById('resultsGrid');
     const resultsCount = document.getElementById('resultsCount');
     const container = document.getElementById('resultsContainer');
 
-    // Limpa grade anterior
     resultsGrid.innerHTML = '';
 
-    // Cria e adiciona os cards
     results.forEach((item, index) => {
         const card = createResultCard(item, index);
         resultsGrid.appendChild(card);
     });
 
-    // Atualiza contador
     const count = results.length;
     resultsCount.innerHTML = `<strong>${count}</strong> ${count === 1 ? 'resultado encontrado' : 'resultados encontrados'}`;
 
-    // Mostra container com animação
     container.style.display = 'block';
     setTimeout(() => {
         container.classList.add('show');
     }, 10);
 };
 
+// --- RENDERIZAÇÃO DOS CARDS COM AS NOVAS VARIÁVEIS ---
 const createResultCard = (item, index) => {
     const card = document.createElement('div');
     card.className = 'result-card';
-    card.style.animationDelay = `${index * 0.05}s`; // Cascata mais rápida
+    card.style.animationDelay = `${index * 0.05}s`;
 
     const iconMap = { 'pasta': 'fa-folder', 'cliente': 'fa-user', 'documento': 'fa-file-alt' };
     const typeLabels = { 'pasta': 'Pasta', 'cliente': 'Cliente', 'documento': 'Documento' };
@@ -176,20 +152,20 @@ const createResultCard = (item, index) => {
         </div>
         <div class="card-body">
             <div class="card-info">
-                <div class="info-item"><i class="fa-solid fa-hashtag"></i><span>${escapeHtml(item.numero)}</span></div>
-                ${item.cliente ? `<div class="info-item"><i class="fa-solid fa-user-tie"></i><span>${escapeHtml(item.cliente)}</span></div>` : ''}
-                <div class="info-item"><i class="fa-solid fa-calendar"></i><span>${formatDate(item.data)}</span></div>
+                ${item.numeroPasta ? `<div class="info-item"><i class="fa-solid fa-folder-open"></i><span>Pasta: ${escapeHtml(item.numeroPasta)}</span></div>` : ''}
+                ${item.numeroProc ? `<div class="info-item"><i class="fa-solid fa-scale-balanced"></i><span>Proc: ${escapeHtml(item.numeroProc)}</span></div>` : ''}
+                ${item.nome ? `<div class="info-item"><i class="fa-solid fa-user-tie"></i><span>${escapeHtml(item.nome)}</span></div>` : ''}
+                ${item.data ? `<div class="info-item"><i class="fa-solid fa-calendar"></i><span>${formatDate(item.data)}</span></div>` : ''}
                 ${item.status ? `<div class="info-item"><i class="fa-solid fa-circle-check"></i><span>${escapeHtml(item.status)}</span></div>` : ''}
             </div>
             ${item.descricao ? `<p style="margin-top: 15px; font-size: 0.9rem; color: var(--text-light); line-height: 1.4;">${escapeHtml(item.descricao)}</p>` : ''}
         </div>
         <div class="card-footer">
-            <span class="card-date">${formatDate(item.data)}</span>
+            <span class="card-date">${item.data ? formatDate(item.data) : ''}</span>
             <button class="btn-view" onclick="viewItem(${item.id}, '${item.tipo}')">Ver Detalhes <i class="fa-solid fa-arrow-right"></i></button>
         </div>
     `;
 
-    // Hover via JS (opcional)
     card.onmouseenter = () => card.style.transform = 'translateY(-5px)';
     card.onmouseleave = () => card.style.transform = 'translateY(0)';
 
@@ -197,7 +173,6 @@ const createResultCard = (item, index) => {
 };
 
 // --- HELPERS E UTILITÁRIOS ---
-
 const showLoading = (show) => {
     const loading = document.getElementById('loading');
     if (show) loading.classList.add('show');
@@ -207,7 +182,6 @@ const showLoading = (show) => {
 const hideResults = () => {
     const container = document.getElementById('resultsContainer');
     container.classList.remove('show');
-    // Pequeno timeout para não remover do DOM antes da transição CSS terminar
     setTimeout(() => {
         if (!container.classList.contains('show')) container.style.display = 'none';
     }, 300);
@@ -217,7 +191,6 @@ const showEmptyState = (messageHTML) => {
     const emptyState = document.getElementById('emptyState');
     const p = emptyState.querySelector('p');
 
-    // Usamos innerHTML para permitir negrito ou quebras de linha na mensagem
     if (p) p.innerHTML = messageHTML;
 
     emptyState.style.display = 'block';
@@ -232,7 +205,6 @@ const hideEmptyState = () => {
     }, 300);
 };
 
-// Formatação e Segurança
 const formatDate = (dateString) => new Date(dateString).toLocaleDateString('pt-BR');
 const escapeHtml = (text) => {
     if (!text) return '';
@@ -245,30 +217,133 @@ const traduzirTipo = (tipo) => {
     return map[tipo] || tipo;
 };
 
-// Ação de clique no botão
+// --- FUNÇÕES DE VISUALIZAÇÃO (MODAL) ---
 const viewItem = (id, tipo) => {
-    alert(`Visualizando ${tipo} com ID: ${id}\n(Backend pendente)`);
+    // 1. Verificação e Busca do Item
+    // Convertendo ambos para String para evitar erros de tipagem (Number vs String) vindos da API
+    const item = clientes.find(c => String(c.id) === String(id) && c.tipo === tipo);
+
+    // 2. Tratamento de Erro (Item não encontrado)
+    if (!item) {
+        console.error(`[Erro] Item não encontrado: ID ${id} | Tipo: ${tipo}`);
+        alert('Não foi possível encontrar os detalhes deste item. Ele pode ter sido removido.');
+        return;
+    }
+
+    // Remover modal existente (se houver) para evitar duplicatas
+    const modalExistente = document.getElementById('itemModal');
+    if (modalExistente) modalExistente.remove();
+
+    // 3. Renderização Condicional por 'Tipo'
+    let detalhesEspecificos = '';
+
+    if (tipo === 'pasta' || tipo === 'processo') { // Assumindo que possa ter 'processo' futuramente
+        detalhesEspecificos = `
+            <div class="modal-info-item"><strong>Número da Pasta:</strong> <span>${escapeHtml(item.numeroPasta || 'N/A')}</span></div>
+            <div class="modal-info-item"><strong>Número do Processo:</strong> <span>${escapeHtml(item.numeroProc || 'N/A')}</span></div>
+            <div class="modal-info-item"><strong>Status:</strong> <span class="status-badge">${escapeHtml(item.status || 'N/A')}</span></div>
+        `;
+    } else if (tipo === 'cliente') {
+        detalhesEspecificos = `
+            <div class="modal-info-item"><strong>Nome Completo:</strong> <span>${escapeHtml(item.nome || item.titulo || 'N/A')}</span></div>
+            <div class="modal-info-item"><strong>Contato:</strong> <span>${escapeHtml(item.contato || 'N/A')}</span></div>
+        `;
+    } else if (tipo === 'documento') {
+        detalhesEspecificos = `
+            <div class="modal-info-item"><strong>Tipo de Documento:</strong> <span>${escapeHtml(item.titulo || 'N/A')}</span></div>
+            <div class="modal-info-item"><strong>Vínculo (Pasta):</strong> <span>${escapeHtml(item.numeroPasta || 'N/A')}</span></div>
+        `;
+    }
+
+    // 4. Criação dinâmica do Modal no DOM
+    const modal = document.createElement('div');
+    modal.id = 'itemModal';
+    modal.className = 'modal-overlay';
+
+    //     titulo,
+    // nome,
+    // numeroPasta,
+    // tipo,
+    // numeroProc,
+    // status,
+    // descricao
+
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Detalhes - <span class="badge">${item.titulo}</span></h2>
+                <button class="btn-close-modal" onclick="fecharModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="modal-section">
+                    <h3>Informações Gerais</h3>
+                    <div class="modal-info-grid">
+                        <div class="modal-info-item"><strong>Título:</strong> <span>${escapeHtml(item.titulo || 'N/A')}</span></div>
+                        <div class="modal-info-item"><strong>Nome:</strong> <span>${escapeHtml(item.nome || 'N/A')}</span></div>
+                        <div class="modal-info-item"><strong>Número da Pasta:</strong> <span>${escapeHtml(item.numeroPasta || 'N/A')}</span></div>
+                        <div class="modal-info-item"><strong>Tipo:</strong> <span>${traduzirTipo(tipo)}</span></div>
+                        <div class="modal-info-item"><strong>Número do Processo:</strong> <span>${escapeHtml(item.numeroProc || 'N/A')}</span></div>
+                        <div class="modal-info-item"><strong>Status:</strong> <span class="status-badge">${escapeHtml(item.status || 'N/A')}</span></div>
+                    </div>
+                </div>
+
+                ${item.descricao ? `
+                <div class="modal-section" style="margin-top: 20px;">
+                    <h3>Descrição / Observações</h3>
+                    <p class="modal-description">${escapeHtml(item.descricao)}</p>
+                </div>` : ''}
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-view" onclick="fecharModal()" style="border-color: var(--text-light); color: var(--text-light);">Fechar</button>
+                <button class="btn-view" onclick="editarItem(${item.id}, '${tipo}')">Editar <i class="fa-solid fa-pen-to-square"></i></button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Adicionar listener para fechar clicando fora do modal (no overlay escuro)
+    modal.addEventListener('mousedown', (e) => {
+        if (e.target === modal) fecharModal();
+    });
+
+    // Timeout mínimo para a transição do CSS funcionar corretamente
+    setTimeout(() => {
+        modal.classList.add('show');
+    }, 10);
 };
 
-// --- INICIALIZAÇÃO (DOMContentLoaded) ---
-document.addEventListener('DOMContentLoaded', () => {
-    const searchInput = document.getElementById('search');
+const fecharModal = () => {
+    const modal = document.getElementById('itemModal');
+    if (modal) {
+        modal.classList.remove('show');
+        // Aguarda a animação de saída terminar antes de remover do DOM
+        setTimeout(() => modal.remove(), 300);
+    }
+};
 
-    // 1. Foco inicial
+// Deixando o hook pronto para quando você for fazer a edição
+const editarItem = (id, tipo) => {
+    console.log(`Redirecionando para edição: ID ${id}, Tipo ${tipo}`);
+    // Ex: window.location.href = `../edit?id=${id}&tipo=${tipo}`;
+};
+// --- INICIALIZAÇÃO (DOMContentLoaded) ---
+document.addEventListener('DOMContentLoaded', async () => {
+    const searchInput = document.getElementById('search');
     searchInput.focus();
 
-    // 2. CARREGAMENTO INICIAL: 
-    // Chama a busca sem digitar nada. Isso fará aparecer TODOS os cards do mockup.
-    // O parâmetro 'true' indica que é o load inicial.
+    // Aguarda carregar os dados reais da API antes de renderizar
+    showLoading(true);
+    await carregarDados();
+    showLoading(false);
+
     executarBuscaEFiltro(true);
 
-    // 3. Listeners de Input (com Debounce)
     searchInput.addEventListener('input', () => {
         clearTimeout(searchTimeout);
         const query = searchInput.value.trim();
-
-        // Se o campo for limpo, busca imediatamente (para restaurar a lista completa).
-        // Se estiver digitando, espera 500ms.
         const delay = query.length === 0 ? 0 : 500;
 
         searchTimeout = setTimeout(() => {
@@ -276,7 +351,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }, delay);
     });
 
-    // Enter busca imediatamente
     searchInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             clearTimeout(searchTimeout);

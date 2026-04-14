@@ -1,4 +1,31 @@
-const API_URL = 'http://localhost:3000';
+const API_URL = 'http://192.168.0.150:3000';
+
+const mascaraProcessoCNJ = (valor) => {
+    // Remove tudo que não for dígito
+    let v = valor.replace(/\D/g, "");
+
+    // Aplica a formatação progressivamente
+    v = v.replace(/(\d{7})(\d)/, "$1-$2");                       // NNNNNNN-DD...
+    v = v.replace(/(\d{7}-\d{2})(\d)/, "$1.$2");                 // NNNNNNN-DD.AAAA...
+    v = v.replace(/(\d{7}-\d{2}\.\d{4})(\d)/, "$1.$2");          // NNNNNNN-DD.AAAA.J...
+    v = v.replace(/(\d{7}-\d{2}\.\d{4}\.\d{1})(\d)/, "$1.$2");   // NNNNNNN-DD.AAAA.J.TR...
+    v = v.replace(/(\d{7}-\d{2}\.\d{4}\.\d{1}\.\d{2})(\d)/, "$1.$2"); // NNNNNNN-DD.AAAA.J.TR.OOOO
+
+    // Limita o tamanho máximo a 25 caracteres (20 números + 5 caracteres de pontuação)
+    return v.substring(0, 25);
+};
+
+// Aguarda o DOM carregar para selecionar o elemento
+document.addEventListener('DOMContentLoaded', () => {
+    const inputProcesso = document.getElementById('numeroProc');
+
+    if (inputProcesso) {
+        inputProcesso.addEventListener('input', (e) => {
+            // Pega o valor atual, passa na máscara e devolve para o input
+            e.target.value = mascaraProcessoCNJ(e.target.value);
+        });
+    }
+});
 
 const salvarRegistro = async () => {
     const titulo = document.getElementById('titulo').value;

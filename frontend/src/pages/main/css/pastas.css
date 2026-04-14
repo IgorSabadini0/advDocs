@@ -6,7 +6,7 @@
     --gold-hover: #c29b54;
     --text-main: #979797;
     --text-light: #666666;
-    --text-dark: #333333;
+    --text-dark: #ffffff;
     --text-logo: #b1b1b1;
     --font-title: 'Playfair Display', serif;
     --font-body: 'Montserrat', sans-serif;
@@ -168,6 +168,164 @@ body {
     background: rgba(218, 176, 99, 0.05);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(218, 176, 99, 0.2);
+}
+
+/* --- 10. Modal Dinâmico --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: var(--transition-fast);
+}
+
+.modal-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: var(--shadow-hover);
+    transform: translateY(30px) scale(0.95);
+    transition: var(--transition-fast);
+    overflow: hidden;
+}
+
+.modal-overlay.show .modal-content {
+    transform: translateY(0) scale(1);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 25px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h2 {
+    color: var(--gold-primary);
+    font-family: var(--font-title);
+    font-size: 1.4rem;
+    font-weight: 600;
+}
+
+.btn-close-modal {
+    background: none;
+    border: none;
+    color: var(--text-light);
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.btn-close-modal:hover {
+    color: var(--gold-primary);
+    transform: scale(1.1);
+}
+
+.modal-body {
+    padding: 25px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.modal-section h3 {
+    font-size: 1rem;
+    color: var(--text-dark);
+    margin-bottom: 15px;
+    border-left: 3px solid var(--gold-primary);
+    padding-left: 10px;
+}
+
+.modal-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.modal-info-item {
+    color: var(--text-dark);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.modal-info-item strong {
+    font-size: 0.8rem;
+    color: var(--gold-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.modal-info-item span {
+    color: var(--text-dark);
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.modal-description {
+    font-size: 0.95rem;
+    color: var(--text-dark);
+    line-height: 1.6;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    background: rgba(218, 176, 99, 0.1);
+    color: var(--gold-primary) !important;
+    border-radius: 20px;
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    width: fit-content;
+}
+
+.badge {
+    color: var(--text-dark) !important;
+}
+
+.modal-title {
+    color: var(--gold-primary) !important;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    padding: 20px 25px;
+    border-top: 1px solid var(--border-color);
+    background: rgba(0, 0, 0, 0.1);
+}
+
+/* Responsividade do Modal */
+@media (max-width: 600px) {
+    .modal-info-grid {
+        grid-template-columns: 1fr;
+        /* Em telas pequenas, fica uma coluna só */
+    }
 }
 
 /* --- 4. Área de Resultados --- */
@@ -494,29 +652,38 @@ body {
         padding: 20px 15px;
     }
 
+    /* Ajuste para permitir quebra de linha entre os blocos (flex-wrap) */
     .search-bar {
-        flex-direction: column;
-        gap: 15px;
-        padding: 20px 15px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 20px;
     }
 
+    /* Primeira Linha: Pesquisa (flex: 1) e Lupa (fixa) */
     .pesquisa {
+        display: flex;
+        flex: 1;
+        min-width: 200px;
+    }
+
+    #search {
         width: 100%;
     }
 
-    .lupa {
-        width: 100%;
-        height: 50px;
-    }
-
+    /* Segunda Linha: Adicionar e Sair dividindo 50% cada */
+    .add,
     .logout {
-        width: 100%;
+        flex: 1;
+        display: flex;
     }
 
     .logout input[type="button"] {
         width: 100%;
+        height: 56px;
     }
 
+    /* Restante das suas configurações originais de responsividade */
     .results-header {
         flex-direction: column;
         align-items: flex-start;
