@@ -31,27 +31,31 @@
                     <input type="text" id="search" placeholder="Pesquisar (Pastas, Clientes...)"
                         onkeypress="handleKeyPress(event)">
                 </div>
-                <div class="lupa">
+
+                <div class="lupa" onclick="buscar()" style="cursor: pointer;">
                     <abbr title="Pesquisar pastas, clientes ou documentos" style="text-decoration: none;">
-                        <button class="btn-lupa" onclick="buscar()" aria-label="Buscar">
+                        <button class="btn-lupa" aria-label="Buscar">
                             <i class="fa-solid fa-magnifying-glass"></i>
                         </button>
                     </abbr>
                 </div>
-                <div class="add">
+
+                <div class="add" onclick="adicionar()" style="cursor: pointer;">
                     <abbr title="Adicionar nova pasta, cliente ou documento" style="text-decoration: none;">
-                        <button class="btn-add" onclick="adicionar()" aria-label="Adicionar">
+                        <button class="btn-add" aria-label="Adicionar">
                             <i class="fa-solid fa-plus"></i>
                         </button>
                     </abbr>
                 </div>
-                <div class="delete" style="text-decoration: none;">
+
+                <div class="delete" onclick="excluir()" style="cursor: pointer;">
                     <abbr title="Excluir pasta, cliente ou documento">
-                        <button class="btn-delete" onclick="excluir()" aria-label="Excluir">
+                        <button class="btn-delete" aria-label="Excluir">
                             <i class="fa-solid fa-trash"></i>
                         </button>
                     </abbr>
                 </div>
+
                 <div class="logout">
                     <input type="button" value="Sair" onclick="sair()">
                 </div>

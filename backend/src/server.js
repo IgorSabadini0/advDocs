@@ -26,7 +26,7 @@ app.use(express.static(staticPath));
 // ---------------------  G E T  => LISTAR  ---------------------
 
 app.get('/', (req, res) => {
-    res.redirect('pages/auth/index.html');
+    res.redirect('pages/auth');
 })
 
 app.get('/clientes', async (req, res) => {
@@ -84,7 +84,7 @@ app.post('/auth', async (req, res) => {
 
         return res.status(200).json({
             mensagem: 'Login efetuado com sucesso',
-            redirectUrl: '/pages/main/index.html',
+            redirectUrl: '/pages/main',
             usuario: {
                 id: usuario.id,
                 nome: usuario.user

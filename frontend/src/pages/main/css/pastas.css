@@ -146,6 +146,14 @@ body {
     justify-content: center;
 }
 
+/* No seu arquivo pastas.css */
+.btn-lupa,
+.btn-add,
+.btn-delete,
+i {
+    pointer-events: none;
+}
+
 .logout {
     display: flex;
     align-items: center;
