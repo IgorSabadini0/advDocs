@@ -1,7 +1,6 @@
-const API_URL = 'http://192.168.0.150:3000';
+const API_URL = 'http://localhost:3000';
 
 const mascaraProcessoCNJ = (valor) => {
-    // Remove tudo que não for dígito
     let v = valor.replace(/\D/g, "");
 
     // Aplica a formatação progressivamente
@@ -9,9 +8,8 @@ const mascaraProcessoCNJ = (valor) => {
     v = v.replace(/(\d{7}-\d{2})(\d)/, "$1.$2");                 // NNNNNNN-DD.AAAA...
     v = v.replace(/(\d{7}-\d{2}\.\d{4})(\d)/, "$1.$2");          // NNNNNNN-DD.AAAA.J...
     v = v.replace(/(\d{7}-\d{2}\.\d{4}\.\d{1})(\d)/, "$1.$2");   // NNNNNNN-DD.AAAA.J.TR...
-    v = v.replace(/(\d{7}-\d{2}\.\d{4}\.\d{1}\.\d{2})(\d)/, "$1.$2"); // NNNNNNN-DD.AAAA.J.TR.OOOO
+    v = v.replace(/(\d{7}-\d{2}\.\d{4}\.\d{1}\.\d{2})(\d)/, "$1.$2"); // NNNNNNN-DD.AAAA.J.TR.OO...
 
-    // Limita o tamanho máximo a 25 caracteres (20 números + 5 caracteres de pontuação)
     return v.substring(0, 25);
 };
 

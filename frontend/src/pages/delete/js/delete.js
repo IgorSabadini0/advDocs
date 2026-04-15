@@ -1,7 +1,7 @@
-const API_URL = 'http://192.168.0.150:3000';
+const API_URL = 'http://localhost:3000';
 
 const excluirRegistro = async () => {
-    const valorInput = document.getElementById('idInput').value;
+    const valorInput = document.getElementById('idInput').value.trim();
 
     if (!valorInput) {
         document.getElementById('mensagem').textContent = 'Por favor, insira um ID válido.';
@@ -16,12 +16,14 @@ const excluirRegistro = async () => {
             }
         });
         if (response.ok) {
-            document.getElementById('mensagem').textContent = 'Registro excluído com sucesso!';
-        } else {
-            document.getElementById('mensagem').textContent = 'Erro ao excluir registro.';
+            document.getElementById('idInput').value = '';
+            const statusMessage = document.getElementById('response');
+            statusMessage.textContent = '✅ Registro excluído com sucesso!';
+            statusMessage.style.color = '#28a745';
         }
     } catch (error) {
-        console.error('Erro ao excluir registro:', error);
-        document.getElementById('mensagem').textContent = 'Erro ao excluir registro.';
+        const statusMessage = document.getElementById('response');
+        statusMessage.textContent = '❌ Erro ao excluir registro!';
+        statusMessage.style.color = '#dc3545';
     }
 };
