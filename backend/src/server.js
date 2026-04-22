@@ -59,7 +59,12 @@ app.delete('/delete/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const deletarDados = "DELETE FROM clientes WHERE id = ?";
-        await db.query(deletarDados, [id]);
+        const [result] = await db.query(deletarDados, [id]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ mensagem: 'O ID informado não existe no banco de dados.' });
+        }
+
         return res.status(200).json({ mensagem: 'Registro excluído com sucesso' });
     } catch (error) {
         console.log(`Erro ao excluir registro: ${error}`);

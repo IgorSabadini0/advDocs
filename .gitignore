@@ -1,3 +1,4 @@
 node_modules
 .env
 *.sql
+frontend/src/pages/config.js

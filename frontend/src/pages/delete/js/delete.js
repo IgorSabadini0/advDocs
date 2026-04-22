@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:3000';
+import { API_URL } from '../../config.js';
 
 const excluirRegistro = async () => {
     const valorInput = document.getElementById('idInput').value.trim();
@@ -15,15 +15,24 @@ const excluirRegistro = async () => {
                 'Content-Type': 'application/json'
             }
         });
-        if (response.ok) {
-            document.getElementById('idInput').value = '';
-            const statusMessage = document.getElementById('response');
-            statusMessage.textContent = '✅ Registro excluído com sucesso!';
-            statusMessage.style.color = '#28a745';
-        }
-    } catch (error) {
         const statusMessage = document.getElementById('response');
-        statusMessage.textContent = '❌ Erro ao excluir registro!';
+        const data = await response.json(); // Pegamos a mensagem enviada pelo back-end
+
+        if (response.ok) {
+            // Status 200 a 299
+            document.getElementById('idInput').value = '';
+            statusMessage.textContent = `✅ ${data.mensagem}`;
+            statusMessage.style.color = '#28a745';
+        } else {
+            // Status 404, 400, 500, etc.
+            statusMessage.textContent = `⚠️ ${data.mensagem || 'Erro ao excluir'}`;
+            statusMessage.style.color = '#ffc107'; // Um amarelo/laranja para aviso
+        }
+
+    } catch (error) {
+        // Erro de rede ou erro crítico
+        const statusMessage = document.getElementById('response');
+        statusMessage.textContent = '❌ Erro de conexão com o servidor!';
         statusMessage.style.color = '#dc3545';
     }
 };
