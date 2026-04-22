@@ -1,8 +1,8 @@
 // --- ESTADO DA APLICAÇÃO ---
+import { API_URL } from '../../config.js';
 let currentFilter = 'all';
 let searchTimeout = null;
 let clientes = []; // Agora é um array que receberá os dados do banco
-const API_URL = 'http://localhost:3000';
 
 // --- VARIÁVEIS DE FORMULÁRIO ---
 // DICA: Capturar o ".value" aqui fora só pega o valor no momento que a página carrega (geralmente vazio).

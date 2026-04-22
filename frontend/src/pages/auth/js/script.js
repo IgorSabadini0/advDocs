@@ -1,6 +1,7 @@
+import { API_URL } from '../../config.js';
+
 const submit = document.getElementById("submit");
 
-const API_URL = 'http://localhost:3000';
 const acess = async () => {
     const user = document.getElementById('user').value;
     const password = document.getElementById('password').value;

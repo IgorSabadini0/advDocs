@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:3000';
+import { API_URL } from '../../config.js';
 
 const mascaraProcessoCNJ = (valor) => {
     let v = valor.replace(/\D/g, "");
