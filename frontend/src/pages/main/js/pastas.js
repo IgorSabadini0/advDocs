@@ -1,5 +1,5 @@
 // --- ESTADO DA APLICAÇÃO ---
-const API_URL = "http://localhost:3000";
+const API_URL = window.location.origin;
 let currentFilter = 'all';
 let searchTimeout = null;
 let clientes = []; // Agora é um array que receberá os dados do banco

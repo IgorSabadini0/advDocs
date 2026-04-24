@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:3000";
+const API_URL = window.location.origin;
 
 const mascaraProcessoCNJ = (valor) => {
     let v = valor.replace(/\D/g, "");
