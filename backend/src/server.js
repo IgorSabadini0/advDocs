@@ -42,9 +42,9 @@ app.get('/clientes', async (req, res) => {
 
 app.post('/register', async (req, res) => {
     try {
-        const { titulo, nome, numeroPasta, tipo, numeroProc, status, descricao } = req.body;
-        const inserirDados = "INSERT INTO clientes (titulo, nome, numeroPasta, tipo, numeroProc, status, descricao) VALUES (?, ?, ?, ?, ?, ?, ?)";
-        const [rows] = await db.query(inserirDados, [titulo, nome, numeroPasta, tipo, numeroProc, status, descricao]);
+        const { acao, nome, numeroPasta, tipo, numeroProc, status, descricao } = req.body;
+        const inserirDados = "INSERT INTO clientes (acao, nome, numeroPasta, tipo, numeroProc, status, descricao) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        const [rows] = await db.query(inserirDados, [acao, nome, numeroPasta, tipo, numeroProc, status, descricao]);
 
         return res.status(201).json({ mensagem: 'Registro criado com sucesso', id: rows.insertId });
     }
@@ -97,7 +97,7 @@ app.post('/auth', async (req, res) => {
         });
 
     } catch (e) {
-        console.error(error);
+        console.error(e);
         return res.status(500).json({ mensagem: 'Erro interno no servidor.' });
     }
 })

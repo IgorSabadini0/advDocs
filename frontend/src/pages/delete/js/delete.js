@@ -1,4 +1,4 @@
-import { API_URL } from '../../config.js';
+const API_URL = "http://localhost:3000";
 
 const excluirRegistro = async () => {
     const valorInput = document.getElementById('idInput').value.trim();

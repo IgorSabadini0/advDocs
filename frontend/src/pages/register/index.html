@@ -22,21 +22,24 @@
         </div>
 
         <div class="clientes-add">
-            <label for="titulo">Título da Pasta / Documento <span class="obrigatorio">*</span></label>
-            <input type="text" id="titulo" required placeholder="Ex: Ação Revisional - Nome do Cliente">
-
-            <label for="numeroPasta">Número da Pasta</label>
-            <input type="text" id="numeroPasta" placeholder="Ex: nº 1">
+            <label for="acao">Ação <span class="obrigatorio">*</span></label>
+            <input type="text" id="acao" required placeholder="Ex: Ação Revisional">
 
             <label for="nome">Nome do Cliente <span class="obrigatorio">*</span></label>
             <input type="text" id="nome" required placeholder="Nome completo do cliente">
 
+            <label for=" numeroPasta">Número da Pasta</label>
+            <input type="text" id="numeroPasta" placeholder="Ex: nº 1">
+
             <label for="tipo">Tipo de Registro <span class="obrigatorio">*</span></label>
             <select name="tipo" id="tipo" required>
                 <option value="" disabled selected hidden>Selecione o tipo...</option>
-                <option value="pasta">Pasta</option>
-                <option value="cliente">Cliente</option>
-                <option value="documento">Documento</option>
+                <option value="Todos Processos">Todos Processos</option>
+                <option value="Previdenciário">Previdenciário</option>
+                <option value="Santa Casa">Santa Casa</option>
+                <option value="Justiça Gratuita">Justiça Gratuita</option>
+                <option value="Arquivado">Arquivado</option>
+                <option value="Outro">Outro</option>
             </select>
 
             <label for="numero">Número do Processo</label>
@@ -46,7 +49,7 @@
             <select name="status" id="status">
                 <option value="" disabled selected hidden>Selecione o status...</option>
                 <option value="Ativo">Ativo</option>
-                <option value="Arquivado">Arquivado</option>
+                <option value="Parado">Parado</option>
             </select>
 
             <label for="descricao">Descrição Adicional</label>

@@ -1,4 +1,4 @@
-import { API_URL } from '../../config.js';
+const API_URL = "http://localhost:3000";
 
 const submit = document.getElementById("submit");
 
@@ -21,3 +21,5 @@ const acess = async () => {
         status.innerText = data.mensagem;
     }
 }
+
+submit.addEventListener('click', acess);

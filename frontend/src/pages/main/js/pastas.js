@@ -1,5 +1,5 @@
 // --- ESTADO DA APLICAÇÃO ---
-import { API_URL } from '../../config.js';
+const API_URL = "http://localhost:3000";
 let currentFilter = 'all';
 let searchTimeout = null;
 let clientes = []; // Agora é um array que receberá os dados do banco
@@ -7,7 +7,7 @@ let clientes = []; // Agora é um array que receberá os dados do banco
 // --- VARIÁVEIS DE FORMULÁRIO ---
 // DICA: Capturar o ".value" aqui fora só pega o valor no momento que a página carrega (geralmente vazio).
 // O ideal é colocar essas consts dentro da função que vai de fato enviar os dados para o banco.
-const titulo = document.getElementById('titulo')?.value;
+const acao = document.getElementById('acao')?.value;
 const nome = document.getElementById('nome')?.value;
 const numeroPasta = document.getElementById('numeroPasta')?.value;
 const tipo = document.getElementById('tipo')?.value;
@@ -60,7 +60,7 @@ const executarBuscaEFiltro = async (isInitialLoad = false) => {
             const matchTipo = currentFilter === 'all' || item.tipo === currentFilter;
 
             const matchTexto = query === '' || (
-                (item.titulo && item.titulo.toLowerCase().includes(query)) ||
+                (item.acao && item.acao.toLowerCase().includes(query)) ||
                 (item.nome && item.nome.toLowerCase().includes(query)) ||
                 (item.numeroPasta && item.numeroPasta.toLowerCase().includes(query)) ||
                 (item.numeroProc && item.numeroProc.toLowerCase().includes(query)) ||
@@ -150,7 +150,7 @@ const createResultCard = (item, index) => {
         <div class="card-header">
             <div class="card-icon"><i class="fa-solid ${iconMap[item.tipo] || 'fa-file'}"></i></div>
             <div class="card-title">
-                <h3>${escapeHtml(item.titulo)}</h3>
+                <h3>${escapeHtml(item.acao)}</h3>
                 <span class="card-type">${typeLabels[item.tipo] || item.tipo}</span>
             </div>
         </div>
@@ -249,12 +249,12 @@ const viewItem = (id, tipo) => {
         `;
     } else if (tipo === 'cliente') {
         detalhesEspecificos = `
-            <div class="modal-info-item"><strong>Nome Completo:</strong> <span>${escapeHtml(item.nome || item.titulo || 'N/A')}</span></div>
+            <div class="modal-info-item"><strong>Nome Completo:</strong> <span>${escapeHtml(item.nome || item.acao || 'N/A')}</span></div>
             <div class="modal-info-item"><strong>Contato:</strong> <span>${escapeHtml(item.contato || 'N/A')}</span></div>
         `;
     } else if (tipo === 'documento') {
         detalhesEspecificos = `
-            <div class="modal-info-item"><strong>Tipo de Documento:</strong> <span>${escapeHtml(item.titulo || 'N/A')}</span></div>
+            <div class="modal-info-item"><strong>Tipo de Documento:</strong> <span>${escapeHtml(item.acao || 'N/A')}</span></div>
             <div class="modal-info-item"><strong>Vínculo (Pasta):</strong> <span>${escapeHtml(item.numeroPasta || 'N/A')}</span></div>
         `;
     }
@@ -264,7 +264,7 @@ const viewItem = (id, tipo) => {
     modal.id = 'itemModal';
     modal.className = 'modal-overlay';
 
-    //     titulo,
+    //     acao,
     // nome,
     // numeroPasta,
     // tipo,
@@ -275,7 +275,7 @@ const viewItem = (id, tipo) => {
     modal.innerHTML = `
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title">Detalhes - <span class="badge">${item.titulo}</span></h2>
+                <h2 class="modal-title">Detalhes - <span class="badge">${item.acao}</span></h2>
                 <button class="btn-close-modal" onclick="fecharModal()"><i class="fa-solid fa-xmark"></i></button>
             </div>
             
@@ -284,7 +284,7 @@ const viewItem = (id, tipo) => {
                     <h3>Informações Gerais</h3>
                     <div class="modal-info-grid">
                         <div class="modal-info-item"><strong>ID do Sistema:</strong> <span>#${escapeHtml(item.id || 'N/A')}</span></div> 
-                        <div class="modal-info-item"><strong>Título:</strong> <span>${escapeHtml(item.titulo || 'N/A')}</span></div>
+                        <div class="modal-info-item"><strong>Ação:</strong> <span>${escapeHtml(item.acao || 'N/A')}</span></div>
                         <div class="modal-info-item"><strong>Nome:</strong> <span>${escapeHtml(item.nome || 'N/A')}</span></div>
                         <div class="modal-info-item"><strong>Número da Pasta:</strong> <span>${escapeHtml(item.numeroPasta || 'N/A')}</span></div>
                         <div class="modal-info-item"><strong>Tipo:</strong> <span>${traduzirTipo(tipo)}</span></div>

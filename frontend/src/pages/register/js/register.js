@@ -1,4 +1,4 @@
-import { API_URL } from '../../config.js';
+const API_URL = "http://localhost:3000";
 
 const mascaraProcessoCNJ = (valor) => {
     let v = valor.replace(/\D/g, "");
@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 const salvarRegistro = async () => {
-    const titulo = document.getElementById('titulo').value;
+    const acao = document.getElementById('acao').value;
     const nome = document.getElementById('nome').value;
     const numeroPasta = document.getElementById('numeroPasta').value;
     const tipo = document.getElementById('tipo').value;
@@ -35,7 +35,7 @@ const salvarRegistro = async () => {
     const descricao = document.getElementById('descricao').value;
 
     const registro = {
-        titulo,
+        acao,
         nome,
         numeroPasta,
         tipo,
@@ -52,7 +52,7 @@ const salvarRegistro = async () => {
         });
 
         if (response.ok) {
-            document.getElementById('titulo').value = '';
+            document.getElementById('acao').value = '';
             document.getElementById('numeroPasta').value = '';
             document.getElementById('nome').value = '';
             document.getElementById('tipo').value = '';
