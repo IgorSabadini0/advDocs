@@ -143,15 +143,14 @@ const createResultCard = (item, index) => {
     card.className = 'result-card';
     card.style.animationDelay = `${index * 0.05}s`;
 
-    const iconMap = { 'pasta': 'fa-folder', 'cliente': 'fa-user', 'documento': 'fa-file-alt' };
-    const typeLabels = { 'pasta': 'Pasta', 'cliente': 'Cliente', 'documento': 'Documento' };
+    const iconMap = { 'Todos Processos': 'fa-folder-open', 'Previdenciário': 'fa-person-cane', 'Santa Casa': 'fa-hospital', 'Justiça Gratuita': 'fa-hand-holding-usd', 'Arquivado': 'fa-box-archive', 'Outro': 'fa-file' }; // preciso alterar
 
     card.innerHTML = `
         <div class="card-header">
             <div class="card-icon"><i class="fa-solid ${iconMap[item.tipo] || 'fa-file'}"></i></div>
             <div class="card-title">
-                <h3>${escapeHtml(item.acao)}</h3>
-                <span class="card-type">${typeLabels[item.tipo] || item.tipo}</span>
+                <h3>${escapeHtml(item.nome)}</h3>
+                <span class="card-type">${item.tipo}</span>
             </div>
         </div>
         <div class="card-body">
