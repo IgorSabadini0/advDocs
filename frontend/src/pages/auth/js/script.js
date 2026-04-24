@@ -1,4 +1,4 @@
-const API_URL = window.location.origin;
+const API_URL = window.location.origin; // usa a URL atual como base para as requisições. Ex: https://minhaapi.com/api/v1 a URL base será https://minhaapi.com
 
 const submit = document.getElementById("submit");
 
