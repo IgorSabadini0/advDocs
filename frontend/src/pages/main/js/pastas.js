@@ -274,7 +274,7 @@ const viewItem = (id, tipo) => {
     modal.innerHTML = `
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title">Detalhes - <span class="badge">${item.acao}</span></h2>
+                <h2 class="modal-title">${item.nome} - <span class="badge">${item.acao}</span></h2>
                 <button class="btn-close-modal" onclick="fecharModal()"><i class="fa-solid fa-xmark"></i></button>
             </div>
             
