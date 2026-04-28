@@ -237,6 +237,93 @@ i {
     font-weight: 600;
 }
 
+/* --- Estilo do Modal de Confirmação de Exclusão --- */
+
+.modal-confirm-content {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    width: 95%;
+    max-width: 420px;
+    padding: 30px;
+    text-align: center;
+    box-shadow: var(--shadow);
+    transform: translateY(30px) scale(0.95);
+    transition: var(--transition-fast);
+}
+
+.modal-overlay.show .modal-confirm-content {
+    transform: translateY(0) scale(1);
+}
+
+.modal-confirm-icon {
+    font-size: 3.5rem;
+    color: #e74c3c;
+    margin-bottom: 20px;
+    filter: drop-shadow(0 0 10px rgba(231, 76, 60, 0.2));
+}
+
+.modal-confirm-content h3 {
+    font-family: var(--font-body);
+    color: var(--gold-primary);
+    font-size: 1.6rem;
+    margin-bottom: 12px;
+}
+
+.modal-confirm-content p {
+    font-family: var(--font-body);
+    color: var(--text-main);
+    font-size: 1rem;
+    line-height: 1.5;
+    margin-bottom: 25px;
+}
+
+.confirm-buttons-group {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+/* Botão Cancelar (Estilo similar ao filter-btn) */
+.btn-cancel-modal {
+    padding: 12px 24px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-main);
+    font-family: var(--font-body);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.btn-cancel-modal:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-dark);
+    border-color: var(--text-light);
+}
+
+.btn-confirm-delete-act {
+    padding: 12px 24px;
+    background: #e74c3c;
+    border: 1px solid #e74c3c;
+    border-radius: 8px;
+    color: #ffffff;
+    font-family: var(--font-body);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.btn-confirm-delete-act:hover {
+    background: #c0392b;
+    border-color: #c0392b;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
+}
+
 .btn-close-modal {
     background: none;
     border: none;
@@ -337,7 +424,6 @@ i {
 @media (max-width: 600px) {
     .modal-info-grid {
         grid-template-columns: 1fr;
-        /* Em telas pequenas, fica uma coluna só */
     }
 }
 

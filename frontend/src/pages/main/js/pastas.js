@@ -263,7 +263,7 @@ const viewItem = (id, tipo) => {
     modal.id = 'itemModal';
     modal.className = 'modal-overlay';
 
-    //     acao,
+    // acao,
     // nome,
     // numeroPasta,
     // tipo,
@@ -300,7 +300,7 @@ const viewItem = (id, tipo) => {
             </div>
 
             <div class="modal-footer">
-                <button class="btn-view" onclick="fecharModal()" style="border-color: var(--text-light); color: var(--text-light);">Fechar</button>
+                <button class="btn-view" onclick="deletarItem(${item.id}, '${tipo}')" style="border-color: var(--text-light); color: var(--text-light);">Deletar</button>
                 <button class="btn-view" onclick="editarItem(${item.id}, '${tipo}')">Editar <i class="fa-solid fa-pen-to-square"></i></button>
             </div>
         </div>
@@ -308,12 +308,10 @@ const viewItem = (id, tipo) => {
 
     document.body.appendChild(modal);
 
-    // Adicionar listener para fechar clicando fora do modal (no overlay escuro)
     modal.addEventListener('mousedown', (e) => {
         if (e.target === modal) fecharModal();
     });
 
-    // Timeout mínimo para a transição do CSS funcionar corretamente
     setTimeout(() => {
         modal.classList.add('show');
     }, 10);
@@ -323,22 +321,39 @@ const fecharModal = () => {
     const modal = document.getElementById('itemModal');
     if (modal) {
         modal.classList.remove('show');
-        // Aguarda a animação de saída terminar antes de remover do DOM
         setTimeout(() => modal.remove(), 300);
     }
 };
 
-// Deixando o hook pronto para quando você for fazer a edição
 const editarItem = (id, tipo) => {
     console.log(`Redirecionando para edição: ID ${id}, Tipo ${tipo}`);
     // Ex: window.location.href = `../edit?id=${id}&tipo=${tipo}`;
+};
+
+const deletarItem = (id, tipo) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay show';
+    overlay.id = 'confirmDeleteModal';
+
+    overlay.innerHTML = `
+        <div class="modal-confirm-content">
+            <i class="fa-solid fa-triangle-exclamation modal-confirm-icon"></i>
+            <h3 class>Confirmar Exclusão</h3>
+            <p>Esta ação apagará permanentemente os dados da pasta e não poderá ser desfeita. Deseja continuar?</p>
+            <div class="confirm-buttons-group">
+                <button class="btn-cancel-modal" onclick="fecharConfirmacao()">Cancelar</button>
+                <button class="btn-confirm-delete-act" id="confirmRealDelete">Apagar Agora</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
 };
 // --- INICIALIZAÇÃO (DOMContentLoaded) ---
 document.addEventListener('DOMContentLoaded', async () => {
     const searchInput = document.getElementById('search');
     searchInput.focus();
 
-    // Aguarda carregar os dados reais da API antes de renderizar
     showLoading(true);
     await carregarDados();
     showLoading(false);
