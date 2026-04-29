@@ -1,7 +1,7 @@
 {
   "scripts": {
     "watch": " cd src/ && node --watch server.js",
-    "start": "cd src/ && node server.js"
+    "dev": "cd src/ && node server.js"
   },
   "dependencies": {
     "cors": "^2.8.6",

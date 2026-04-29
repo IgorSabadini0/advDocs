@@ -300,7 +300,7 @@ const viewItem = (id, tipo) => {
             </div>
 
             <div class="modal-footer">
-                <button class="btn-view" onclick="deletarItem(${item.id}, '${tipo}')" style="border-color: var(--text-light); color: var(--text-light);">Deletar</button>
+                <button class="btn-view-delete" onclick="deletarItem(${item.id}, '${tipo}')">Deletar</button>
                 <button class="btn-view" onclick="editarItem(${item.id}, '${tipo}')">Editar <i class="fa-solid fa-pen-to-square"></i></button>
             </div>
         </div>
@@ -339,7 +339,7 @@ const deletarItem = (id, tipo) => {
         <div class="modal-confirm-content">
             <i class="fa-solid fa-triangle-exclamation modal-confirm-icon"></i>
             <h3 class>Confirmar Exclusão</h3>
-            <p>Esta ação apagará permanentemente os dados da pasta e não poderá ser desfeita. Deseja continuar?</p>
+            <p>Esta ação apagará permanentemente os dados da pasta e não poderá ser desfeita. <span style="font-weight: bold; color: white;">Deseja continuar?</span></p>
             <div class="confirm-buttons-group">
                 <button class="btn-cancel-modal" onclick="fecharConfirmacao()">Cancelar</button>
                 <button class="btn-confirm-delete-act" id="confirmRealDelete">Apagar Agora</button>

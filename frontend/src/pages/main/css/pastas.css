@@ -635,12 +635,36 @@ i {
     outline: none;
 }
 
+.btn-view-delete {
+    padding: 8px 18px;
+    border: 1px solid #e74c3c;
+    border-radius: 8px;
+    background: transparent;
+    color: #c0392b;
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    outline: none;
+}
+
 .btn-view:hover {
     background: linear-gradient(45deg, #ae8625, #e0da7d, #d2ac47, #edc967);
     color: #FFFFFF;
     border-color: transparent;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(218, 176, 99, 0.3);
+}
+
+.btn-view-delete:hover {
+    background: #c0392b;
+    border-color: #c0392b;
+    color: var(--text-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
 }
 
 /* --- 6. Estado Vazio --- */
