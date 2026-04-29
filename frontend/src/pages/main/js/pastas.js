@@ -348,7 +348,30 @@ const deletarItem = (id, tipo) => {
     `;
 
     document.body.appendChild(overlay);
+
+    //pega o botão de confirmação como uma variável
+    const confirmButton = document.getElementById('confirmRealDelete');
+
+    confirmButton.onclick = async () => {
+        try {
+            const response = await fetch(`${API_URL}/clientes/${id}`, { method: 'DELETE' });
+            if (response.ok) {
+                clientes = clientes.filter(c => String(c.id) !== String(id)); // caso o id seja um number passa para um String
+                fecharConfirmacao();
+                fecharModal();
+                executarBuscaEFiltro();
+            }
+        } catch (error) {
+            console.log(`Erro na exclusão`, error);
+        }
+    }
 };
+
+const fecharConfirmacao = () => {
+    const modal = document.getElementById('confirmDeleteModal');
+    if (modal) modal.remove();
+};
+
 // --- INICIALIZAÇÃO (DOMContentLoaded) ---
 document.addEventListener('DOMContentLoaded', async () => {
     const searchInput = document.getElementById('search');

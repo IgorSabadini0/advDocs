@@ -36,7 +36,7 @@ app.get('/clientes', async (req, res) => {
         res.status(200).json(dados);
     } catch (error) {
         console.log(`Erro ao puxar dados: ${error}`);
-        res.status(500).send("Erro interno no servidor");
+        return res.status(500).send("Erro interno no servidor");
     }
 });
 
@@ -50,12 +50,12 @@ app.post('/register', async (req, res) => {
     }
     catch (error) {
         console.log(`Erro ao registrar cadastro: ${error}`);
-        res.status(500).send("Erro interno no servidor");
+        return res.status(500).send("Erro interno no servidor");
     }
 
 });
 
-app.delete('/delete/:id', async (req, res) => {
+app.delete('/clientes/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const deletarDados = "DELETE FROM clientes WHERE id = ?";
@@ -67,8 +67,8 @@ app.delete('/delete/:id', async (req, res) => {
 
         return res.status(200).json({ mensagem: 'Registro excluído com sucesso' });
     } catch (error) {
-        console.log(`Erro ao excluir registro: ${error}`);
-        res.status(500).send("Erro interno no servidor");
+        console.error(`Erro ao excluir registro: ${error}`);
+        return res.status(500).send("Erro interno no servidor");
     }
 });
 
