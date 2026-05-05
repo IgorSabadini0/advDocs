@@ -16,6 +16,7 @@ const acess = async () => {
     const data = await response.json();
 
     if (response.ok) {
+        localStorage.setItem('token', data.token);
         window.location.href = data.redirectUrl;
     } else {
         status.innerText = data.mensagem;

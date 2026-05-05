@@ -1,13 +1,12 @@
-// Importação do banco de dados
-
 import express, { json } from 'express';
+import jwt from 'jsonwebtoken';
+import { verifyToken } from './config/auth.js'
 import { config } from 'dotenv';
 import cors from 'cors';
 import db from './config/db.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { error } from 'console';
-
 config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -40,7 +39,7 @@ app.get('/clientes', async (req, res) => {
     }
 });
 
-app.post('/register', async (req, res) => {
+app.post('/register', verifyToken, async (req, res) => {
     try {
         const { acao, nome, numeroPasta, tipo, numeroProc, status, descricao } = req.body;
         const inserirDados = "INSERT INTO clientes (acao, nome, numeroPasta, tipo, numeroProc, status, descricao) VALUES (?, ?, ?, ?, ?, ?, ?)";
@@ -55,7 +54,7 @@ app.post('/register', async (req, res) => {
 
 });
 
-app.delete('/clientes/:id', async (req, res) => {
+app.delete('/clientes/:id', verifyToken, async (req, res) => {
     try {
         const { id } = req.params;
         const deletarDados = "DELETE FROM clientes WHERE id = ?";
@@ -87,9 +86,17 @@ app.post('/auth', async (req, res) => {
 
         const usuario = rows[0];
 
+        //Lógica para gerar de Token de autenticação
+        const token = jwt.sign(
+            { id: usuario.id, nome: usuario.user },
+            process.env.JWT_SECRET,
+            { expiresIn: '8h' }
+        );
+
         return res.status(200).json({
             mensagem: 'Login efetuado com sucesso',
             redirectUrl: '/pages/main',
+            token: token, // ENVIA O TOKEN LÁ PARA O FRONT-END
             usuario: {
                 id: usuario.id,
                 nome: usuario.user

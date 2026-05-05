@@ -25,7 +25,12 @@ function editar() {
 // --- BUSCAR DADOS DO BANCO ---
 const carregarDados = async () => {
     try {
-        const response = await fetch(`${API_URL}/clientes`); // Presumindo que seja um GET para listar
+        const response = await fetch(`${API_URL}/clientes`, {
+            headers: {
+                'Authorization': localStorage.getItem('token')
+            }
+        });
+
         clientes = await response.json();
     } catch (error) {
         console.error('Erro ao buscar dados da API:', error);
