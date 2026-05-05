@@ -90,7 +90,7 @@ body {
 }
 
 .lupa,
-.delete,
+.edit,
 .add {
     display: flex;
     justify-content: center;
@@ -105,7 +105,7 @@ body {
 }
 
 .lupa:hover,
-.delete:hover,
+.edit:hover,
 .add:hover {
     border-color: var(--gold-primary);
     background: var(--gold-primary);
@@ -114,13 +114,13 @@ body {
 }
 
 .lupa:hover i,
-.delete:hover i,
+.edit:hover i,
 .add:hover i {
     color: #FFFFFF;
 }
 
 .lupa i,
-.delete i,
+.edit i,
 .add i {
     font-size: 1.2rem;
     color: var(--gold-primary);
@@ -128,7 +128,7 @@ body {
 }
 
 .btn-lupa,
-.btn-delete,
+.btn-edit,
 .btn-add {
     background: none;
     border: none;
@@ -149,7 +149,7 @@ body {
 /* No seu arquivo pastas.css */
 .btn-lupa,
 .btn-add,
-.btn-delete,
+.btn-edit,
 i {
     pointer-events: none;
 }
@@ -339,9 +339,16 @@ i {
 }
 
 .modal-body {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
     padding: 25px;
     max-height: 60vh;
     overflow-y: auto;
+}
+
+.modal-body::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
 }
 
 .modal-section h3 {

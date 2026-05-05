@@ -1,26 +1,25 @@
 // --- ESTADO DA APLICAÇÃO ---
 const API_URL = window.location.origin;
 let currentFilter = 'all';
+
+// Mapeia os parametros passados para a função pelo HTML e "traduz" para o ENUM do MySQL
+const mapFiltroParaDB = {
+    'all': 'Todos Processos',
+    'previdenciario': 'Previdenciário',
+    'santa_casa': 'Santa Casa',
+    'justica_gratuita': 'Justiça Gratuita',
+    'arquivado': 'Arquivado',
+    'outro': 'Outro'
+};
 let searchTimeout = null;
 let clientes = []; // Agora é um array que receberá os dados do banco
-
-// --- VARIÁVEIS DE FORMULÁRIO ---
-// DICA: Capturar o ".value" aqui fora só pega o valor no momento que a página carrega (geralmente vazio).
-// O ideal é colocar essas consts dentro da função que vai de fato enviar os dados para o banco.
-const acao = document.getElementById('acao')?.value;
-const nome = document.getElementById('nome')?.value;
-const numeroPasta = document.getElementById('numeroPasta')?.value;
-const tipo = document.getElementById('tipo')?.value;
-const numeroProc = document.getElementById('numeroProc')?.value;
-const status = document.getElementById('status')?.value;
-const descricao = document.getElementById('descricao')?.value;
 
 function adicionar() {
     window.location.href = '../register';
 }
 
-function excluir() {
-    window.location.href = '../delete';
+function editar() {
+    window.location.href = '../edit';
 }
 
 // --- BUSCAR DADOS DO BANCO ---
@@ -55,9 +54,12 @@ const executarBuscaEFiltro = async (isInitialLoad = false) => {
     }
 
     try {
-        // --- FILTRAGEM COM AS NOVAS VARIÁVEIS ---
         const resultados = clientes.filter(item => {
-            const matchTipo = currentFilter === 'all' || item.tipo === currentFilter;
+            // Traduz o filtro atual ('santa_casa') para o formato do DB ('Santa Casa')
+            const tipoNoBanco = mapFiltroParaDB[currentFilter];
+
+            // Compara o tipo exato do enum
+            const matchTipo = currentFilter === 'all' || item.tipo === tipoNoBanco;
 
             const matchTexto = query === '' || (
                 (item.acao && item.acao.toLowerCase().includes(query)) ||
@@ -105,9 +107,18 @@ const filterResults = (filter) => {
     botoes.forEach(btn => {
         btn.classList.remove('active');
         const btnText = btn.textContent.trim().toLowerCase();
-        const map = { 'all': 'todos', 'pasta': 'pastas', 'cliente': 'clientes', 'documento': 'documentos' };
 
-        if (map[filter] === btnText || (filter === 'all' && btnText === 'todos')) {
+        // Mapa para relacionar o parâmetro com o texto visível no botão (em minúsculas)
+        const mapButtonText = {
+            'all': 'todos',
+            'previdenciario': 'previdenciário',
+            'santa_casa': 'santa casa',
+            'justica_gratuita': 'justiça gratuita',
+            'arquivado': 'arquivado',
+            'outro': 'outro'
+        };
+
+        if (mapButtonText[filter] === btnText) {
             btn.classList.add('active');
         }
     });
@@ -216,10 +227,8 @@ const escapeHtml = (text) => {
     return div.innerHTML;
 };
 const traduzirTipo = (tipo) => {
-    const map = { 'all': 'Todos', 'pasta': 'Pastas', 'cliente': 'Clientes', 'documento': 'Documentos' };
-    return map[tipo] || tipo;
+    return mapFiltroParaDB[tipo] || tipo;
 };
-
 // --- FUNÇÕES DE VISUALIZAÇÃO (MODAL) ---
 const viewItem = (id, tipo) => {
     // 1. Verificação e Busca do Item

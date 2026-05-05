@@ -48,11 +48,10 @@
                     </abbr>
                 </div>
 
-                <div class="delete" onclick="excluir()" style="cursor: pointer;">
-                    <abbr title="Excluir pasta, cliente ou documento">
-                        <button class="btn-delete" aria-label="Excluir">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
+                <div class="edit" onclick="editar()" style="cursor: pointer;">
+                    <button class="btn-edit" aria-label="Editar">
+                        <i class="fa-solid fa-pencil"></i>
+                    </button>
                     </abbr>
                 </div>
 
@@ -63,9 +62,11 @@
 
             <div class="filter-buttons">
                 <button class="filter-btn active" onclick="filterResults('all')">Todos</button>
-                <button class="filter-btn" onclick="filterResults('pasta')">Pastas</button>
-                <button class="filter-btn" onclick="filterResults('cliente')">Clientes</button>
-                <button class="filter-btn" onclick="filterResults('documento')">Documentos</button>
+                <button class="filter-btn" onclick="filterResults('previdenciario')">Previdenciário</button>
+                <button class="filter-btn" onclick="filterResults('santa_casa')">Santa Casa</button>
+                <button class="filter-btn" onclick="filterResults('justica_gratuita')">Justiça Gratuita</button>
+                <button class="filter-btn" onclick="filterResults('arquivado')">Arquivado</button>
+                <button class="filter-btn" onclick="filterResults('outro')">Outro</button>
             </div>
 
         </div>
