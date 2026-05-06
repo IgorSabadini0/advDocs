@@ -22,14 +22,34 @@ function editar() {
     window.location.href = '../edit';
 }
 
+function sair() {
+    localStorage.removeItem('token');
+    window.location.href = '../auth';
+}
+
 // --- BUSCAR DADOS DO BANCO ---
 const carregarDados = async () => {
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+        sair();
+        return;
+    }
+
+
+
     try {
         const response = await fetch(`${API_URL}/clientes`, {
-            headers: {
-                'Authorization': localStorage.getItem('token')
-            }
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json', 'Authorization': token }
         });
+
+        if (response.status === 401 || response.status === 403) {
+            sair();
+            return;
+        }
+
+        if (!response.ok) throw new Error('Erro ao carregar dados'); // gera um erro e desvia para o catch
 
         clientes = await response.json();
     } catch (error) {
