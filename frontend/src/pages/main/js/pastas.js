@@ -367,8 +367,14 @@ const deletarItem = (id, tipo) => {
     const confirmButton = document.getElementById('confirmRealDelete');
 
     confirmButton.onclick = async () => {
+        const token = localStorage.getItem('token');
+
         try {
-            const response = await fetch(`${API_URL}/clientes/${id}`, { method: 'DELETE' });
+            const response = await fetch(`${API_URL}/clientes/${id}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json', 'Authorization': token }
+            });
+
             if (response.ok) {
                 clientes = clientes.filter(c => String(c.id) !== String(id)); // caso o id seja um number passa para um String
                 fecharConfirmacao();
