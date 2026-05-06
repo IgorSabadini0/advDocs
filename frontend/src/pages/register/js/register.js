@@ -25,6 +25,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+const showLoading = (show) => {
+    const loading = document.getElementById('loading');
+    if (show) loading.classList.add('show');
+    else loading.classList.remove('show');
+};
+
 const salvarRegistro = async () => {
     const acao = document.getElementById('acao').value;
     const nome = document.getElementById('nome').value;
@@ -44,24 +50,32 @@ const salvarRegistro = async () => {
         descricao
     };
 
+    const token = localStorage.getItem('token');
+
     try {
         const response = await fetch(`${API_URL}/register`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Authorization': token },
             body: JSON.stringify(registro)
         });
 
         if (response.ok) {
-            document.getElementById('acao').value = '';
-            document.getElementById('numeroPasta').value = '';
-            document.getElementById('nome').value = '';
-            document.getElementById('tipo').value = '';
-            document.getElementById('numeroProc').value = '';
-            document.getElementById('status').value = '';
-            document.getElementById('descricao').value = '';
             const statusMessage = document.getElementById('response');
             statusMessage.textContent = '✅ Registro salvo com sucesso!';
             statusMessage.style.color = '#28a745';
+
+            showLoading(true);
+            setTimeout(() => {
+                document.getElementById('acao').value = '';
+                document.getElementById('numeroPasta').value = '';
+                document.getElementById('nome').value = '';
+                document.getElementById('tipo').value = '';
+                document.getElementById('numeroProc').value = '';
+                document.getElementById('status').value = '';
+                document.getElementById('descricao').value = '';
+                showLoading(false);
+            }, 300);
+
         } else {
             const statusMessage = document.getElementById('response');
             statusMessage.textContent = '❌ Erro ao salvar registro. Tente novamente.';

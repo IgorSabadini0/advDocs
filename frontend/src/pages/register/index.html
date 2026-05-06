@@ -29,7 +29,7 @@
             <input type="text" id="nome" required placeholder="Nome completo do cliente">
 
             <label for=" numeroPasta">Número da Pasta</label>
-            <input type="text" id="numeroPasta" placeholder="Ex: nº 1">
+            <input type="number" id="numeroPasta" placeholder="Ex: nº 1">
 
             <label for="tipo">Tipo de Registro <span class="obrigatorio">*</span></label>
             <select name="tipo" id="tipo" required>
@@ -43,7 +43,8 @@
             </select>
 
             <label for="numero">Número do Processo</label>
-            <input type="text" id="numeroProc" placeholder="Ex: 1234567-00.2026.8.26.0000" maxlength="25">
+            <input type="text" id="numeroProc" placeholder="Ex: 1234567-00.2026.8.26.0000" maxlength="25"
+                minlength="25">
 
             <label for="status">Status Atual</label>
             <select name="status" id="status">
@@ -58,6 +59,10 @@
             <button class="btn-save" onclick="salvarRegistro()">
                 <i class="fa-solid fa-floppy-disk"></i> Salvar Registro
             </button>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
         </div>
 
         <div class="status-message">

@@ -10,9 +10,10 @@ export const verifyToken = (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.usuarioId = decodedId;
+        req.usuarioId = decoded.id;
         next();
     } catch (error) {
+        console.log('Token inválido ou expirado');
         return res.status(403).json({ mensagem: 'Token inválido ou expirado' });
     }
 };
