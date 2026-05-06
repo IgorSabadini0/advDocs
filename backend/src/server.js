@@ -28,7 +28,7 @@ app.get('/', (req, res) => {
     res.redirect('pages/auth');
 })
 
-app.get('/clientes', async (req, res) => {
+app.get('/clientes', verifyToken, async (req, res) => {
     try {
         const puxarDados = "SELECT * FROM clientes";
         const [dados] = await db.query(puxarDados);
