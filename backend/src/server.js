@@ -41,17 +41,25 @@ app.get('/clientes', verifyToken, async (req, res) => {
 
 app.post('/register', verifyToken, async (req, res) => {
     try {
-
         // Pega cliente pelo numero do processo e verifica se já existe no banco de dados
         const { numeroProc } = req.body;
-        const verificarDB = "SELECT numeroProc FROM clientes WHERE numeroProc = ?";
-        const [rows1] = await db.query(verificarDB, [numeroProc]);
+        const verificarProc = "SELECT numeroProc FROM clientes WHERE numeroProc = ?";
+        const [procExistente] = await db.query(verificarProc, [numeroProc]);
 
-        if (rows1.length > 0) { // TIRAR O ROWS
-            return res.status(400).json({ mensagem: 'Já existe um cliente com este número de processo.' });
+        if (procExistente.length > 0) {
+            return res.status(400).json({ mensagem: 'Já existe um cliente com este <span class="type-error">número de processo</span>' });
         }
 
-        const { acao, nome, numeroPasta, tipo, status, descricao } = req.body;
+        // Verifica se o número da pasta já existe no banco de dados
+        const { numeroPasta } = req.body;
+        const verificarPasta = "SELECT numeroPasta FROM clientes WHERE numeroPasta = ?";
+        const [pastaExistente] = await db.query(verificarPasta, [numeroPasta]);
+
+        if (pastaExistente.length > 0) {
+            return res.status(400).json({ mensagem: 'Já existe um cliente com este <span class="type-error">número de pasta</span>' });
+        }
+
+        const { acao, nome, tipo, status, descricao } = req.body;
         const inserirDados = "INSERT INTO clientes (acao, nome, numeroPasta, tipo, numeroProc, status, descricao) VALUES (?, ?, ?, ?, ?, ?, ?)";
         const [rows] = await db.query(inserirDados, [acao, nome, numeroPasta, tipo, numeroProc, status, descricao]);
 
@@ -62,7 +70,6 @@ app.post('/register', verifyToken, async (req, res) => {
         console.log(`Erro ao registrar cadastro: ${error}`);
         return res.status(500).send("Erro interno no servidor");
     }
-
 });
 
 app.delete('/clientes/:id', verifyToken, async (req, res) => {

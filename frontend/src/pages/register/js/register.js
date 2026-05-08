@@ -77,15 +77,14 @@ const salvarRegistro = async () => {
             }, 300);
 
         } else {
+            const statusMessage = document.getElementById('response');
+            statusMessage.style.color = '#dc3545';
+
             if (response.status === 400) {
                 const data = await response.json();
-                const statusMessage = document.getElementById('response');
-                statusMessage.textContent = data.mensagem;
-                statusMessage.style.color = '#dc3545';
+                statusMessage.innerHTML = data.mensagem;
             } else {
-                const statusMessage = document.getElementById('response');
-                statusMessage.textContent = '❌ Erro ao salvar registro. Tente novamente.';
-                statusMessage.style.color = '#dc3545';
+                statusMessage.innerHTML = '❌ Erro ao salvar registro. Tente novamente.';
             }
         }
     } catch (error) {
