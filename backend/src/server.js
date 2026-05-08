@@ -41,17 +41,35 @@ app.get('/clientes', verifyToken, async (req, res) => {
 
 app.post('/register', verifyToken, async (req, res) => {
     try {
-        const { acao, nome, numeroPasta, tipo, numeroProc, status, descricao } = req.body;
+        // Pega cliente pelo numero do processo e verifica se já existe no banco de dados
+        const { numeroProc } = req.body;
+        const verificarProc = "SELECT numeroProc FROM clientes WHERE numeroProc = ?";
+        const [procExistente] = await db.query(verificarProc, [numeroProc]);
+
+        if (procExistente.length > 0) {
+            return res.status(400).json({ mensagem: 'Já existe um cliente com este <span class="type-error">número de processo</span>' });
+        }
+
+        // Verifica se o número da pasta já existe no banco de dados
+        const { numeroPasta } = req.body;
+        const verificarPasta = "SELECT numeroPasta FROM clientes WHERE numeroPasta = ?";
+        const [pastaExistente] = await db.query(verificarPasta, [numeroPasta]);
+
+        if (pastaExistente.length > 0) {
+            return res.status(400).json({ mensagem: 'Já existe um cliente com este <span class="type-error">número de pasta</span>' });
+        }
+
+        const { acao, nome, tipo, status, descricao } = req.body;
         const inserirDados = "INSERT INTO clientes (acao, nome, numeroPasta, tipo, numeroProc, status, descricao) VALUES (?, ?, ?, ?, ?, ?, ?)";
         const [rows] = await db.query(inserirDados, [acao, nome, numeroPasta, tipo, numeroProc, status, descricao]);
 
         return res.status(201).json({ mensagem: 'Registro criado com sucesso', id: rows.insertId });
     }
     catch (error) {
+
         console.log(`Erro ao registrar cadastro: ${error}`);
         return res.status(500).send("Erro interno no servidor");
     }
-
 });
 
 app.delete('/clientes/:id', verifyToken, async (req, res) => {

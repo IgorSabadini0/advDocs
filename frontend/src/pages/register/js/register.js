@@ -78,8 +78,14 @@ const salvarRegistro = async () => {
 
         } else {
             const statusMessage = document.getElementById('response');
-            statusMessage.textContent = '❌ Erro ao salvar registro. Tente novamente.';
             statusMessage.style.color = '#dc3545';
+
+            if (response.status === 400) {
+                const data = await response.json();
+                statusMessage.innerHTML = data.mensagem;
+            } else {
+                statusMessage.innerHTML = '❌ Erro ao salvar registro. Tente novamente.';
+            }
         }
     } catch (error) {
         console.error('Erro ao salvar registro:', error);

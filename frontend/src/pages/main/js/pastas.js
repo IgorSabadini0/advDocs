@@ -179,7 +179,18 @@ const createResultCard = (item, index) => {
     card.className = 'result-card';
     card.style.animationDelay = `${index * 0.05}s`;
 
-    const iconMap = { 'Todos Processos': 'fa-folder-open', 'Previdenciário': 'fa-person-cane', 'Santa Casa': 'fa-hospital', 'Justiça Gratuita': 'fa-hand-holding-usd', 'Arquivado': 'fa-box-archive', 'Outro': 'fa-file' }; // preciso alterar
+    //Mapeia os icones que vão aparecer no card
+    const iconMap = {
+        'Todos Processos': 'fa-folder-open',
+        'Previdenciário': 'fa-person-cane',
+        'Santa Casa': 'fa-hospital',
+        'Justiça Gratuita': 'fa-hand-holding-usd',
+        'Arquivado': 'fa-box-archive',
+        'Outro': 'fa-file'
+    };
+
+    // Verifica o status e define a classe do ícone correspondente
+    const statusIcon = item.status === 'Ativo' ? 'fa-circle-check' : 'fa-circle-xmark';
 
     card.innerHTML = `
         <div class="card-header">
@@ -195,7 +206,7 @@ const createResultCard = (item, index) => {
                 ${item.numeroProc ? `<div class="info-item"><i class="fa-solid fa-scale-balanced"></i><span>Proc: ${escapeHtml(item.numeroProc)}</span></div>` : ''}
                 ${item.nome ? `<div class="info-item"><i class="fa-solid fa-user-tie"></i><span>${escapeHtml(item.nome)}</span></div>` : ''}
                 ${item.data ? `<div class="info-item"><i class="fa-solid fa-calendar"></i><span>${formatDate(item.data)}</span></div>` : ''}
-                ${item.status ? `<div class="info-item"><i class="fa-solid fa-circle-check"></i><span>${escapeHtml(item.status)}</span></div>` : ''}
+                ${item.status ? `<div class="info-item"><i class="fa-solid ${statusIcon}"></i><span>${escapeHtml(item.status)}</span></div>` : ''}
             </div>
             ${item.descricao ? `<p style="margin-top: 15px; font-size: 0.9rem; color: var(--text-light); line-height: 1.4;">${escapeHtml(item.descricao)}</p>` : ''}
         </div>
@@ -245,6 +256,9 @@ const hideEmptyState = () => {
 };
 
 const formatDate = (dateString) => new Date(dateString).toLocaleDateString('pt-BR');
+
+// Converte caracteres especiais em entidades HTML para evitar ataques de XSS.
+// Utiliza o DOM para realizar o escape de forma segura.
 const escapeHtml = (text) => {
     if (!text) return '';
     const div = document.createElement('div');
@@ -316,7 +330,6 @@ const viewItem = (id, tipo) => {
                 <div class="modal-section">
                     <h3>Informações Gerais</h3>
                     <div class="modal-info-grid">
-                        <div class="modal-info-item"><strong>ID do Sistema:</strong> <span>#${escapeHtml(item.id || 'N/A')}</span></div> 
                         <div class="modal-info-item"><strong>Ação:</strong> <span>${escapeHtml(item.acao || 'N/A')}</span></div>
                         <div class="modal-info-item"><strong>Nome:</strong> <span>${escapeHtml(item.nome || 'N/A')}</span></div>
                         <div class="modal-info-item"><strong>Número da Pasta:</strong> <span>${escapeHtml(item.numeroPasta || 'N/A')}</span></div>

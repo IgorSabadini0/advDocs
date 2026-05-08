@@ -187,11 +187,15 @@ body {
     color: var(--gold-primary);
 }
 
+.type-error {
+    color: var(--text-dark);
+    font-weight: bold;
+}
+
 #response {
     text-align: center;
     margin-top: 15px;
     font-size: 1.2rem;
-    font-weight: 600;
 }
 
 .loading {
