@@ -41,13 +41,24 @@ app.get('/clientes', verifyToken, async (req, res) => {
 
 app.post('/register', verifyToken, async (req, res) => {
     try {
-        const { acao, nome, numeroPasta, tipo, numeroProc, status, descricao } = req.body;
+
+        // Pega cliente pelo numero do processo e verifica se já existe no banco de dados
+        const { numeroProc } = req.body;
+        const verificarDB = "SELECT numeroProc FROM clientes WHERE numeroProc = ?";
+        const [rows1] = await db.query(verificarDB, [numeroProc]);
+
+        if (rows1.length > 0) { // TIRAR O ROWS
+            return res.status(400).json({ mensagem: 'Já existe um cliente com este número de processo.' });
+        }
+
+        const { acao, nome, numeroPasta, tipo, status, descricao } = req.body;
         const inserirDados = "INSERT INTO clientes (acao, nome, numeroPasta, tipo, numeroProc, status, descricao) VALUES (?, ?, ?, ?, ?, ?, ?)";
         const [rows] = await db.query(inserirDados, [acao, nome, numeroPasta, tipo, numeroProc, status, descricao]);
 
         return res.status(201).json({ mensagem: 'Registro criado com sucesso', id: rows.insertId });
     }
     catch (error) {
+
         console.log(`Erro ao registrar cadastro: ${error}`);
         return res.status(500).send("Erro interno no servidor");
     }
