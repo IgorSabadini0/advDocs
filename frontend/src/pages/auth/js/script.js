@@ -16,9 +16,6 @@ const showLoading = (show) => {
 };
 
 const acess = async (event) => {
-    // Evita comportamentos padrão se for usado dentro de um form
-    if (event) event.preventDefault();
-
     const user = document.getElementById('user').value;
     const password = document.getElementById('password').value;
     const status = document.getElementById('status');
@@ -43,17 +40,16 @@ const acess = async (event) => {
         // Verifica se a resposta é JSON antes de parsear
         const contentType = response.headers.get("content-type");
         let data = {};
-        if (contentType && contentType.indexOf("application/json") !== -1) {
+        if (contentType && contentType.indexOf("application/json") !== -1) { // qualquer resposta que seja JSON, mesmo que seja um erro, será parseada para mostrar a mensagem correta
             data = await response.json();
         }
 
         if (response.ok) {
             localStorage.setItem('token', data.token);
-            // Pequeno delay opcional para o usuário ver que deu certo
             window.location.href = data.redirectUrl;
         } else {
             status.innerText = data.mensagem || 'Usuário ou senha inválidos.';
-            showLoading(false); // Só paramos o loading se houver erro, pois no sucesso mudamos de página
+            showLoading(false); // O loading é parado apenas em caso de erro para permitir uma nova tentativa. Se der certo vai redirecionar para a Main
         }
 
     } catch (error) {
@@ -66,7 +62,7 @@ const acess = async (event) => {
 // Escuta o clique no botão
 submit.addEventListener('click', acess);
 
-// Permite dar "Enter" nos campos de input
+// Permite dar "Enter" nos campos de input e chamar a função de acesso sem precisar clicar no botão
 document.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') acess();
 });
