@@ -1,5 +1,6 @@
 import express, { json } from 'express';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
 import { verifyToken } from './config/auth.js'
 import { config } from 'dotenv';
 import cors from 'cors';
@@ -95,14 +96,19 @@ app.post('/auth', async (req, res) => {
     const password = req.body.password;
 
     try {
-        const verificarDB = "SELECT user, password FROM login WHERE user = ? AND password = ?"; // Isso quer dizer que o PRIMEIRO que encontrar com esse USER pare a busca. SEMPRE SERÁ RETORNADO UM ARRAY [].
-        const [rows] = await db.query(verificarDB, [user, password]);
+        const verificarDB = "SELECT id, user, password FROM login WHERE user = ? LIMIT 1";
+        const [rows] = await db.query(verificarDB, [user]);
 
         if (rows.length === 0) {
             return res.status(401).json({ mensagem: 'Usuário ou senha inválidos. ' });
         }
 
         const usuario = rows[0];
+        const senhaValida = await bcrypt.compare(password, usuario.password);
+
+        if (!senhaValida) {
+            return res.status(401).json({ mensagem: 'Usuário ou senha inválidos. ' });
+        }
 
         //Lógica para gerar de Token de autenticação
         const token = jwt.sign(
