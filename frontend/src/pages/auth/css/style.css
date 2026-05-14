@@ -103,3 +103,30 @@ body {
     background: var(--bg);
     color: var(--text);
 }
+
+/* Loading */
+.loading {
+    display: none;
+    text-align: center;
+    padding: 10px;
+}
+
+.loading.show {
+    display: block;
+}
+
+.spinner {
+    width: 30px;
+    height: 30px;
+    border: 4px solid var(--border);
+    border-top-color: var(--brand);
+    border-radius: 50%;
+    margin: 0 auto;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
