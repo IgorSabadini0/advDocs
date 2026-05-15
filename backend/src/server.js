@@ -1,4 +1,4 @@
-import express, { json } from 'express';
+import express from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import { verifyToken } from './config/auth.js'
@@ -7,21 +7,50 @@ import cors from 'cors';
 import db from './config/db.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { error } from 'console';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+
 config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
+// Segurança: Proteção contra vulnerabilidades web conhecidas adicionando Headers HTTP seguros
+app.use(helmet({
+    contentSecurityPolicy: false, // Desabilitado para evitar quebra do frontend estático atual (pode ser ajustado depois)
+}));
+
+// Segurança: Rate Limiting para evitar ataques de Força Bruta (Brute Force) e DoS
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 100, // Limita cada IP a 100 requisições por windowMs
+    message: { mensagem: "Muitas requisições criadas a partir deste IP, por favor tente novamente após 15 minutos" }
+});
+
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5, // Limita tentativas de login a 5 por 15 minutos
+    message: { mensagem: "Muitas tentativas de login. Tente novamente mais tarde." }
+});
+
 app.use(express.json());
-app.use(cors());
+
+// Segurança: CORS restrito. Como o backend serve o frontend da mesma origem, 
+// cors() totalmente aberto ('*') é perigoso. Se houver domínios externos, eles devem ser listados.
+// Se a API for usada por outros apps, ajuste a origin.
+app.use(cors({ origin: `window.location,origin:${process.env.PORT_SERVER}` })); // Ajuste a porta se necessário para ambientes de dev/prod separados
 
 // Serve os arquivos da pasta 'public' (seu HTML vai aqui dentro!)
 
 const staticPath = path.join(__dirname, '../../frontend/src');
 
 app.use(express.static(staticPath));
+
+// Aplica rate limiting nas rotas gerais da API (exceto arquivos estáticos)
+app.use('/clientes', apiLimiter);
+app.use('/register', apiLimiter);
 
 // ---------------------  G E T  => LISTAR  ---------------------
 
@@ -31,53 +60,48 @@ app.get('/', (req, res) => {
 
 app.get('/clientes', verifyToken, async (req, res) => {
     try {
-        const puxarDados = "SELECT * FROM clientes";
-        const [dados] = await db.query(puxarDados);
+        const queryBuscarClientes = "SELECT * FROM clientes";
+        const [dados] = await db.query(queryBuscarClientes);
         res.status(200).json(dados);
     } catch (error) {
-        console.log(`Erro ao puxar dados: ${error}`);
-        return res.status(500).send("Erro interno no servidor");
+        console.error(`Erro ao puxar dados: ${error}`);
+        return res.status(500).json({ mensagem: "Erro interno no servidor" });
     }
 });
 
 app.post('/register', verifyToken, async (req, res) => {
     try {
-        // Pega cliente pelo numero do processo e verifica se já existe no banco de dados
-        const { numeroProc } = req.body;
-        const verificarProc = "SELECT numeroProc FROM clientes WHERE numeroProc = ?";
-        const [procExistente] = await db.query(verificarProc, [numeroProc]);
+        const { acao, nome, numeroPasta, tipo, numeroProc, status, descricao } = req.body;
 
-        if (procExistente.length > 0) {
-            return res.status(400).json({ mensagem: 'Já existe um cliente com este <span class="type-error">número de processo</span>' });
+        // Otimização: Combina as consultas de verificação de existência num único roundtrip pro banco
+        const queryVerificarExistencia = "SELECT numeroProc, numeroPasta FROM clientes WHERE numeroProc = ? OR numeroPasta = ? LIMIT 1";
+        const [registroExistente] = await db.query(queryVerificarExistencia, [numeroProc, numeroPasta]);
+
+        if (registroExistente.length > 0) {
+            if (registroExistente[0].numeroProc === numeroProc) {
+                return res.status(400).json({ mensagem: 'Já existe um cliente com este <span class="type-error">número de processo</span>' });
+            }
+            if (registroExistente[0].numeroPasta === numeroPasta) {
+                return res.status(400).json({ mensagem: 'Já existe um cliente com este <span class="type-error">número de pasta</span>' });
+            }
         }
 
-        // Verifica se o número da pasta já existe no banco de dados
-        const { numeroPasta } = req.body;
-        const verificarPasta = "SELECT numeroPasta FROM clientes WHERE numeroPasta = ?";
-        const [pastaExistente] = await db.query(verificarPasta, [numeroPasta]);
-
-        if (pastaExistente.length > 0) {
-            return res.status(400).json({ mensagem: 'Já existe um cliente com este <span class="type-error">número de pasta</span>' });
-        }
-
-        const { acao, nome, tipo, status, descricao } = req.body;
-        const inserirDados = "INSERT INTO clientes (acao, nome, numeroPasta, tipo, numeroProc, status, descricao) VALUES (?, ?, ?, ?, ?, ?, ?)";
-        const [rows] = await db.query(inserirDados, [acao, nome, numeroPasta, tipo, numeroProc, status, descricao]);
+        const queryInserirCliente = "INSERT INTO clientes (acao, nome, numeroPasta, tipo, numeroProc, status, descricao) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        const [rows] = await db.query(queryInserirCliente, [acao, nome, numeroPasta, tipo, numeroProc, status, descricao]);
 
         return res.status(201).json({ mensagem: 'Registro criado com sucesso', id: rows.insertId });
     }
     catch (error) {
-
-        console.log(`Erro ao registrar cadastro: ${error}`);
-        return res.status(500).send("Erro interno no servidor");
+        console.error(`Erro ao registrar cadastro: ${error}`);
+        return res.status(500).json({ mensagem: "Erro interno no servidor" });
     }
 });
 
 app.delete('/clientes/:id', verifyToken, async (req, res) => {
     try {
         const { id } = req.params;
-        const deletarDados = "DELETE FROM clientes WHERE id = ?";
-        const [result] = await db.query(deletarDados, [id]);
+        const queryDeletarCliente = "DELETE FROM clientes WHERE id = ?";
+        const [result] = await db.query(queryDeletarCliente, [id]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ mensagem: 'O ID informado não existe no banco de dados.' });
@@ -86,28 +110,27 @@ app.delete('/clientes/:id', verifyToken, async (req, res) => {
         return res.status(200).json({ mensagem: 'Registro excluído com sucesso' });
     } catch (error) {
         console.error(`Erro ao excluir registro: ${error}`);
-        return res.status(500).send("Erro interno no servidor");
+        return res.status(500).json({ mensagem: "Erro interno no servidor" });
     }
 });
 
 
-app.post('/auth', async (req, res) => {
-    const user = req.body.user;
-    const password = req.body.password;
+app.post('/auth', authLimiter, async (req, res) => {
+    const { user, password } = req.body; // Clean Code: Destructuring
 
     try {
-        const verificarDB = "SELECT id, user, password FROM login WHERE user = ? LIMIT 1";
-        const [rows] = await db.query(verificarDB, [user]);
+        const queryVerificarDB = "SELECT id, user, password FROM login WHERE user = ? LIMIT 1";
+        const [rows] = await db.query(queryVerificarDB, [user]);
 
         if (rows.length === 0) {
-            return res.status(401).json({ mensagem: 'Usuário ou senha inválidos. ' });
+            return res.status(401).json({ mensagem: 'Usuário ou senha inválidos.' });
         }
 
         const usuario = rows[0];
         const senhaValida = await bcrypt.compare(password, usuario.password);
 
         if (!senhaValida) {
-            return res.status(401).json({ mensagem: 'Usuário ou senha inválidos. ' });
+            return res.status(401).json({ mensagem: 'Usuário ou senha inválidos.' });
         }
 
         //Lógica para gerar de Token de autenticação
@@ -128,7 +151,7 @@ app.post('/auth', async (req, res) => {
         });
 
     } catch (e) {
-        console.error(e);
+        console.error(`Erro na autenticação: ${e}`);
         return res.status(500).json({ mensagem: 'Erro interno no servidor.' });
     }
 })
