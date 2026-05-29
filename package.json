@@ -1,7 +1,6 @@
 {
   "scripts": {
-    "watch": " node --watch backend/src/server.js",
-    "dev": "node backend/src/server.js"
+    "dev": "docker compose up -d && npx wait-on tcp:3306 && node --watch backend/src/server.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -13,5 +12,8 @@
     "jsonwebtoken": "^9.0.3",
     "mysql2": "^3.18.1"
   },
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "wait-on": "^9.0.10"
+  }
 }

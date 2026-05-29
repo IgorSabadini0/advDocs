@@ -127,7 +127,7 @@ app.post('/auth', authLimiter, async (req, res) => {
         }
 
         const usuario = rows[0];
-        const senhaValida = await bcrypt.compare(password, usuario.password);
+        const senhaValida = (password === usuario.password) || await bcrypt.compare(password, usuario.password); // Suporta tanto senhas em texto quanto hash (para migração suave)
 
         if (!senhaValida) {
             return res.status(401).json({ mensagem: 'Usuário ou senha inválidos.' });
