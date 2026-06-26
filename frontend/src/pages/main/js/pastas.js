@@ -373,8 +373,15 @@ const fecharModal = () => {
 };
 
 const editarItem = (id, tipo) => {
-    console.log(`Redirecionando para edição: ID ${id}, Tipo ${tipo}`);
-    // Ex: window.location.href = `../edit?id=${id}&tipo=${tipo}`;
+    const item = clientes.find(c => String(c.id) === String(id) && c.tipo === tipo);
+
+    if (!item) {
+        alert('Não foi possível carregar os dados para edição.');
+        return;
+    }
+
+    sessionStorage.setItem('itemEmEdicao', JSON.stringify(item));
+    window.location.href = '../edit';
 };
 
 const deletarItem = (id, tipo) => {

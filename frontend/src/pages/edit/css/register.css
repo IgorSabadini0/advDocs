@@ -1,0 +1,232 @@
+/* --- register.css --- */
+
+:root {
+    --bg-body: #151923;
+    --bg-card: #151923;
+    --gold-primary: #dab063;
+    --gold-hover: #c29b54;
+    --text-main: #979797;
+    --text-light: #666666;
+    --text-dark: #e5e7eb;
+    /* Ajustado para melhor leitura em inputs */
+    --border-color: #252b36;
+    --shadow: 0 8px 16px rgba(0, 0, 0, .35), 0 2px 6px rgba(0, 0, 0, .25);
+    --font-body: 'Inter', 'Montserrat', sans-serif;
+    --transition-fast: all 0.3s ease;
+}
+
+body {
+    background-color: var(--bg-body);
+    color: var(--text-main);
+    font-family: var(--font-body);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.container {
+    width: 100%;
+    max-width: 500px;
+    padding: 40px;
+    background: var(--bg-card);
+    border-radius: 15px;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow);
+    margin: 20px auto;
+    /* O 'auto' centraliza o card horizontalmente na tela */
+    display: flex;
+    flex-direction: column;
+}
+
+/* --- Logo --- */
+.brand-logo {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.brand-logo img {
+    height: 60px;
+    width: auto;
+}
+
+.title-page {
+    display: flex;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-top: 10px;
+}
+
+/* --- Formulário --- */
+.clientes-add {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+    /* Garante que o formulário ocupe toda a largura interna do card */
+    align-items: stretch;
+    /* Faz com que os inputs preencham a largura por igual */
+}
+
+.clientes-add label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--gold-primary);
+    margin-bottom: -12px;
+    /* Ajuste para aproximar o label do input */
+    text-align: left;
+    /* Mantém o texto do label alinhado à esquerda do input */
+}
+
+.clientes-add input {
+    width: 100%;
+    /* Garante que o input não "fuja" para os lados */
+    box-sizing: border-box;
+    /* Crucial: impede que o padding interno aumente a largura real do input */
+    padding: 14px 16px;
+    background-color: #1a1f2b;
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-dark);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    transition: var(--transition-fast);
+    outline: none;
+}
+
+.clientes-add input:focus {
+    border-color: var(--gold-primary);
+    box-shadow: 0 0 0 3px rgba(218, 176, 99, 0.1);
+}
+
+.obrigatorio {
+    color: #dc3545;
+    margin-left: 4px;
+}
+
+/* --- Botão (Baseado no .btn-view do pastas.css) --- */
+.btn-save {
+    margin-top: 10px;
+    padding: 15px;
+    border: 1px solid var(--gold-primary);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--gold-primary);
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+/* --- Estilização do Select em register.css --- */
+
+.clientes-add select {
+    width: 100%;
+    padding: 14px 16px;
+    background-color: #1a1f2b;
+    /* Mesmo fundo dos inputs */
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-dark);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    cursor: pointer;
+    outline: none;
+    transition: var(--transition-fast);
+
+    /* Remove a seta padrão do navegador */
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+
+    /* Adiciona uma seta customizada (ícone de chevron) */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23dab063'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    background-size: 18px;
+}
+
+/* Efeito de Focus (Igual ao input) */
+.clientes-add select:focus {
+    border-color: var(--gold-primary);
+    box-shadow: 0 0 0 3px rgba(218, 176, 99, 0.1);
+}
+
+/* Estilização das opções (limitação: o visual das opções depende do SO) */
+.clientes-add select option {
+    background-color: var(--bg-body);
+    color: var(--text-dark);
+    padding: 10px;
+}
+
+.btn-save:hover {
+    background: linear-gradient(45deg, #ae8625, #e0da7d, #d2ac47, #edc967);
+    color: #151923;
+    border-color: transparent;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(218, 176, 99, 0.3);
+}
+
+/* Link de voltar */
+.back-link {
+    display: block;
+    text-align: center;
+    margin-top: 20px;
+    color: var(--text-light);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: var(--transition-fast);
+}
+
+.back-link:hover {
+    color: var(--gold-primary);
+}
+
+.type-error {
+    color: var(--text-dark);
+    font-weight: bold;
+}
+
+#response {
+    text-align: center;
+    margin-top: 15px;
+    font-size: 1.2rem;
+}
+
+.loading {
+    display: none;
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.loading.show {
+    display: block;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid var(--border-color);
+    border-top-color: var(--gold-primary);
+    border-radius: 50%;
+    margin: 0 auto 20px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsividade */
+@media (max-width: 480px) {
+    .container {
+        padding: 25px 20px;
+    }
+}
