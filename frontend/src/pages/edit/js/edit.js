@@ -66,13 +66,6 @@ const salvarEdicao = async () => {
 
             showLoading(true);
             setTimeout(() => {
-                document.getElementById('acao').value = '';
-                document.getElementById('numeroPasta').value = '';
-                document.getElementById('nome').value = '';
-                document.getElementById('tipo').value = '';
-                document.getElementById('numeroProc').value = '';
-                document.getElementById('status').value = '';
-                document.getElementById('descricao').value = '';
                 showLoading(false);
             }, 300);
 

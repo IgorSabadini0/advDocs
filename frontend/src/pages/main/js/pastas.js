@@ -18,10 +18,6 @@ function adicionar() {
     window.location.href = '../register';
 }
 
-function editar() {
-    window.location.href = '../edit';
-}
-
 function sair() {
     localStorage.removeItem('token');
     window.location.href = '../auth';
@@ -372,6 +368,7 @@ const fecharModal = () => {
     }
 };
 
+// Informa ao navegador que o item a ser editado está armazenado no sessionStorage e redireciona para a página de edição.
 const editarItem = (id, tipo) => {
     const item = clientes.find(c => String(c.id) === String(id) && c.tipo === tipo);
 
