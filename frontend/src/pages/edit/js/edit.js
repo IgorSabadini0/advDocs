@@ -1,4 +1,5 @@
 const API_URL = window.location.origin;
+const idEdicao = null;
 
 const mascaraProcessoCNJ = (valor) => {
     let v = valor.replace(/\D/g, "");
@@ -23,6 +24,28 @@ document.addEventListener('DOMContentLoaded', () => {
             e.target.value = mascaraProcessoCNJ(e.target.value);
         });
     }
+
+    // Pega os dados salvos no localStorage e preenche os campos do formulário
+
+    const dadosItem = sessionStorage.getItem("itemEmEdicao");
+    if (!dadosItem) {
+        document.getElementById('response').textContent = "Nenhuma pasta selecionada para edição.";
+        window.location.href = "../main";
+        return;
+    }
+
+    const item = JSON.parse(dadosItem);
+    const idEdicao = item.id;
+
+    // Prencher os inputs com os valores coletados e se não houver valor, preencher com uma string vazia "".
+
+    document.getElementById('acao').value = item.acao || "";
+    document.getElementById('nome').value = item.nome || "";
+    document.getElementById('numeroPasta').value = item.numeroPasta || "";
+    document.getElementById('tipo').value = item.tipo || "";
+    document.getElementById('numeroProc').value = item.numeroProc || "";
+    document.getElementById('status').value = item.status || "";
+    document.getElementById('descricao').value = item.descricao || "";
 });
 
 const showLoading = (show) => {
@@ -53,8 +76,8 @@ const salvarEdicao = async () => {
     const token = localStorage.getItem('token');
 
     try {
-        const response = await fetch(`${API_URL}/register`, {
-            method: 'POST',
+        const response = await fetch(`${API_URL}/clientes/${idEdicao}`, {
+            method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'Authorization': token },
             body: JSON.stringify(edicao)
         });
