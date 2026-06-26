@@ -114,6 +114,24 @@ app.delete('/clientes/:id', verifyToken, async (req, res) => {
     }
 });
 
+app.put("/clientes/:id", verifyToken, async (req, res) => {
+    try {
+        const { id } = req.params; // req.params diz que o id vem da URL, ex: /clientes/1
+        const { acao, nome, numeroPasta, tipo, numeroProc, status, descricao } = req.body; // pega os dados do input para passar na query.
+        const queryEditarCliente = "UPDATE clientes SET acao = ?, nome = ?, numeroPasta = ?, tipo = ?, numeroProc = ?, status = ?, descricao = ? WHERE id = ?";
+        const [result] = await db.query(queryEditarCliente, [acao, nome, numeroPasta, tipo, numeroProc, status, descricao, id]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ mensagem: "Registro não encontrado" });
+        }
+
+        return res.status(200).json({ mensagem: "Registro atualizado com sucesso" });
+    } catch (error) {
+        console.error(`Erro ao editar registro: ${error}`);
+        return res.status(500).json({ mensagem: "Erro interno no servidor" });
+    }
+});
+
 
 app.post('/auth', authLimiter, async (req, res) => {
     const { user, password } = req.body; // Clean Code: Destructuring
