@@ -2,8 +2,8 @@ version: '3.8'
 
 services:
   db:
-    image: mysql:8.0 # Evite usar 'latest' em produção para não quebrar o código em atualizações
-    container_name: pfadvocacia_mysql
+    image: mysql:8.0
+    container_name: system_office
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
