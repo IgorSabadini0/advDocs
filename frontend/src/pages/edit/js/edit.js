@@ -1,5 +1,5 @@
 const API_URL = window.location.origin;
-const idEdicao = null;
+let idEdicao = null;
 
 const mascaraProcessoCNJ = (valor) => {
     let v = valor.replace(/\D/g, "");
@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const item = JSON.parse(dadosItem);
-    const idEdicao = item.id;
+    idEdicao = item.id;
 
     // Prencher os inputs com os valores coletados e se não houver valor, preencher com uma string vazia "".
 
