@@ -398,7 +398,7 @@ const deletarItem = (id, tipo) => {
         </div>
     `;
 
-    document.body.appendChild(overlay);
+    document.body.appendChild(overlay); // Adiciona o modal de confirmação ao DOM
 
     //pega o botão de confirmação como uma variável
     const confirmButton = document.getElementById('confirmRealDelete');
