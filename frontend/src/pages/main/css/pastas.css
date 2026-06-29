@@ -91,7 +91,8 @@ body {
 
 .lupa,
 .edit,
-.add {
+.add,
+.config {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -106,7 +107,8 @@ body {
 
 .lupa:hover,
 .edit:hover,
-.add:hover {
+.add:hover,
+.config:hover {
     border-color: var(--gold-primary);
     background: var(--gold-primary);
     transform: translateY(-2px);
@@ -115,13 +117,15 @@ body {
 
 .lupa:hover i,
 .edit:hover i,
-.add:hover i {
+.add:hover i,
+.config:hover i {
     color: #FFFFFF;
 }
 
 .lupa i,
 .edit i,
-.add i {
+.add i,
+.config i {
     font-size: 1.2rem;
     color: var(--gold-primary);
     transition: var(--transition-fast);
@@ -129,7 +133,8 @@ body {
 
 .btn-lupa,
 .btn-edit,
-.btn-add {
+.btn-add,
+.btn-config {
     background: none;
     border: none;
     padding: 0;
@@ -146,41 +151,23 @@ body {
     justify-content: center;
 }
 
-/* No seu arquivo pastas.css */
+.lupa abbr,
+.edit abbr,
+.add abbr,
+.config abbr {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .btn-lupa,
 .btn-add,
 .btn-edit,
+.btn-config,
 i {
     pointer-events: none;
-}
-
-.logout {
-    display: flex;
-    align-items: center;
-}
-
-.logout input[type="button"] {
-    padding: 14px 28px;
-    border: 2px solid var(--border-color);
-    border-radius: 10px;
-    background-color: var(--bg-card);
-    color: var(--text-main);
-    font-family: var(--font-body);
-    font-size: 0.9rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    cursor: pointer;
-    transition: var(--transition-fast);
-    outline: none;
-}
-
-.logout input[type="button"]:hover {
-    border-color: var(--gold-primary);
-    color: var(--gold-primary);
-    background: rgba(218, 176, 99, 0.05);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(218, 176, 99, 0.2);
 }
 
 /* --- 10. Modal Dinâmico --- */
@@ -803,14 +790,9 @@ i {
 
     /* Segunda Linha: Adicionar e Sair dividindo 50% cada */
     .add,
-    .logout {
+    .config {
         flex: 1;
         display: flex;
-    }
-
-    .logout input[type="button"] {
-        width: 100%;
-        height: 56px;
     }
 
     /* Restante das suas configurações originais de responsividade */

@@ -14,13 +14,17 @@ const mapFiltroParaDB = {
 let searchTimeout = null;
 let clientes = []; // Agora é um array que receberá os dados do banco
 
-function adicionar() {
+const adicionar = () => {
     window.location.href = '../register';
 }
 
-function sair() {
+const sair = () => {
     localStorage.removeItem('token');
     window.location.href = '../auth';
+}
+
+const config = () => {
+    window.location.href = '../config';
 }
 
 // --- BUSCAR DADOS DO BANCO ---
