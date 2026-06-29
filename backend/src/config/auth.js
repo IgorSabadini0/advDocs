@@ -1,7 +1,8 @@
 import jwt from 'jsonwebtoken';
 import { config } from "dotenv";
+import db from './db.js';
 
-export const verifyToken = (req, res, next) => {
+export const verifyToken = async (req, res, next) => {
     const authHeader = req.headers['authorization'];
 
     if (!authHeader) {
@@ -13,6 +14,16 @@ export const verifyToken = (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        
+        // Verifica se o usuário existe e está ativo no banco de dados
+        const [rows] = await db.query("SELECT is_active FROM login WHERE id = ? LIMIT 1", [decoded.id]);
+        if (rows.length === 0) {
+            return res.status(403).json({ mensagem: 'Usuário não encontrado' });
+        }
+        if (!rows[0].is_active) {
+            return res.status(403).json({ mensagem: 'Usuário desativado' });
+        }
+
         req.usuarioId = decoded.id;
         next();
     } catch (error) {
