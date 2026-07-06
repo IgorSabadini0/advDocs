@@ -256,12 +256,13 @@ const createResultCard = (item, index) => {
         </div>
         <div class="card-footer">
             <span class="card-date">${item.data ? formatDate(item.data) : ''}</span>
-            <button class="btn-view" onclick="viewItem(${item.id}, '${item.tipo}')">Ver Detalhes <i class="fa-solid fa-arrow-right"></i></button>
+            <button class="btn-view" data-action="view">Ver Detalhes <i class="fa-solid fa-arrow-right"></i></button>
         </div>
     `;
 
     card.onmouseenter = () => card.style.transform = 'translateY(-5px)';
     card.onmouseleave = () => card.style.transform = 'translateY(0)';
+    card.querySelector('[data-action="view"]').addEventListener('click', () => viewItem(item.id, item.tipo));
 
     return card;
 };
@@ -367,7 +368,7 @@ const viewItem = (id, tipo) => {
         <div class="modal-content">
             <div class="modal-header">
                 <h2 class="modal-title">${item.nome} - <span class="badge">${item.acao}</span></h2>
-                <button class="btn-close-modal" onclick="fecharModal()"><i class="fa-solid fa-xmark"></i></button>
+                <button class="btn-close-modal" data-action="close"><i class="fa-solid fa-xmark"></i></button>
             </div>
             
             <div class="modal-body">
@@ -391,13 +392,17 @@ const viewItem = (id, tipo) => {
             </div>
 
             <div class="modal-footer">
-                <button class="btn-view-delete" onclick="deletarItem(${item.id}, '${tipo}')">Deletar</button>
-                <button class="btn-view" onclick="editarItem(${item.id}, '${tipo}')">Editar <i class="fa-solid fa-pen-to-square"></i></button>
+                <button class="btn-view-delete" data-action="delete">Deletar</button>
+                <button class="btn-view" data-action="edit">Editar <i class="fa-solid fa-pen-to-square"></i></button>
             </div>
         </div>
     `;
 
     document.body.appendChild(modal);
+
+    modal.querySelector('[data-action="close"]').addEventListener('click', fecharModal);
+    modal.querySelector('[data-action="delete"]').addEventListener('click', () => deletarItem(item.id, tipo));
+    modal.querySelector('[data-action="edit"]').addEventListener('click', () => editarItem(item.id, tipo));
 
     modal.addEventListener('mousedown', (e) => {
         if (e.target === modal) fecharModal();
@@ -440,13 +445,14 @@ const deletarItem = (id, tipo) => {
             <h3 class>Confirmar Exclusão</h3>
             <p>Esta ação apagará permanentemente os dados da pasta e não poderá ser desfeita. <span style="font-weight: bold; color: white;">Deseja continuar?</span></p>
             <div class="confirm-buttons-group">
-                <button class="btn-cancel-modal" onclick="fecharConfirmacao()">Cancelar</button>
+                <button class="btn-cancel-modal" data-action="cancel-delete">Cancelar</button>
                 <button class="btn-confirm-delete-act" id="confirmRealDelete">Apagar Agora</button>
             </div>
         </div>
     `;
 
     document.body.appendChild(overlay); // Adiciona o modal de confirmação ao DOM
+    overlay.querySelector('[data-action="cancel-delete"]').addEventListener('click', fecharConfirmacao);
 
     //pega o botão de confirmação como uma variável
     const confirmButton = document.getElementById('confirmRealDelete');
@@ -480,6 +486,13 @@ const fecharConfirmacao = () => {
 // --- INICIALIZAÇÃO (DOMContentLoaded) ---
 document.addEventListener('DOMContentLoaded', async () => {
     const searchInput = document.getElementById('search');
+    document.getElementById('addButton').addEventListener('click', adicionar);
+    document.getElementById('configButton').addEventListener('click', config);
+    document.getElementById('logoutButton').addEventListener('click', sair);
+    document.getElementById('searchButton').addEventListener('click', buscar);
+    document.querySelectorAll('.filter-btn').forEach((button) => {
+        button.addEventListener('click', () => filterResults(button.dataset.filter));
+    });
     searchInput.focus();
 
     showLoading(true);

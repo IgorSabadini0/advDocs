@@ -6,6 +6,7 @@ const sair = () => {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('logoutButton').addEventListener('click', sair);
     const token = localStorage.getItem('token');
 
     // Rota protegida: se não houver token, envia para o login

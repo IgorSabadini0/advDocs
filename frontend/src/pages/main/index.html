@@ -29,14 +29,14 @@
             </div>
 
             <div class="nav-actions">
-                <button class="btn-nav btn-add-nav" onclick="adicionar()" title="Adicionar novo registro">
+                <button class="btn-nav btn-add-nav" id="addButton" title="Adicionar novo registro">
                     <i class="fa-solid fa-plus"></i>
                     <span>Nova Pasta</span>
                 </button>
-                <button class="btn-nav btn-config-nav" onclick="config()" title="Configurações">
+                <button class="btn-nav btn-config-nav" id="configButton" title="Configurações">
                     <i class="fa-solid fa-sliders"></i>
                 </button>
-                <button class="btn-nav btn-logout-nav" onclick="sair()" title="Sair do sistema">
+                <button class="btn-nav btn-logout-nav" id="logoutButton" title="Sair do sistema">
                     <i class="fa-solid fa-arrow-right-from-bracket"></i>
                 </button>
             </div>
@@ -52,7 +52,7 @@
             </div>
 
             <!-- Statistics Cards Grid -->
-            <div class="stats-grid">
+            <!-- <div class="stats-grid">
                 <div class="stat-card gold-glow">
                     <div class="stat-icon"><i class="fa-solid fa-folder-closed"></i></div>
                     <div class="stat-info">
@@ -76,7 +76,7 @@
                         <h2 class="stat-value" id="stat-parados">-</h2>
                     </div>
                 </div>
-            </div>
+            </div> -->
         </section>
 
         <!-- Search and Filter Control Center -->
@@ -85,19 +85,19 @@
                 <i class="fa-solid fa-magnifying-glass search-icon"></i>
                 <input type="text" id="search"
                     placeholder="Pesquise por nome do cliente, número do processo ou pasta..."
-                    onkeypress="handleKeyPress(event)">
-                <button class="search-btn" onclick="buscar()">Pesquisar</button>
+                    >
+                <button class="search-btn" id="searchButton">Pesquisar</button>
             </div>
 
             <div class="filter-wrapper">
                 <span class="filter-title"><i class="fa-solid fa-filter"></i> Filtrar por categoria:</span>
                 <div class="filter-buttons">
-                    <button class="filter-btn active" onclick="filterResults('all')">Todos</button>
-                    <button class="filter-btn" onclick="filterResults('previdenciario')">Previdenciário</button>
-                    <button class="filter-btn" onclick="filterResults('santa_casa')">Santa Casa</button>
-                    <button class="filter-btn" onclick="filterResults('justica_gratuita')">Justiça Gratuita</button>
-                    <button class="filter-btn" onclick="filterResults('arquivado')">Arquivado</button>
-                    <button class="filter-btn" onclick="filterResults('outro')">Outro</button>
+                    <button class="filter-btn active" data-filter="all">Todos</button>
+                    <button class="filter-btn" data-filter="previdenciario">Previdenciário</button>
+                    <button class="filter-btn" data-filter="santa_casa">Santa Casa</button>
+                    <button class="filter-btn" data-filter="justica_gratuita">Justiça Gratuita</button>
+                    <button class="filter-btn" data-filter="arquivado">Arquivado</button>
+                    <button class="filter-btn" data-filter="outro">Outro</button>
                 </div>
             </div>
         </section>

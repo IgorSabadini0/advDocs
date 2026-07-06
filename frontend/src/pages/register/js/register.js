@@ -23,6 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
             e.target.value = mascaraProcessoCNJ(e.target.value);
         });
     }
+
+    document.getElementById('saveButton').addEventListener('click', salvarRegistro);
 });
 
 const showLoading = (show) => {

@@ -25,6 +25,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    document.getElementById('saveButton').addEventListener('click', salvarEdicao);
+
     // Pega os dados salvos no localStorage e preenche os campos do formulário
 
     const dadosItem = sessionStorage.getItem("itemEmEdicao");

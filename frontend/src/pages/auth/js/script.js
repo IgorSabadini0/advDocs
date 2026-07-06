@@ -16,6 +16,7 @@ const showLoading = (show) => {
 };
 
 const acess = async (event) => {
+    event?.preventDefault();
     const user = document.getElementById('user').value;
     const password = document.getElementById('password').value;
     const status = document.getElementById('status');
@@ -59,10 +60,11 @@ const acess = async (event) => {
     }
 }
 
-// Escuta o clique no botão
-submit.addEventListener('click', acess);
+// Escuta o clique no botão sem depender de uma variável global criada pelo id.
+const submitButton = document.getElementById('submit');
+submitButton.addEventListener('click', acess);
 
 // Permite dar "Enter" nos campos de input e chamar a função de acesso sem precisar clicar no botão
-document.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') acess();
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') acess(e);
 });
