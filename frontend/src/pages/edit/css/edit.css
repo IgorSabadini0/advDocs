@@ -1,221 +1,255 @@
-/* --- register.css --- */
-
+/* --- edit.css --- */
 :root {
-    --bg-body: #151923;
-    --bg-card: #151923;
-    --gold-primary: #dab063;
-    --gold-hover: #c29b54;
-    --text-main: #979797;
-    --text-light: #666666;
-    --text-dark: #e5e7eb;
-    /* Ajustado para melhor leitura em inputs */
-    --border-color: #252b36;
-    --shadow: 0 8px 16px rgba(0, 0, 0, .35), 0 2px 6px rgba(0, 0, 0, .25);
+    --bg-main: #07090e;
+    --bg-surface: rgba(20, 24, 33, 0.7);
+    --bg-surface-solid: #121620;
+    --brand-gold: #dab063;
+    --brand-gold-hover: #edd8ad;
+    --brand-gold-glow: rgba(218, 176, 99, 0.15);
+    --brand-gold-dark: #b88d3e;
+    --text-primary: #f3f4f6;
+    --text-secondary: #9ca3af;
+    --text-muted: #6b7280;
+    --border-color: rgba(255, 255, 255, 0.08);
+    --border-hover: rgba(218, 176, 99, 0.35);
+
+    --success: #10b981;
+    --danger: #ef4444;
+    --danger-glow: rgba(239, 68, 68, 0.15);
+
     --font-body: 'Inter', 'Montserrat', sans-serif;
-    --transition-fast: all 0.3s ease;
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 24px;
+
+    --shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 body {
-    background-color: var(--bg-body);
-    color: var(--text-main);
+    background-color: var(--bg-main);
+    color: var(--text-primary);
     font-family: var(--font-body);
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+    padding: 40px 20px;
+}
+
+/* Background animated mesh */
+.bg-mesh {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -1;
+    background:
+        radial-gradient(circle at 10% 10%, rgba(218, 176, 99, 0.04) 0%, transparent 40%),
+        radial-gradient(circle at 90% 90%, rgba(59, 130, 246, 0.04) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, #07090e 0%, #030406 100%);
+    opacity: 0.95;
+    pointer-events: none;
 }
 
 .container {
     width: 100%;
-    max-width: 500px;
+    max-width: 580px;
     padding: 40px;
-    background: var(--bg-card);
-    border-radius: 15px;
+    background: var(--bg-surface);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: var(--radius-lg);
     border: 1px solid var(--border-color);
+    border-top: 1px solid rgba(218, 176, 99, 0.3);
+    border-left: 1px solid rgba(218, 176, 99, 0.3);
     box-shadow: var(--shadow);
-    margin: 20px auto;
-    /* O 'auto' centraliza o card horizontalmente na tela */
     display: flex;
     flex-direction: column;
+    gap: 30px;
+    animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* --- Logo --- */
+/* --- Header & Logo --- */
 .brand-logo {
-    text-align: center;
-    margin-bottom: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
 }
 
 .brand-logo img {
-    height: 60px;
+    height: 52px;
     width: auto;
+    filter: drop-shadow(0 0 8px rgba(218, 176, 99, 0.2));
 }
 
 .title-page {
-    display: flex;
-    justify-content: center;
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     font-weight: 700;
-    color: var(--text-dark);
-    margin-top: 10px;
+    color: var(--brand-gold);
+    letter-spacing: 0.5px;
 }
 
-/* --- Formulário --- */
+/* --- Form Layout & Fields --- */
 .clientes-add {
     display: flex;
     flex-direction: column;
     gap: 20px;
-    width: 100%;
-    /* Garante que o formulário ocupe toda a largura interna do card */
-    align-items: stretch;
-    /* Faz com que os inputs preencham a largura por igual */
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
 }
 
 .clientes-add label {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: var(--gold-primary);
-    margin-bottom: -12px;
-    /* Ajuste para aproximar o label do input */
-    text-align: left;
-    /* Mantém o texto do label alinhado à esquerda do input */
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
-.clientes-add input {
+.clientes-add label i {
+    color: var(--brand-gold);
+    font-size: 0.85rem;
+}
+
+.clientes-add input,
+.clientes-add select {
     width: 100%;
-    /* Garante que o input não "fuja" para os lados */
-    box-sizing: border-box;
-    /* Crucial: impede que o padding interno aumente a largura real do input */
-    padding: 14px 16px;
-    background-color: #1a1f2b;
-    border: 2px solid var(--border-color);
-    border-radius: 10px;
-    color: var(--text-dark);
+    height: 50px;
+    padding: 0 16px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
     font-family: var(--font-body);
-    font-size: 1rem;
-    transition: var(--transition-fast);
+    font-size: 0.95rem;
     outline: none;
+    transition: var(--transition);
 }
 
-.clientes-add input:focus {
-    border-color: var(--gold-primary);
-    box-shadow: 0 0 0 3px rgba(218, 176, 99, 0.1);
+.clientes-add input::placeholder {
+    color: var(--text-muted);
+}
+
+.clientes-add input:focus,
+.clientes-add select:focus {
+    border-color: var(--brand-gold);
+    background-color: rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 0 4px var(--brand-gold-glow);
 }
 
 .obrigatorio {
-    color: #dc3545;
-    margin-left: 4px;
+    color: var(--danger);
+    margin-left: 2px;
 }
 
-/* --- Botão (Baseado no .btn-view do pastas.css) --- */
-.btn-save {
-    margin-top: 10px;
-    padding: 15px;
-    border: 1px solid var(--gold-primary);
-    border-radius: 10px;
-    background: transparent;
-    color: var(--gold-primary);
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    cursor: pointer;
-    transition: var(--transition-fast);
-}
-
-/* --- Estilização do Select em register.css --- */
-
+/* Custom Styled Select */
 .clientes-add select {
-    width: 100%;
-    padding: 14px 16px;
-    background-color: #1a1f2b;
-    /* Mesmo fundo dos inputs */
-    border: 2px solid var(--border-color);
-    border-radius: 10px;
-    color: var(--text-dark);
-    font-family: var(--font-body);
-    font-size: 1rem;
-    cursor: pointer;
-    outline: none;
-    transition: var(--transition-fast);
-
-    /* Remove a seta padrão do navegador */
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
-
-    /* Adiciona uma seta customizada (ícone de chevron) */
+    cursor: pointer;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23dab063'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 16px center;
-    background-size: 18px;
+    background-size: 16px;
 }
 
-/* Efeito de Focus (Igual ao input) */
-.clientes-add select:focus {
-    border-color: var(--gold-primary);
-    box-shadow: 0 0 0 3px rgba(218, 176, 99, 0.1);
-}
-
-/* Estilização das opções (limitação: o visual das opções depende do SO) */
 .clientes-add select option {
-    background-color: var(--bg-body);
-    color: var(--text-dark);
-    padding: 10px;
+    background-color: var(--bg-surface-solid);
+    color: var(--text-primary);
+}
+
+/* Button Save */
+.btn-save {
+    margin-top: 10px;
+    height: 52px;
+    border: 1px solid var(--brand-gold);
+    background: linear-gradient(135deg, var(--brand-gold) 0%, var(--brand-gold-dark) 100%);
+    color: #07090e;
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition);
+    box-shadow: 0 4px 15px rgba(218, 176, 99, 0.15);
 }
 
 .btn-save:hover {
-    background: linear-gradient(45deg, #ae8625, #e0da7d, #d2ac47, #edc967);
-    color: #151923;
-    border-color: transparent;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(218, 176, 99, 0.3);
+    box-shadow: 0 8px 25px rgba(218, 176, 99, 0.35);
+    background: linear-gradient(135deg, var(--brand-gold-hover) 0%, var(--brand-gold) 100%);
 }
 
-/* Link de voltar */
+.btn-save:active {
+    transform: translateY(0);
+}
+
+/* Back navigation link */
 .back-link {
-    display: block;
-    text-align: center;
-    margin-top: 20px;
-    color: var(--text-light);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-secondary);
     text-decoration: none;
-    font-size: 0.9rem;
-    transition: var(--transition-fast);
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: var(--transition);
+    align-self: center;
 }
 
 .back-link:hover {
-    color: var(--gold-primary);
+    color: var(--brand-gold);
 }
 
-.type-error {
-    color: var(--text-dark);
-    font-weight: bold;
-}
-
-#response {
-    text-align: center;
-    margin-top: 15px;
-    font-size: 1.2rem;
-}
-
+/* Loader */
 .loading {
     display: none;
-    text-align: center;
-    padding: 60px 20px;
+    justify-content: center;
+    margin: 10px 0;
 }
 
 .loading.show {
-    display: block;
+    display: flex;
 }
 
 .spinner {
-    width: 50px;
-    height: 50px;
-    border: 4px solid var(--border-color);
-    border-top-color: var(--gold-primary);
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(218, 176, 99, 0.1);
+    border-top-color: var(--brand-gold);
     border-radius: 50%;
-    margin: 0 auto 20px;
-    animation: spin 1s linear infinite;
+    animation: spin 0.8s cubic-bezier(0.5, 0.1, 0.4, 0.9) infinite;
 }
 
 @keyframes spin {
@@ -224,29 +258,37 @@ body {
     }
 }
 
-/* Responsividade */
-@media (max-width: 480px) {
-    .container {
-        padding: 25px 20px;
-    }
+/* Status messages */
+.status-message {
+    min-height: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-/* --- Modal de Confirmação --- */
+#response {
+    font-size: 0.95rem;
+    text-align: center;
+    font-weight: 600;
+}
+
+/* --- Confirmation Modal Overlay --- */
 .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-color: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(4px);
+    background-color: rgba(3, 4, 6, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 1000;
     opacity: 0;
     visibility: hidden;
-    transition: var(--transition-fast);
+    transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
 .modal-overlay.show {
@@ -255,86 +297,105 @@ body {
 }
 
 .modal-confirm-content {
-    background-color: var(--bg-card);
+    background-color: var(--bg-surface-solid);
     border: 1px solid var(--border-color);
-    border-radius: 12px;
+    border-top: 3px solid var(--brand-gold);
+    border-radius: var(--radius-md);
     width: 95%;
     max-width: 420px;
-    padding: 30px;
+    padding: 36px;
     text-align: center;
-    box-shadow: var(--shadow);
-    transform: translateY(30px) scale(0.95);
-    transition: var(--transition-fast);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    transform: scale(0.9) translateY(20px);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .modal-overlay.show .modal-confirm-content {
-    transform: translateY(0) scale(1);
+    transform: scale(1) translateY(0);
 }
 
 .modal-confirm-icon {
-    font-size: 3.5rem;
-    color: var(--gold-primary);
+    font-size: 3rem;
+    color: var(--brand-gold);
     margin-bottom: 20px;
     filter: drop-shadow(0 0 10px rgba(218, 176, 99, 0.2));
 }
 
 .modal-confirm-content h3 {
-    font-family: var(--font-body);
-    color: var(--gold-primary);
-    font-size: 1.6rem;
+    font-size: 1.4rem;
+    color: var(--text-primary);
     margin-bottom: 12px;
 }
 
 .modal-confirm-content p {
-    font-family: var(--font-body);
-    color: var(--text-main);
-    font-size: 1rem;
+    font-size: 0.95rem;
+    color: var(--text-secondary);
     line-height: 1.5;
-    margin-bottom: 25px;
+    margin-bottom: 28px;
 }
 
 .confirm-buttons-group {
     display: flex;
-    gap: 15px;
+    gap: 12px;
     justify-content: center;
 }
 
-/* Botão Cancelar (Estilo similar ao filter-btn) */
 .btn-cancel-modal {
-    padding: 12px 24px;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
+    padding: 10px 20px;
     background: transparent;
-    color: var(--text-main);
-    font-family: var(--font-body);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
     font-weight: 600;
+    font-size: 0.85rem;
     cursor: pointer;
-    transition: var(--transition-fast);
+    transition: var(--transition);
 }
 
 .btn-cancel-modal:hover {
     background: rgba(255, 255, 255, 0.05);
-    color: var(--text-dark);
-    border-color: var(--text-light);
+    color: var(--text-primary);
 }
 
 .btn-confirm-edit-act {
-    padding: 12px 24px;
-    background: var(--gold-primary);
-    border: 1px solid var(--gold-primary);
-    border-radius: 8px;
-    color: #ffffff;
-    font-family: var(--font-body);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    padding: 10px 20px;
+    background: var(--brand-gold);
+    border: none;
+    color: #07090e;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
+    font-size: 0.85rem;
     cursor: pointer;
-    transition: var(--transition-fast);
+    transition: var(--transition);
 }
 
 .btn-confirm-edit-act:hover {
-    background: var(--gold-hover);
-    border-color: var(--gold-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(218, 176, 99, 0.4);
+    background: var(--brand-gold-hover);
+    box-shadow: 0 4px 15px rgba(218, 176, 99, 0.3);
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsividade */
+@media (max-width: 580px) {
+    .container {
+        padding: 24px;
+        gap: 24px;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
 }
