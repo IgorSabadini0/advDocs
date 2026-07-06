@@ -15,46 +15,66 @@
 </head>
 
 <body>
+    <div class="bg-mesh"></div>
     <div class="container">
         <div class="brand-logo">
             <img src="/assets/logo.svg" alt="Logo Palhares Ferreira">
-            <span class="title-page">Editar Pasta</span>
+            <span class="title-page">Editar Registro</span>
         </div>
 
         <div class="clientes-add">
-            <label for="acao">Ação <span class="obrigatorio">*</span></label>
-            <input type="text" id="acao" required placeholder="Ex: Ação Revisional">
+            <div class="form-group">
+                <label for="acao"><i class="fa-solid fa-gavel"></i> Ação <span class="obrigatorio">*</span></label>
+                <input type="text" id="acao" required placeholder="Ex: Ação Revisional">
+            </div>
 
-            <label for="nome">Nome do Cliente <span class="obrigatorio">*</span></label>
-            <input type="text" id="nome" required placeholder="Nome completo do cliente">
+            <div class="form-group">
+                <label for="nome"><i class="fa-solid fa-user-tie"></i> Nome do Cliente <span
+                        class="obrigatorio">*</span></label>
+                <input type="text" id="nome" required placeholder="Nome completo do cliente">
+            </div>
 
-            <label for=" numeroPasta">Número da Pasta</label>
-            <input type="number" id="numeroPasta" placeholder="Ex: nº 1">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="numeroPasta"><i class="fa-solid fa-folder-open"></i> Número da Pasta</label>
+                    <input type="number" id="numeroPasta" placeholder="Ex: 1">
+                </div>
 
-            <label for="tipo">Tipo de Registro <span class="obrigatorio">*</span></label>
-            <select name="tipo" id="tipo" required>
-                <option value="" disabled selected hidden>Selecione o tipo...</option>
-                <option value="Todos Processos">Todos Processos</option>
-                <option value="Previdenciário">Previdenciário</option>
-                <option value="Santa Casa">Santa Casa</option>
-                <option value="Justiça Gratuita">Justiça Gratuita</option>
-                <option value="Arquivado">Arquivado</option>
-                <option value="Outro">Outro</option>
-            </select>
+                <div class="form-group">
+                    <label for="tipo"><i class="fa-solid fa-tags"></i> Tipo de Registro <span
+                            class="obrigatorio">*</span></label>
+                    <select name="tipo" id="tipo" required>
+                        <option value="" disabled selected hidden>Selecione...</option>
+                        <option value="Todos Processos">Todos Processos</option>
+                        <option value="Previdenciário">Previdenciário</option>
+                        <option value="Santa Casa">Santa Casa</option>
+                        <option value="Justiça Gratuita">Justiça Gratuita</option>
+                        <option value="Arquivado">Arquivado</option>
+                        <option value="Outro">Outro</option>
+                    </select>
+                </div>
+            </div>
 
-            <label for="numero">Número do Processo</label>
-            <input type="text" id="numeroProc" placeholder="Ex: 1234567-00.2026.8.26.0000" maxlength="25"
-                minlength="25">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="numeroProc"><i class="fa-solid fa-scale-balanced"></i> Número do Processo</label>
+                    <input type="text" id="numeroProc" placeholder="Ex: 1234567-00.2026.8.26.0000" maxlength="25">
+                </div>
 
-            <label for="status">Status Atual</label>
-            <select name="status" id="status">
-                <option value="" disabled selected hidden>Selecione o status...</option>
-                <option value="Ativo">Ativo</option>
-                <option value="Parado">Parado</option>
-            </select>
+                <div class="form-group">
+                    <label for="status"><i class="fa-solid fa-circle-info"></i> Status Atual</label>
+                    <select name="status" id="status">
+                        <option value="" disabled selected hidden>Selecione...</option>
+                        <option value="Ativo">Ativo</option>
+                        <option value="Parado">Parado</option>
+                    </select>
+                </div>
+            </div>
 
-            <label for="descricao">Descrição Adicional</label>
-            <input type="text" id="descricao" placeholder="Breve resumo sobre o caso">
+            <div class="form-group">
+                <label for="descricao"><i class="fa-solid fa-align-left"></i> Descrição Adicional</label>
+                <input type="text" id="descricao" placeholder="Breve resumo sobre o caso">
+            </div>
 
             <button class="btn-save" onclick="salvarEdicao()">
                 <i class="fa-solid fa-floppy-disk"></i> Salvar Edição
@@ -70,7 +90,7 @@
         </div>
 
         <a href="../main" class="back-link">
-            <i class="fa-solid fa-arrow-left"></i> Voltar para a listagem
+            <i class="fa-solid fa-arrow-left"></i> Voltar para o painel
         </a>
     </div>
 

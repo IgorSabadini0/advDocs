@@ -4,17 +4,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configurações</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>Configurações | Palhares Ferreira Advocacia</title>
+    <link rel="stylesheet" href="css/config.css">
+    <link rel="shortcut icon" href="/assets/logo.svg" type="image/svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Inter:wght@400;600&display=swap"
+        rel="stylesheet">
+    <script src="https://kit.fontawesome.com/a8f4be2bb0.js" crossorigin="anonymous"></script>
 </head>
 
 <body>
+    <div class="bg-mesh"></div>
     <div class="container">
-        <div class="title">
-            <h1>Configurações</h1>
+        <div class="brand-logo">
+            <img src="/assets/logo.svg" alt="Logo Palhares Ferreira">
+            <span class="title-page">Configurações</span>
         </div>
+
+        <div class="config-card">
+            <div class="config-section">
+                <h3><i class="fa-solid fa-user-gear"></i> Perfil do Usuário</h3>
+                <div class="profile-info">
+                    <div class="avatar"><i class="fa-solid fa-circle-user"></i></div>
+                    <div class="profile-text">
+                        <h4 id="user-name">Administrador</h4>
+                        <span class="badge">Acesso Master</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="config-section">
+                <h3><i class="fa-solid fa-desktop"></i> Sistema & Tema</h3>
+                <div class="system-status">
+                    <div class="status-item">
+                        <span>Tema Ativo:</span>
+                        <strong class="gold-text">OLED Dark Gold (Premium)</strong>
+                    </div>
+                    <div class="status-item">
+                        <span>Status do Servidor:</span>
+                        <span class="status-indicator"><i class="fa-solid fa-circle"></i> Conectado</span>
+                    </div>
+                    <div class="status-item">
+                        <span>Versão:</span>
+                        <span class="version-text">v2.4.0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="config-actions">
+                <button class="btn-logout" onclick="sair()">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i> Encerrar Sessão
+                </button>
+            </div>
+        </div>
+
+        <a href="../main" class="back-link">
+            <i class="fa-solid fa-arrow-left"></i> Voltar para o painel
+        </a>
     </div>
-    <script src="js/script.js"></script>
+
+    <script src="js/config.js"></script>
 </body>
 
 </html>

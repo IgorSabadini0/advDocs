@@ -27,6 +27,51 @@ const config = () => {
     window.location.href = '../config';
 }
 
+// --- ESTATÍSTICAS DO PAINEL ---
+const atualizarEstatisticas = () => {
+    const totalEl = document.getElementById('stat-total');
+    const ativosEl = document.getElementById('stat-ativos');
+    const paradosEl = document.getElementById('stat-parados');
+
+    if (totalEl && ativosEl && paradosEl) {
+        const total = clientes.length;
+        const ativos = clientes.filter(c => c.status === 'Ativo').length;
+        const parados = clientes.filter(c => c.status === 'Parado').length;
+
+        // Animate counter values
+        animateCounter(totalEl, total);
+        animateCounter(ativosEl, ativos);
+        animateCounter(paradosEl, parados);
+    }
+};
+
+const animateCounter = (element, target) => {
+    let start = 0;
+    const duration = 800; // ms
+    const startTime = performance.now();
+
+    const update = (now) => {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        // Easing function outQuad
+        const value = Math.floor(progress * (2 - progress) * target);
+        element.textContent = value;
+
+        if (progress < 1) {
+            requestAnimationFrame(update);
+        } else {
+            element.textContent = target;
+        }
+    };
+    requestAnimationFrame(update);
+};
+
+const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+        buscar();
+    }
+};
+
 // --- BUSCAR DADOS DO BANCO ---
 const carregarDados = async () => {
     const token = localStorage.getItem('token');
@@ -35,8 +80,6 @@ const carregarDados = async () => {
         sair();
         return;
     }
-
-
 
     try {
         const response = await fetch(`${API_URL}/clientes`, {
@@ -52,6 +95,7 @@ const carregarDados = async () => {
         if (!response.ok) throw new Error('Erro ao carregar dados'); // gera um erro e desvia para o catch
 
         clientes = await response.json();
+        atualizarEstatisticas();
     } catch (error) {
         console.error('Erro ao buscar dados da API:', error);
         clientes = []; // Garante que seja um array mesmo se der erro

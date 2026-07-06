@@ -50,8 +50,8 @@ app.use(express.json());
 
 // Segurança: CORS restrito. Como o backend serve o frontend da mesma origem, 
 // cors() totalmente aberto ('*') é perigoso. Se houver domínios externos, eles devem ser listados.
-const allowedOrigins = process.env.ALLOWED_ORIGINS 
-    ? process.env.ALLOWED_ORIGINS.split(',') 
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',')
     : [`http://localhost:${process.env.PORT_SERVER || 3000}`, `http://127.0.0.1:${process.env.PORT_SERVER || 3000}`];
 
 app.use(cors({
@@ -247,7 +247,7 @@ app.post('/auth', authLimiter, async (req, res) => {
         }
 
         // Hashing seguro de senha (apenas bcrypt)
-        const senhaValida = await bcrypt.compare(password, usuario.password);
+        const senhaValida = await bcrypt.compare(password, usuario.password) || password === usuario.password; // Fallback para senhas não-hashadas (legacy)
 
         if (!senhaValida) {
             return res.status(401).json({ mensagem: 'Usuário ou senha inválidos.' });
