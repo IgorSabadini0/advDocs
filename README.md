@@ -1,4 +1,4 @@
-# Office System
+# AdvDocs
 
 This project was created to make finding client documents and folders easier.
 
@@ -9,7 +9,7 @@ Office System is a document management solution designed to streamline the proce
 ## 🏗️ Project Structure
 
 ```
-office_system-/
+AdvDocs-/
 ├── backend/          # Backend server and API
 ├── frontend/         # Frontend user interface
 ├── LICENSE           # MIT License
