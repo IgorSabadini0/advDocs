@@ -76,25 +76,31 @@
                 <input type="text" id="descricao" placeholder="Breve resumo sobre o caso">
             </div>
 
-            <button class="btn-save" id="saveButton">
-                <i class="fa-solid fa-floppy-disk"></i> Salvar Registro
-            </button>
+            <!-- CheckBox - Consultar Processo via API Datajud -->
+            <label for="consultarProcesso"><i class="fa-solid fa-magnifying-glass"></i> Consultar Processo via API
+                Datajud</label>
+            <input type="checkbox" id="consultarProcesso">
+
+            <div class="form-group">
+                <button class="btn-save" id="saveButton">
+                    <i class="fa-solid fa-floppy-disk"></i> Salvar Registro
+                </button>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+            </div>
+
+            <div class="status-message">
+                <p id="response"></p>
+            </div>
+
+            <a href="../main" class="back-link">
+                <i class="fa-solid fa-arrow-left"></i> Voltar para o painel
+            </a>
         </div>
 
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-        </div>
-
-        <div class="status-message">
-            <p id="response"></p>
-        </div>
-
-        <a href="../main" class="back-link">
-            <i class="fa-solid fa-arrow-left"></i> Voltar para o painel
-        </a>
-    </div>
-
-    <script src="js/register.js"></script>
+        <script src="js/register.js"></script>
 </body>
 
 </html>

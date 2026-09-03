@@ -183,6 +183,24 @@ body {
     color: var(--text-primary);
 }
 
+/* Check Box */
+.clientes-add input[type="checkbox"] {
+    width: 30px;
+    height: 40px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background-color: rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+.clientes-add input[type="checkbox"]:checked {
+    background-color: var(--brand-gold);
+    border-color: var(--brand-gold);
+}
+
 /* Button Save */
 .btn-save {
     margin-top: 10px;
