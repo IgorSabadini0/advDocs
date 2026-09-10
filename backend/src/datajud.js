@@ -24,7 +24,6 @@ export async function buscarProcesso(numeroProcesso) {
         );
 
         console.log(response.data.hits.hits);
-        return response.data.hits.hits;
     } catch (error) {
         console.error('Erro ao buscar processo:', error.message);
     }
