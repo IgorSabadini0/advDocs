@@ -68,7 +68,7 @@ app.use(cors({
 
 // Validador de dados de cliente para evitar dados malformados ou inválidos
 const validateCliente = (data) => {
-    const { acao, nome, numeroPasta, tipo, numeroProc, status, descricao } = data;
+    const { acao, nome, numeroPasta, tipo, numeroProc, status, consultarProcesso, descricao } = data;
 
     if (!nome || typeof nome !== 'string' || nome.trim().length === 0 || nome.length > 128) {
         return { valido: false, mensagem: "Nome inválido (deve ter entre 1 e 128 caracteres)." };
@@ -99,6 +99,10 @@ const validateCliente = (data) => {
 
     if (descricao && typeof descricao !== 'string') {
         return { valido: false, mensagem: "Descrição inválida." };
+    }
+
+    if (consultarProcesso !== true && consultarProcesso !== false) {
+        return { valido: false, mensagem: "Opção de consulta de processo inválida (deve ser true ou false)." };
     }
 
     return { valido: true };
