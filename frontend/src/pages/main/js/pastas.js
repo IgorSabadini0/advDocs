@@ -1,18 +1,5 @@
 // --- ESTADO DA APLICAÇÃO ---
-const API_URL = window.location.origin;
-let currentFilter = 'all';
-
-// Mapeia os parametros passados para a função pelo HTML e "traduz" para o ENUM do MySQL
-const mapFiltroParaDB = {
-    'all': 'Todos Processos',
-    'previdenciario': 'Previdenciário',
-    'santa_casa': 'Santa Casa',
-    'justica_gratuita': 'Justiça Gratuita',
-    'arquivado': 'Arquivado',
-    'outro': 'Outro'
-};
-let searchTimeout = null;
-let clientes = []; // Agora é um array que receberá os dados do banco
+import { API_URL, currentFilter, mapFiltroParaDB, searchTimeout, clientes } from './state.js';
 
 const adicionar = () => {
     window.location.href = '../register';
