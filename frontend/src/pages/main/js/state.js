@@ -1,8 +1,8 @@
-// --- ESTADO DA APLICAÇÃO ---
 export const API_URL = window.location.origin;
-export let currentFilter = 'all';
 
-// Mapeia os parametros passados para a função pelo HTML e "traduz" para o ENUM do MySQL
+export let currentFilter = 'all';
+export const setCurrentFilter = (novoFiltro) => { currentFilter = novoFiltro; };
+
 export const mapFiltroParaDB = {
     'all': 'Todos Processos',
     'previdenciario': 'Previdenciário',
@@ -11,5 +11,9 @@ export const mapFiltroParaDB = {
     'arquivado': 'Arquivado',
     'outro': 'Outro'
 };
+
 export let searchTimeout = null;
-export let clientes = []; // Agora é um array que receberá os dados do banco
+export const setSearchTimeout = (novoTimeout) => { searchTimeout = novoTimeout; };
+
+export let clientes = [];
+export const setClientes = (novosClientes) => { clientes = novosClientes; };
