@@ -2,7 +2,7 @@
 import { currentFilter, setCurrentFilter, mapFiltroParaDB, searchTimeout, setSearchTimeout, clientes, setClientes } from './state.js';
 import { deleteClienteApi, carregarDados } from '../api/clientsApi.js';
 import { createResultCard } from './components/cardComponent.js';
-import { viewItem, fecharModal } from './components/modalComponent.js';
+import { viewItemModal, fecharModal } from './components/modalComponent.js';
 
 const adicionar = () => {
     window.location.href = '../register';
@@ -220,13 +220,7 @@ const hideEmptyState = () => {
 const formatDate = (dateString) => new Date(dateString).toLocaleDateString('pt-BR');
 
 // Converte caracteres especiais em entidades HTML para evitar ataques de XSS.
-// Utiliza o DOM para realizar o escape de forma segura.
-const escapeHtml = (text) => {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-};
+
 const traduzirTipo = (tipo) => {
     return mapFiltroParaDB[tipo] || tipo;
 };
@@ -287,6 +281,17 @@ const deletarItem = (id) => {
         }
     }
 };
+
+const viewItem = (id, tipo) => {
+    const item = clientes.find(c => String(c.id) === String(id) && c.tipo === tipo);
+
+    if (!item) {
+        console.error(`[Erro] Item não encontrado: ID ${id} | Tipo: ${tipo}`);
+        alert('Não foi possível carregar os dados do item. Tente novamente.');
+        return;
+    }
+    viewItemModal(item, { tipoLegivel: traduzirTipo(tipo), onDelete: deletarItem(id), onEdit: editarItem(id, tipo) });
+}
 
 const fecharConfirmacao = () => {
     const modal = document.getElementById('confirmDeleteModal');
