@@ -9,6 +9,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import { buscarProcesso } from './datajud.js'; // Importa a função buscarProcesso do arquivo datajud.js
 
 config();
 
@@ -67,7 +68,7 @@ app.use(cors({
 
 // Validador de dados de cliente para evitar dados malformados ou inválidos
 const validateCliente = (data) => {
-    const { acao, nome, numeroPasta, tipo, numeroProc, status, descricao } = data;
+    const { acao, nome, numeroPasta, tipo, numeroProc, status, consultarProcesso, descricao } = data;
 
     if (!nome || typeof nome !== 'string' || nome.trim().length === 0 || nome.length > 128) {
         return { valido: false, mensagem: "Nome inválido (deve ter entre 1 e 128 caracteres)." };
@@ -98,6 +99,10 @@ const validateCliente = (data) => {
 
     if (descricao && typeof descricao !== 'string') {
         return { valido: false, mensagem: "Descrição inválida." };
+    }
+
+    if (consultarProcesso !== true && consultarProcesso !== false) {
+        return { valido: false, mensagem: "Opção de consulta de processo inválida (deve ser true ou false)." };
     }
 
     return { valido: true };
@@ -137,7 +142,11 @@ app.post('/register', verifyToken, async (req, res) => {
             return res.status(400).json({ mensagem: validacao.mensagem });
         }
 
-        const { acao, nome, numeroPasta, tipo, numeroProc, status, descricao } = req.body;
+        const { acao, nome, numeroPasta, tipo, numeroProc, status, consultarProcesso, descricao } = req.body;
+
+        if (consultarProcesso && numeroProc) {
+            buscarProcesso(numeroProc); // Chama a função para buscar o processo no DataJud
+        }
 
         // Otimização: Combina as consultas de verificação de existência num único roundtrip pro banco
         const queryVerificarExistencia = "SELECT numeroProc, numeroPasta FROM clientes WHERE (numeroProc = ? AND numeroProc IS NOT NULL AND numeroProc != '') OR numeroPasta = ? LIMIT 1";
