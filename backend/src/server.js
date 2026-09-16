@@ -38,8 +38,6 @@ app.use(helmet({
 
 app.use(express.json());
 
-app.use('api/clientes', clientesRouter); // Aplica o middleware de verificação de token e rate limiting para todas as rotas de clientes
-
 // Segurança: CORS restrito. Como o backend serve o frontend da mesma origem, 
 // cors() totalmente aberto ('*') é perigoso. Se houver domínios externos, eles devem ser listados.
 const allowedOrigins = process.env.ALLOWED_ORIGINS
@@ -62,20 +60,13 @@ app.use(cors({
 const staticPath = path.join(__dirname, '../../frontend/src');
 
 app.use(express.static(staticPath));
-
-// Aplica rate limiting nas rotas gerais da API (exceto arquivos estáticos)
-app.use('/clientes', apiLimiter);
-app.use('/register', apiLimiter);
-
 // ---------------------  G E T  => LISTAR  ---------------------
 
 app.get('/', (req, res) => {
     res.redirect('pages/auth');
 })
 
-app.get('/clientes', verifyToken, async (req, res) => {
-
-});
+app.use('/clientes', verifyToken, clientesRouter);
 
 app.post('/register', verifyToken, async (req, res) => {
     createCliente(req, res);
