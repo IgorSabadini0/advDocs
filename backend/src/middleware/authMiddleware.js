@@ -1,6 +1,4 @@
 import jwt from 'jsonwebtoken';
-import { config } from "dotenv";
-import db from './db.js';
 
 export const verifyToken = async (req, res, next) => {
     const authHeader = req.headers['authorization'];
@@ -14,7 +12,7 @@ export const verifyToken = async (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        
+
         // Verifica se o usuário existe e está ativo no banco de dados
         const [rows] = await db.query("SELECT is_active FROM login WHERE id = ? LIMIT 1", [decoded.id]);
         if (rows.length === 0) {
