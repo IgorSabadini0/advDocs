@@ -1,18 +1,9 @@
 // --- ESTADO DA APLICAÇÃO ---
-const API_URL = window.location.origin;
-let currentFilter = 'all';
-
-// Mapeia os parametros passados para a função pelo HTML e "traduz" para o ENUM do MySQL
-const mapFiltroParaDB = {
-    'all': 'Todos Processos',
-    'previdenciario': 'Previdenciário',
-    'santa_casa': 'Santa Casa',
-    'justica_gratuita': 'Justiça Gratuita',
-    'arquivado': 'Arquivado',
-    'outro': 'Outro'
-};
-let searchTimeout = null;
-let clientes = []; // Agora é um array que receberá os dados do banco
+import {
+    API_URL, currentFilter, setCurrentFilter, mapFiltroParaDB, searchTimeout, setSearchTimeout,
+    clientes, setClientes
+} from './state.js';
+import { deleteClienteApi } from '../api/clientsApi.js';
 
 const adicionar = () => {
     window.location.href = '../register';
@@ -94,11 +85,12 @@ const carregarDados = async () => {
 
         if (!response.ok) throw new Error('Erro ao carregar dados'); // gera um erro e desvia para o catch
 
-        clientes = await response.json();
+        const dados = await response.json();
+        setClientes(dados);
         atualizarEstatisticas();
     } catch (error) {
         console.error('Erro ao buscar dados da API:', error);
-        clientes = []; // Garante que seja um array mesmo se der erro
+        setClientes([]); // Garante que seja um array mesmo se der erro
     }
 };
 
@@ -170,7 +162,7 @@ const buscar = () => {
 };
 
 const filterResults = (filter) => {
-    currentFilter = filter;
+    setCurrentFilter(filter);
 
     const botoes = document.querySelectorAll('.filter-btn');
     botoes.forEach(btn => {
@@ -389,6 +381,12 @@ const viewItem = (id, tipo) => {
                     <h3>Descrição / Observações</h3>
                     <p class="modal-description">${escapeHtml(item.descricao)}</p>
                 </div>` : ''}
+
+                ${item.descricao ? `
+                <div class="modal-section" style="margin-top: 20px;">
+                    <h3>Descrição / Observações</h3>
+                    <p class="modal-description">${escapeHtml(item.descricao)}</p>
+                </div>` : ''}
             </div>
 
             <div class="modal-footer">
@@ -434,7 +432,7 @@ const editarItem = (id, tipo) => {
     window.location.href = '../edit';
 };
 
-const deletarItem = (id, tipo) => {
+const deletarItem = (id) => {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay show';
     overlay.id = 'confirmDeleteModal';
@@ -461,19 +459,28 @@ const deletarItem = (id, tipo) => {
         const token = localStorage.getItem('token');
 
         try {
-            const response = await fetch(`${API_URL}/clientes/${id}`, {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json', 'Authorization': token }
-            });
+            await deleteClienteApi(id);
+            setClientes(clientes.filter(c => String(c.id) !== String(id))); // caso o id seja um number passa para um String
+            fecharConfirmacao();
+            fecharModal();
+            executarBuscaEFiltro();
 
-            if (response.ok) {
-                clientes = clientes.filter(c => String(c.id) !== String(id)); // caso o id seja um number passa para um String
-                fecharConfirmacao();
-                fecharModal();
-                executarBuscaEFiltro();
-            }
         } catch (error) {
-            console.log(`Erro na exclusão`, error);
+            // Verificação dos erros retornados da função deleteClienteApi()
+
+            if (error.message === 'UNAUTHORIZED' || error.message === 'TOKEN_MISSING') {
+                sair();
+            } else {
+                overlay.innerHTML = `
+                <div class="modal-confirm-content">
+                    <i class="fa-solid fa-triangle-exclamation modal-confirm-icon"></i>
+                    <h3 class>Erro na Exclusão</h3>
+                    <p><span style="font-weight: bold;">Tente novamente mais tarde.</span></p>
+                    <div class="confirm-buttons-group">
+                        <button class="btn-confirm-delete-act" id="confirmErrorDelete">Fechar</button>
+                    </div>
+                </div>`;
+            }
         }
     }
 };
@@ -506,9 +513,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const query = searchInput.value.trim();
         const delay = query.length === 0 ? 0 : 500;
 
-        searchTimeout = setTimeout(() => {
+        setSearchTimeout(setTimeout(() => {
             buscar();
-        }, delay);
+        }, delay));
     });
 
     searchInput.addEventListener('keypress', (e) => {
