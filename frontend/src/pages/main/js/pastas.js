@@ -1,9 +1,6 @@
 // --- ESTADO DA APLICAÇÃO ---
-import {
-    API_URL, currentFilter, setCurrentFilter, mapFiltroParaDB, searchTimeout, setSearchTimeout,
-    clientes, setClientes
-} from './state.js';
-import { deleteClienteApi } from '../api/clientsApi.js';
+import { currentFilter, setCurrentFilter, mapFiltroParaDB, searchTimeout, setSearchTimeout, clientes, setClientes } from './state.js';
+import { deleteClienteApi, carregarDados } from '../api/clientsApi.js';
 
 const adicionar = () => {
     window.location.href = '../register';
@@ -64,35 +61,11 @@ const handleKeyPress = (e) => {
 };
 
 // --- BUSCAR DADOS DO BANCO ---
-const carregarDados = async () => {
-    const token = localStorage.getItem('token');
-
-    if (!token) {
-        sair();
-        return;
-    }
-
-    try {
-        const response = await fetch(`${API_URL}/clientes`, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json', 'Authorization': token }
-        });
-
-        if (response.status === 401 || response.status === 403) {
-            sair();
-            return;
-        }
-
-        if (!response.ok) throw new Error('Erro ao carregar dados'); // gera um erro e desvia para o catch
-
-        const dados = await response.json();
-        setClientes(dados);
-        atualizarEstatisticas();
-    } catch (error) {
-        console.error('Erro ao buscar dados da API:', error);
-        setClientes([]); // Garante que seja um array mesmo se der erro
-    }
-};
+carregarDados().then(() => { // o .then() é chamado após a função carregarDados() ser concluída com sucesso e espera a função atualizarEstatisticas()
+    atualizarEstatisticas();
+}).catch((error) => {
+    console.error('Erro ao carregar dados da API:', error);
+});
 
 // --- LÓGICA CENTRAL UNIFICADA ---
 const executarBuscaEFiltro = async (isInitialLoad = false) => {
