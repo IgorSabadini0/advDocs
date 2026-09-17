@@ -1,8 +1,8 @@
 // --- ESTADO DA APLICAÇÃO ---
 import { currentFilter, setCurrentFilter, mapFiltroParaDB, searchTimeout, setSearchTimeout, clientes, setClientes } from './state.js';
 import { deleteClienteApi, carregarDados } from '../api/clientsApi.js';
-import { createResultCard } from './components/cardComponent.js';
-import { viewItemModal, fecharModal } from './components/modalComponent.js';
+import { createResultCard } from '../components/cardComponent.js';
+import { viewItemModal, fecharModal } from '../components/modalComponent.js';
 import { confirmModal } from '../../../components/confirmModal.js';
 
 const adicionar = () => {
@@ -245,18 +245,23 @@ const deletarItem = (id) => {
     overlay.innerHTML = confirmModal();
 
     document.body.appendChild(overlay); // Adiciona o modal de confirmação ao DOM
-    overlay.querySelector('[data-action="cancel-delete"]').addEventListener('click', fecharModal);
+
+    const fecharConfirmModal = () => {
+        overlay.classList.remove('show');
+        setTimeout(() => overlay.remove(), 300);
+    };
+
+    overlay.querySelector('[data-action="cancel-delete"]').addEventListener('click', fecharConfirmModal);
 
     //pega o botão de confirmação como uma variável
     const confirmButton = document.getElementById('confirmRealDelete');
 
     confirmButton.onclick = async () => {
-        const token = localStorage.getItem('token');
-
         try {
             await deleteClienteApi(id);
             setClientes(clientes.filter(c => String(c.id) !== String(id))); // caso o id seja um number passa para um String
             atualizarEstatisticas();
+            fecharConfirmModal();
             fecharModal();
             executarBuscaEFiltro();
 
@@ -275,6 +280,7 @@ const deletarItem = (id) => {
                         <button class="btn-confirm-delete-act" id="confirmErrorDelete">Fechar</button>
                     </div>
                 </div>`;
+                document.getElementById('confirmErrorDelete')?.addEventListener('click', fecharConfirmModal);
             }
         }
     }

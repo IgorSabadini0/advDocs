@@ -1,5 +1,6 @@
 import db from '../config/db.js';
 import { validateCliente } from '../validator/clientValidator.js'; // Importa a função de validação de cliente
+import { buscarProcesso } from '../datajud.js'; // Importa a função buscarProcesso do arquivo datajud.js
 
 export const listClientes = async (req, res) => {
     try {

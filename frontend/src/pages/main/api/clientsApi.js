@@ -33,7 +33,8 @@ export const carregarDados = async () => {
     const token = localStorage.getItem('token');
 
     if (!token) {
-        throw new Error("TOKEN_MISSING");
+        window.location.href = '/pages/auth/';
+        return;
     }
 
     try {
@@ -43,15 +44,18 @@ export const carregarDados = async () => {
         });
 
         if (response.status === 401 || response.status === 403) {
-            throw new Error("UNAUTHORIZED");
+            localStorage.removeItem('token');
+            window.location.href = '/pages/auth/';
+            return;
         }
 
-        if (!response.ok) throw new Error('Erro ao carregar dados'); // gera um erro e desvia para o catch
+        if (!response.ok) throw new Error(`Erro ao carregar dados: ${response.status}`);
 
         const dados = await response.json();
         setClientes(dados);
     } catch (error) {
         console.error('Erro ao buscar dados da API:', error);
         setClientes([]); // Garante que seja um array mesmo se der erro
+        throw error;
     }
 };

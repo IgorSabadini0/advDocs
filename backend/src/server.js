@@ -12,6 +12,7 @@ import { verifyToken } from './middleware/authMiddleware.js'; // Importa o middl
 import { apiLimiter, authLimiter } from './middleware/rateLimiter.js'; // Importa o middleware de rate limiting
 import { validateCliente } from './validator/clientValidator.js'; // Importa a função de validação de cliente
 import clientesRouter from './routes/clientes.js'; // Importa o router de clientes
+import { createCliente } from './controllers/clienteController.js'; // Importa a função createCliente do controller
 
 config();
 
@@ -60,13 +61,14 @@ app.use(cors({
 const staticPath = path.join(__dirname, '../../frontend/src');
 
 app.use(express.static(staticPath));
+
+app.use('/clientes', verifyToken, apiLimiter, clientesRouter); // Usa o router de clientes para todas as rotas que começam com /clientes, aplicando o middleware de verificação de token e rate limiting
+
 // ---------------------  G E T  => LISTAR  ---------------------
 
 app.get('/', (req, res) => {
-    res.redirect('pages/auth');
-})
-
-app.use('/clientes', verifyToken, clientesRouter);
+    res.redirect('/pages/auth/');
+});
 
 app.post('/register', verifyToken, async (req, res) => {
     createCliente(req, res);
