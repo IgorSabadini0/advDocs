@@ -41,6 +41,7 @@ const salvarRegistro = async () => {
     const numeroProc = document.getElementById('numeroProc').value;
     const status = document.getElementById('status').value;
     const descricao = document.getElementById('descricao').value;
+    const consultarProcesso = document.getElementById('consultarProcesso').checked; // Propriedade checked para verificar status do checkbox, return true ou false (boolean)
 
     const registro = {
         acao,
@@ -49,6 +50,7 @@ const salvarRegistro = async () => {
         tipo,
         numeroProc,
         status,
+        consultarProcesso,
         descricao
     };
 
@@ -58,7 +60,7 @@ const salvarRegistro = async () => {
         const response = await fetch(`${API_URL}/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': token },
-            body: JSON.stringify(registro)
+            body: JSON.stringify(registro) // Envia informações da variável registro como JSON no corpo da requisição
         });
 
         if (response.ok) {
@@ -68,12 +70,13 @@ const salvarRegistro = async () => {
 
             showLoading(true);
             setTimeout(() => {
-                document.getElementById('acao').value = '';
+                document.getElementById('acao').value = ''; // Resetando o campo de ação para vazio
                 document.getElementById('numeroPasta').value = '';
                 document.getElementById('nome').value = '';
                 document.getElementById('tipo').value = '';
                 document.getElementById('numeroProc').value = '';
                 document.getElementById('status').value = '';
+                document.getElementById('consultarProcesso').checked = false; // Resetando o checkbox para desmarcado
                 document.getElementById('descricao').value = '';
                 showLoading(false);
             }, 300);

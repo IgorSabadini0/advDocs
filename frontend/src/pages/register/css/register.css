@@ -183,6 +183,65 @@ body {
     color: var(--text-primary);
 }
 
+/* Checkbox */
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 24px;
+}
+
+.clientes-add input[type="checkbox"] {
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    display: grid;
+    place-content: center;
+    transition: var(--transition);
+}
+
+.clientes-add input[type="checkbox"]::before {
+    content: "";
+    width: 9px;
+    height: 5px;
+    border: solid #07090e;
+    border-width: 0 0 2px 2px;
+    transform: rotate(-45deg) scale(0);
+    transition: transform 0.15s ease-in-out;
+}
+
+.clientes-add input[type="checkbox"]:checked {
+    background-color: var(--brand-gold);
+    border-color: var(--brand-gold);
+}
+
+.clientes-add input[type="checkbox"]:checked::before {
+    transform: rotate(-45deg) scale(1);
+}
+
+.clientes-add input[type="checkbox"]:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 4px var(--brand-gold-glow);
+}
+
+.checkbox-group label {
+    margin: 0;
+    cursor: pointer;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
 /* Button Save */
 .btn-save {
     margin-top: 10px;
