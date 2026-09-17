@@ -1,5 +1,5 @@
 const confirmModal = () => {
-    overlay.innerHTML = `
+    return `
     <div class="modal-confirm-content">
             <i class="fa-solid fa-triangle-exclamation modal-confirm-icon"></i>
             <h3 class>Confirmar Exclusão</h3>

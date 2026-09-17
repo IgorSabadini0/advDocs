@@ -3,18 +3,19 @@ import { currentFilter, setCurrentFilter, mapFiltroParaDB, searchTimeout, setSea
 import { deleteClienteApi, carregarDados } from '../api/clientsApi.js';
 import { createResultCard } from './components/cardComponent.js';
 import { viewItemModal, fecharModal } from './components/modalComponent.js';
+import { confirmModal } from '../../../components/confirmModal.js';
 
 const adicionar = () => {
-    window.location.href = '../register';
+    window.location.href = '/pages/register';
 }
 
 const sair = () => {
     localStorage.removeItem('token');
-    window.location.href = '../auth';
+    window.location.href = '/pages/auth';
 }
 
 const config = () => {
-    window.location.href = '../config';
+    window.location.href = '/pages/config';
 }
 
 // --- ESTATÍSTICAS DO PAINEL ---
@@ -171,7 +172,7 @@ const displayResults = (results) => {
     resultsGrid.innerHTML = '';
 
     results.forEach((item, index) => {
-        const card = createResultCard(item, index);
+        const card = createResultCard(item, index, viewItem);
         resultsGrid.appendChild(card);
     });
 
@@ -217,8 +218,6 @@ const hideEmptyState = () => {
     }, 300);
 };
 
-const formatDate = (dateString) => new Date(dateString).toLocaleDateString('pt-BR');
-
 // Converte caracteres especiais em entidades HTML para evitar ataques de XSS.
 
 const traduzirTipo = (tipo) => {
@@ -235,7 +234,7 @@ const editarItem = (id, tipo) => {
     }
 
     sessionStorage.setItem('itemEmEdicao', JSON.stringify(item));
-    window.location.href = '../edit';
+    window.location.href = '/pages/edit';
 };
 
 const deletarItem = (id) => {
@@ -246,7 +245,7 @@ const deletarItem = (id) => {
     overlay.innerHTML = confirmModal();
 
     document.body.appendChild(overlay); // Adiciona o modal de confirmação ao DOM
-    overlay.querySelector('[data-action="cancel-delete"]').addEventListener('click', fecharConfirmacao);
+    overlay.querySelector('[data-action="cancel-delete"]').addEventListener('click', fecharModal);
 
     //pega o botão de confirmação como uma variável
     const confirmButton = document.getElementById('confirmRealDelete');
@@ -258,7 +257,6 @@ const deletarItem = (id) => {
             await deleteClienteApi(id);
             setClientes(clientes.filter(c => String(c.id) !== String(id))); // caso o id seja um number passa para um String
             atualizarEstatisticas();
-            fecharConfirmacao();
             fecharModal();
             executarBuscaEFiltro();
 
@@ -290,15 +288,15 @@ const viewItem = (id, tipo) => {
         alert('Não foi possível carregar os dados do item. Tente novamente.');
         return;
     }
-    viewItemModal(item, { tipoLegivel: traduzirTipo(tipo), onDelete: deletarItem(id), onEdit: editarItem(id, tipo) });
+    viewItemModal(item, {
+        tipoLegivel: traduzirTipo(tipo),
+        onDelete: () => deletarItem(id),
+        onEdit: () => editarItem(id, tipo)
+    });
 }
 
-const fecharConfirmacao = () => {
-    const modal = document.getElementById('confirmDeleteModal');
-    if (modal) modal.remove();
-};
-
 // --- INICIALIZAÇÃO (DOMContentLoaded) ---
+
 document.addEventListener('DOMContentLoaded', async () => {
     const searchInput = document.getElementById('search');
     document.getElementById('addButton').addEventListener('click', adicionar);

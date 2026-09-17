@@ -29,7 +29,7 @@ export const deleteClienteApi = async (id) => {
     return true;
 };
 
-const carregarDados = async () => {
+export const carregarDados = async () => {
     const token = localStorage.getItem('token');
 
     if (!token) {

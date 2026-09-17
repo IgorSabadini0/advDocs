@@ -1,5 +1,7 @@
+import { escapeHtml, formatDate } from '../../../utils/utils.js';
+
 // --- RENDERIZAÇÃO DOS CARDS COM AS NOVAS VARIÁVEIS ---
-const createResultCard = (item, index) => {
+const createResultCard = (item, index, onViewClick) => {
     const card = document.createElement('div');
     card.className = 'result-card';
     card.style.animationDelay = `${index * 0.05}s`;
@@ -43,7 +45,9 @@ const createResultCard = (item, index) => {
 
     card.onmouseenter = () => card.style.transform = 'translateY(-5px)';
     card.onmouseleave = () => card.style.transform = 'translateY(0)';
-    card.querySelector('[data-action="view"]').addEventListener('click', () => viewItem(item.id, item.tipo));
+    card.querySelector('[data-action="view"]').addEventListener('click', () => {
+        if (typeof onViewClick === 'function') onViewClick(item.id, item.tipo);
+    })
 
     return card;
 };

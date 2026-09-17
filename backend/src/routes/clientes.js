@@ -6,7 +6,7 @@ const router = Router();
 
 router.use(apiLimiter); // Aplica o rate limiter para TODAS as rotas deste router
 
-router.get('/', apiLimiter, listClientes);
-router.post('/', authLimiter, createCliente);
+router.get('/clientes', apiLimiter, listClientes);
+router.post('/clientes', authLimiter, createCliente);
 
 export default router;
