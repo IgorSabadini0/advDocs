@@ -438,16 +438,26 @@ const deletarItem = (id) => {
     overlay.id = 'confirmDeleteModal';
 
     overlay.innerHTML = `
-        <div class="modal-confirm-content">
-            <i class="fa-solid fa-triangle-exclamation modal-confirm-icon"></i>
-            <h3 class>Confirmar Exclusão</h3>
-            <p>Esta ação apagará permanentemente os dados da pasta e não poderá ser desfeita. <span style="font-weight: bold; color: white;">Deseja continuar?</span></p>
-            <div class="confirm-buttons-group">
-                <button class="btn-cancel-modal" data-action="cancel-delete">Cancelar</button>
-                <button class="btn-confirm-delete-act" id="confirmRealDelete">Apagar Agora</button>
-            </div>
-        </div>
-    `;
+                <div class="modal-confirm-content">
+                    <i class="fa-solid fa-triangle-exclamation modal-confirm-icon"></i>
+                    <h3 class>Erro na Exclusão</h3>
+                    <p><span style="font-weight: bold;">Tente novamente mais tarde.</span></p>
+                    <div class="confirm-buttons-group">
+                        <button class="btn-confirm-delete-act" id="confirmErrorDelete" onclick="fecharConfirmacao()">Fechar</button>
+                    </div>
+                </div>`;
+
+    // overlay.innerHTML = `
+    //     <div class="modal-confirm-content">
+    //         <i class="fa-solid fa-triangle-exclamation modal-confirm-icon"></i>
+    //         <h3 class>Confirmar Exclusão</h3>
+    //         <p>Esta ação apagará permanentemente os dados da pasta e não poderá ser desfeita. <span style="font-weight: bold; color: white;">Deseja continuar?</span></p>
+    //         <div class="confirm-buttons-group">
+    //             <button class="btn-cancel-modal" data-action="cancel-delete">Cancelar</button>
+    //             <button class="btn-confirm-delete-act" id="confirmRealDelete">Apagar Agora</button>
+    //         </div>
+    //     </div>
+    // `;
 
     document.body.appendChild(overlay); // Adiciona o modal de confirmação ao DOM
     overlay.querySelector('[data-action="cancel-delete"]').addEventListener('click', fecharConfirmacao);
@@ -477,7 +487,7 @@ const deletarItem = (id) => {
                     <h3 class>Erro na Exclusão</h3>
                     <p><span style="font-weight: bold;">Tente novamente mais tarde.</span></p>
                     <div class="confirm-buttons-group">
-                        <button class="btn-confirm-delete-act" id="confirmErrorDelete">Fechar</button>
+                        <button class="btn-confirm-delete-act" id="confirmErrorDelete" onclick="fecharModal()">Fechar</button>
                     </div>
                 </div>`;
             }
