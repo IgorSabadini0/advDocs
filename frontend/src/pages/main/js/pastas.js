@@ -1,21 +1,25 @@
 // --- ESTADO DA APLICAÇÃO ---
-import {
-    API_URL, currentFilter, setCurrentFilter, mapFiltroParaDB, searchTimeout, setSearchTimeout,
-    clientes, setClientes
-} from './state.js';
-import { deleteClienteApi } from '../api/clientsApi.js';
+import { currentFilter, setCurrentFilter, mapFiltroParaDB, searchTimeout, setSearchTimeout, clientes, setClientes } from './state.js';
+import { deleteClienteApi, carregarDados } from '../api/clientsApi.js';
+import { createResultCard } from '../components/cardComponent.js';
+import { viewItemModal, fecharModal } from '../components/modalComponent.js';
+import { confirmModal } from '../../../components/confirmModal.js';
 
 const adicionar = () => {
-    window.location.href = '../register';
+    window.location.href = '/pages/register';
 }
 
 const sair = () => {
     localStorage.removeItem('token');
-    window.location.href = '../auth';
+    window.location.href = '/pages/auth';
 }
 
 const config = () => {
-    window.location.href = '../config';
+    window.location.href = '/pages/config';
+}
+
+const consultar = () => {
+    window.location.href = '/pages/consult';
 }
 
 // --- ESTATÍSTICAS DO PAINEL ---
@@ -64,35 +68,11 @@ const handleKeyPress = (e) => {
 };
 
 // --- BUSCAR DADOS DO BANCO ---
-const carregarDados = async () => {
-    const token = localStorage.getItem('token');
-
-    if (!token) {
-        sair();
-        return;
-    }
-
-    try {
-        const response = await fetch(`${API_URL}/clientes`, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json', 'Authorization': token }
-        });
-
-        if (response.status === 401 || response.status === 403) {
-            sair();
-            return;
-        }
-
-        if (!response.ok) throw new Error('Erro ao carregar dados'); // gera um erro e desvia para o catch
-
-        const dados = await response.json();
-        setClientes(dados);
-        atualizarEstatisticas();
-    } catch (error) {
-        console.error('Erro ao buscar dados da API:', error);
-        setClientes([]); // Garante que seja um array mesmo se der erro
-    }
-};
+// carregarDados().then(() => { // o .then() é chamado após a função carregarDados() ser concluída com sucesso e espera a função atualizarEstatisticas()
+//     atualizarEstatisticas();
+// }).catch((error) => {
+//     console.error('Erro ao carregar dados da API:', error);
+// });
 
 // --- LÓGICA CENTRAL UNIFICADA ---
 const executarBuscaEFiltro = async (isInitialLoad = false) => {
@@ -196,7 +176,7 @@ const displayResults = (results) => {
     resultsGrid.innerHTML = '';
 
     results.forEach((item, index) => {
-        const card = createResultCard(item, index);
+        const card = createResultCard(item, index, viewItem);
         resultsGrid.appendChild(card);
     });
 
@@ -207,56 +187,6 @@ const displayResults = (results) => {
     setTimeout(() => {
         container.classList.add('show');
     }, 10);
-};
-
-// --- RENDERIZAÇÃO DOS CARDS COM AS NOVAS VARIÁVEIS ---
-const createResultCard = (item, index) => {
-    const card = document.createElement('div');
-    card.className = 'result-card';
-    card.style.animationDelay = `${index * 0.05}s`;
-
-    //Mapeia os icones que vão aparecer no card
-    const iconMap = {
-        'Todos Processos': 'fa-folder-open',
-        'Previdenciário': 'fa-person-cane',
-        'Santa Casa': 'fa-hospital',
-        'Justiça Gratuita': 'fa-hand-holding-usd',
-        'Arquivado': 'fa-box-archive',
-        'Outro': 'fa-file'
-    };
-
-    // Verifica o status e define a classe do ícone correspondente
-    const statusIcon = item.status === 'Ativo' ? 'fa-circle-check' : 'fa-circle-xmark';
-
-    card.innerHTML = `
-        <div class="card-header">
-            <div class="card-icon"><i class="fa-solid ${iconMap[item.tipo] || 'fa-file'}"></i></div>
-            <div class="card-title">
-                <h3>${escapeHtml(item.nome)}</h3>
-                <span class="card-type">${item.tipo}</span>
-            </div>
-        </div>
-        <div class="card-body">
-            <div class="card-info">
-                ${item.numeroPasta ? `<div class="info-item"><i class="fa-solid fa-folder-open"></i><span>Pasta: ${escapeHtml(item.numeroPasta)}</span></div>` : ''}
-                ${item.numeroProc ? `<div class="info-item"><i class="fa-solid fa-scale-balanced"></i><span>Proc: ${escapeHtml(item.numeroProc)}</span></div>` : ''}
-                ${item.nome ? `<div class="info-item"><i class="fa-solid fa-user-tie"></i><span>${escapeHtml(item.nome)}</span></div>` : ''}
-                ${item.data ? `<div class="info-item"><i class="fa-solid fa-calendar"></i><span>${formatDate(item.data)}</span></div>` : ''}
-                ${item.status ? `<div class="info-item"><i class="fa-solid ${statusIcon}"></i><span>${escapeHtml(item.status)}</span></div>` : ''}
-            </div>
-            ${item.descricao ? `<p style="margin-top: 15px; font-size: 0.9rem; color: var(--text-light); line-height: 1.4;">${escapeHtml(item.descricao)}</p>` : ''}
-        </div>
-        <div class="card-footer">
-            <span class="card-date">${item.data ? formatDate(item.data) : ''}</span>
-            <button class="btn-view" data-action="view">Ver Detalhes <i class="fa-solid fa-arrow-right"></i></button>
-        </div>
-    `;
-
-    card.onmouseenter = () => card.style.transform = 'translateY(-5px)';
-    card.onmouseleave = () => card.style.transform = 'translateY(0)';
-    card.querySelector('[data-action="view"]').addEventListener('click', () => viewItem(item.id, item.tipo));
-
-    return card;
 };
 
 // --- HELPERS E UTILITÁRIOS ---
@@ -292,131 +222,10 @@ const hideEmptyState = () => {
     }, 300);
 };
 
-const formatDate = (dateString) => new Date(dateString).toLocaleDateString('pt-BR');
-
 // Converte caracteres especiais em entidades HTML para evitar ataques de XSS.
-// Utiliza o DOM para realizar o escape de forma segura.
-const escapeHtml = (text) => {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-};
+
 const traduzirTipo = (tipo) => {
     return mapFiltroParaDB[tipo] || tipo;
-};
-// --- FUNÇÕES DE VISUALIZAÇÃO (MODAL) ---
-const viewItem = (id, tipo) => {
-    // 1. Verificação e Busca do Item
-    // Convertendo ambos para String para evitar erros de tipagem (Number vs String) vindos da API
-    const item = clientes.find(c => String(c.id) === String(id) && c.tipo === tipo);
-
-    // 2. Tratamento de Erro (Item não encontrado)
-    if (!item) {
-        console.error(`[Erro] Item não encontrado: ID ${id} | Tipo: ${tipo}`);
-        alert('Não foi possível encontrar os detalhes deste item. Ele pode ter sido removido.');
-        return;
-    }
-
-    // Remover modal existente (se houver) para evitar duplicatas
-    const modalExistente = document.getElementById('itemModal');
-    if (modalExistente) modalExistente.remove();
-
-    // 3. Renderização Condicional por 'Tipo'
-    let detalhesEspecificos = '';
-
-    if (tipo === 'pasta' || tipo === 'processo') { // Assumindo que possa ter 'processo' futuramente
-        detalhesEspecificos = `
-            <div class="modal-info-item"><strong>Número da Pasta:</strong> <span>${escapeHtml(item.numeroPasta || 'N/A')}</span></div>
-            <div class="modal-info-item"><strong>Número do Processo:</strong> <span>${escapeHtml(item.numeroProc || 'N/A')}</span></div>
-            <div class="modal-info-item"><strong>Status:</strong> <span class="status-badge">${escapeHtml(item.status || 'N/A')}</span></div>
-        `;
-    } else if (tipo === 'cliente') {
-        detalhesEspecificos = `
-            <div class="modal-info-item"><strong>Nome Completo:</strong> <span>${escapeHtml(item.nome || item.acao || 'N/A')}</span></div>
-            <div class="modal-info-item"><strong>Contato:</strong> <span>${escapeHtml(item.contato || 'N/A')}</span></div>
-        `;
-    } else if (tipo === 'documento') {
-        detalhesEspecificos = `
-            <div class="modal-info-item"><strong>Tipo de Documento:</strong> <span>${escapeHtml(item.acao || 'N/A')}</span></div>
-            <div class="modal-info-item"><strong>Vínculo (Pasta):</strong> <span>${escapeHtml(item.numeroPasta || 'N/A')}</span></div>
-        `;
-    }
-
-    // 4. Criação dinâmica do Modal no DOM
-    const modal = document.createElement('div');
-    modal.id = 'itemModal';
-    modal.className = 'modal-overlay';
-
-    // acao,
-    // nome,
-    // numeroPasta,
-    // tipo,
-    // numeroProc,
-    // status,
-    // descricao
-
-    modal.innerHTML = `
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title">${item.nome} - <span class="badge">${item.acao}</span></h2>
-                <button class="btn-close-modal" data-action="close"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            
-            <div class="modal-body">
-                <div class="modal-section">
-                    <h3>Informações Gerais</h3>
-                    <div class="modal-info-grid">
-                        <div class="modal-info-item"><strong>Ação:</strong> <span>${escapeHtml(item.acao || 'N/A')}</span></div>
-                        <div class="modal-info-item"><strong>Nome:</strong> <span>${escapeHtml(item.nome || 'N/A')}</span></div>
-                        <div class="modal-info-item"><strong>Número da Pasta:</strong> <span>${escapeHtml(item.numeroPasta || 'N/A')}</span></div>
-                        <div class="modal-info-item"><strong>Tipo:</strong> <span>${traduzirTipo(tipo)}</span></div>
-                        <div class="modal-info-item"><strong>Número do Processo:</strong> <span>${escapeHtml(item.numeroProc || 'N/A')}</span></div>
-                        <div class="modal-info-item"><strong>Status:</strong> <span class="status-badge">${escapeHtml(item.status || 'N/A')}</span></div>
-                    </div>
-                </div>
-
-                ${item.descricao ? `
-                <div class="modal-section" style="margin-top: 20px;">
-                    <h3>Descrição / Observações</h3>
-                    <p class="modal-description">${escapeHtml(item.descricao)}</p>
-                </div>` : ''}
-
-                ${item.descricao ? `
-                <div class="modal-section" style="margin-top: 20px;">
-                    <h3>Descrição / Observações</h3>
-                    <p class="modal-description">${escapeHtml(item.descricao)}</p>
-                </div>` : ''}
-            </div>
-
-            <div class="modal-footer">
-                <button class="btn-view-delete" data-action="delete">Deletar</button>
-                <button class="btn-view" data-action="edit">Editar <i class="fa-solid fa-pen-to-square"></i></button>
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    modal.querySelector('[data-action="close"]').addEventListener('click', fecharModal);
-    modal.querySelector('[data-action="delete"]').addEventListener('click', () => deletarItem(item.id, tipo));
-    modal.querySelector('[data-action="edit"]').addEventListener('click', () => editarItem(item.id, tipo));
-
-    modal.addEventListener('mousedown', (e) => {
-        if (e.target === modal) fecharModal();
-    });
-
-    setTimeout(() => {
-        modal.classList.add('show');
-    }, 10);
-};
-
-const fecharModal = () => {
-    const modal = document.getElementById('itemModal');
-    if (modal) {
-        modal.classList.remove('show');
-        setTimeout(() => modal.remove(), 300);
-    }
 };
 
 // Informa ao navegador que o item a ser editado está armazenado no sessionStorage e redireciona para a página de edição.
@@ -429,7 +238,7 @@ const editarItem = (id, tipo) => {
     }
 
     sessionStorage.setItem('itemEmEdicao', JSON.stringify(item));
-    window.location.href = '../edit';
+    window.location.href = '/pages/edit';
 };
 
 const deletarItem = (id) => {
@@ -437,6 +246,7 @@ const deletarItem = (id) => {
     overlay.className = 'modal-overlay show';
     overlay.id = 'confirmDeleteModal';
 
+<<<<<<< HEAD
     overlay.innerHTML = `
                 <div class="modal-confirm-content">
                     <i class="fa-solid fa-triangle-exclamation modal-confirm-icon"></i>
@@ -458,20 +268,28 @@ const deletarItem = (id) => {
     //         </div>
     //     </div>
     // `;
+=======
+    overlay.innerHTML = confirmModal();
+>>>>>>> 8cc577c724bbca03b11e07f82610aa4ac1524003
 
     document.body.appendChild(overlay); // Adiciona o modal de confirmação ao DOM
-    overlay.querySelector('[data-action="cancel-delete"]').addEventListener('click', fecharConfirmacao);
+
+    const fecharConfirmModal = () => {
+        overlay.classList.remove('show');
+        setTimeout(() => overlay.remove(), 300);
+    };
+
+    overlay.querySelector('[data-action="cancel-delete"]').addEventListener('click', fecharConfirmModal);
 
     //pega o botão de confirmação como uma variável
     const confirmButton = document.getElementById('confirmRealDelete');
 
     confirmButton.onclick = async () => {
-        const token = localStorage.getItem('token');
-
         try {
             await deleteClienteApi(id);
             setClientes(clientes.filter(c => String(c.id) !== String(id))); // caso o id seja um number passa para um String
-            fecharConfirmacao();
+            atualizarEstatisticas();
+            fecharConfirmModal();
             fecharModal();
             executarBuscaEFiltro();
 
@@ -490,20 +308,33 @@ const deletarItem = (id) => {
                         <button class="btn-confirm-delete-act" id="confirmErrorDelete" onclick="fecharModal()">Fechar</button>
                     </div>
                 </div>`;
+                document.getElementById('confirmErrorDelete')?.addEventListener('click', fecharConfirmModal);
             }
         }
     }
 };
 
-const fecharConfirmacao = () => {
-    const modal = document.getElementById('confirmDeleteModal');
-    if (modal) modal.remove();
-};
+const viewItem = (id, tipo) => {
+    const item = clientes.find(c => String(c.id) === String(id) && c.tipo === tipo);
+
+    if (!item) {
+        console.error(`[Erro] Item não encontrado: ID ${id} | Tipo: ${tipo}`);
+        alert('Não foi possível carregar os dados do item. Tente novamente.');
+        return;
+    }
+    viewItemModal(item, {
+        tipoLegivel: traduzirTipo(tipo),
+        onDelete: () => deletarItem(id),
+        onEdit: () => editarItem(id, tipo)
+    });
+}
 
 // --- INICIALIZAÇÃO (DOMContentLoaded) ---
+
 document.addEventListener('DOMContentLoaded', async () => {
     const searchInput = document.getElementById('search');
     document.getElementById('addButton').addEventListener('click', adicionar);
+    document.getElementById('consultButton').addEventListener('click', consultar);
     document.getElementById('configButton').addEventListener('click', config);
     document.getElementById('logoutButton').addEventListener('click', sair);
     document.getElementById('searchButton').addEventListener('click', buscar);
@@ -512,11 +343,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     searchInput.focus();
 
-    showLoading(true);
-    await carregarDados();
-    showLoading(false);
+    try {
+        showLoading(true);
 
-    executarBuscaEFiltro(true);
+        // Busca os dados (se carregarDados retornar a lista, use: const dados = await carregarDados(); setClientes(dados);)
+        await carregarDados();
+
+        // Atualiza os cards estatísticos com os dados carregados
+        atualizarEstatisticas();
+
+        // Renderiza os itens na tela
+        executarBuscaEFiltro(true);
+    } catch (error) {
+        console.error('Erro ao carregar dados iniciais:', error);
+        showEmptyState('Erro ao carregar os dados. Verifique sua conexão e tente novamente.');
+    } finally {
+        showLoading(false);
+    }
 
     searchInput.addEventListener('input', () => {
         clearTimeout(searchTimeout);

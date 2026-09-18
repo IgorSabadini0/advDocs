@@ -23,7 +23,7 @@ export async function buscarProcesso(numeroProcesso) {
             }
         );
 
-        console.log(response.data.hits.hits);
+        console.log(response.data.hits.hits[0]._source); // Exibe os dados do processo encontrado
     } catch (error) {
         console.error('Erro ao buscar processo:', error.message);
     }
