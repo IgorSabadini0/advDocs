@@ -18,6 +18,10 @@ const config = () => {
     window.location.href = '/pages/config';
 }
 
+const consultar = () => {
+    window.location.href = '/pages/consult';
+}
+
 // --- ESTATÍSTICAS DO PAINEL ---
 const atualizarEstatisticas = () => {
     const totalEl = document.getElementById('stat-total');
@@ -306,6 +310,7 @@ const viewItem = (id, tipo) => {
 document.addEventListener('DOMContentLoaded', async () => {
     const searchInput = document.getElementById('search');
     document.getElementById('addButton').addEventListener('click', adicionar);
+    document.getElementById('consultButton').addEventListener('click', consultar);
     document.getElementById('configButton').addEventListener('click', config);
     document.getElementById('logoutButton').addEventListener('click', sair);
     document.getElementById('searchButton').addEventListener('click', buscar);

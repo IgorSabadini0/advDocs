@@ -105,7 +105,7 @@ app.put("/clientes/:id", verifyToken, async (req, res) => {
         }
 
         const validacao = validateCliente(req.body);
-        if (!validacao.valido) {
+        if (!validacao.valido) { // o .valido é vindo do return na função validateCliente, onde retorna um objeto com a propriedade 'valido' e 'mensagem'
             return res.status(400).json({ mensagem: validacao.mensagem });
         }
 
