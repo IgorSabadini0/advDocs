@@ -14,7 +14,7 @@ import { validateCliente } from './validator/clientValidator.js'; // Importa a f
 import clientesRouter from './routes/clientes.js'; // Importa o router de clientes
 import { createCliente } from './controllers/clienteController.js'; // Importa a função createCliente do controller
 
-config();
+config({ quiet: true }); // Carrega as variáveis de ambiente do arquivo .env
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -192,5 +192,6 @@ const port = process.env.PORT_SERVER;
 const host = process.env.HOST_SERVER;
 
 app.listen(port, host, () => {
+    console.log(process.env.MESSAGE_SERVER || ".ENV *NÃO* CARREGADO");
     console.log(`Servidor rodando`);
 });
