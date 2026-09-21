@@ -7,7 +7,7 @@ import path from 'path';
 import db from './config/db.js';
 import { fileURLToPath } from 'url';
 import helmet from 'helmet';
-import { buscarProcesso } from './datajud.js'; // Importa a função buscarProcesso do arquivo datajud.js
+import { buscarProcesso } from './services/datajudServices.js'; // Importa a função buscarProcesso do arquivo datajudServices.js
 import { verifyToken } from './middleware/authMiddleware.js'; // Importa o middleware de verificação de token
 import { apiLimiter, authLimiter } from './middleware/rateLimiter.js'; // Importa o middleware de rate limiting
 import { validateCliente } from './validator/clientValidator.js'; // Importa a função de validação de cliente
