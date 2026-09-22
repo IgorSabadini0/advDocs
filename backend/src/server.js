@@ -97,45 +97,7 @@ app.delete('/clientes/:id', verifyToken, async (req, res) => {
 });
 
 app.put("/clientes/:id", verifyToken, async (req, res) => {
-    try {
-        const { id } = req.params;
-        const parsedId = Number(id);
-        if (isNaN(parsedId) || !Number.isInteger(parsedId) || parsedId <= 0) {
-            return res.status(400).json({ mensagem: "ID do registro inválido." });
-        }
 
-        const validacao = validateCliente(req.body);
-        if (!validacao.valido) { // o .valido é vindo do return na função validateCliente, onde retorna um objeto com a propriedade 'valido' e 'mensagem'
-            return res.status(400).json({ mensagem: validacao.mensagem });
-        }
-
-        const { acao, nome, numeroPasta, tipo, numeroProc, status, descricao } = req.body;
-
-        // Verifica se numeroPasta ou numeroProc conflita com outros clientes
-        const queryVerificarConflito = "SELECT id, numeroProc, numeroPasta FROM clientes WHERE ((numeroProc = ? AND numeroProc IS NOT NULL AND numeroProc != '') OR numeroPasta = ?) AND id != ? LIMIT 1";
-        const [conflito] = await db.query(queryVerificarConflito, [numeroProc, numeroPasta, parsedId]);
-
-        if (conflito.length > 0) {
-            if (numeroProc && conflito[0].numeroProc === numeroProc) {
-                return res.status(400).json({ mensagem: 'Já existe outro cliente com este <span class="type-error">número de processo</span>' });
-            }
-            if (conflito[0].numeroPasta === Number(numeroPasta)) {
-                return res.status(400).json({ mensagem: 'Já existe outro cliente com este <span class="type-error">número de pasta</span>' });
-            }
-        }
-
-        const queryEditarCliente = "UPDATE clientes SET acao = ?, nome = ?, numeroPasta = ?, tipo = ?, numeroProc = ?, status = ?, descricao = ? WHERE id = ?";
-        const [result] = await db.query(queryEditarCliente, [acao, nome, Number(numeroPasta), tipo, numeroProc, status, descricao, parsedId]);
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ mensagem: "Registro não encontrado" });
-        }
-
-        return res.status(200).json({ mensagem: "Registro updated com sucesso" });
-    } catch (error) {
-        console.error(`Erro ao editar registro: ${error}`);
-        return res.status(500).json({ mensagem: "Erro interno no servidor" });
-    }
 });
 
 
