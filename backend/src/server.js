@@ -1,27 +1,29 @@
 import express from 'express';
-import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
 import { config } from 'dotenv';
 import cors from 'cors';
 import path from 'path';
-import { db } from './config/db.js';
 import { fileURLToPath } from 'url';
 import helmet from 'helmet';
-import { buscarProcesso } from './services/datajudServices.js'; // Importa a função buscarProcesso do arquivo datajudServices.js
-import { verifyToken } from './middleware/authMiddleware.js'; // Importa o middleware de verificação de token
-import { apiLimiter, authLimiter } from './middleware/rateLimiter.js'; // Importa o middleware de rate limiting
-import { validateCliente } from './validator/clientValidator.js'; // Importa a função de validação de cliente
-import clientesRouter from './routes/clientes.js'; // Importa o router de clientes
-import { createCliente } from './controllers/clienteController.js'; // Importa a função createCliente do controller
 
-config({ quiet: true }); // Carrega as variáveis de ambiente do arquivo .env
+// Middlewares
+import { verifyToken } from './middleware/authMiddleware.js';
+
+// Routers (Padrão MVC)
+import clientesRouter from './routes/clientes.js';
+import authRouter from './routes/auth.js';
+
+// Importado apenas para alias de compatibilidade com o frontend
+import { clienteController } from './controllers/clienteController.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Garante o carregamento do .env a partir da raiz do projeto
+config({ path: path.resolve(__dirname, '../../.env'), quiet: true });
+
 const app = express();
 
-// Segurança: Proteção contra vulnerabilidades web conhecidas adicionando Headers HTTP seguros
+// 1. Segurança e Headers HTTP
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
@@ -31,16 +33,14 @@ app.use(helmet({
             connectSrc: ["'self'", "https://ka-f.fontawesome.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com", "https://ka-f.fontawesome.com"],
             imgSrc: ["'self'", "data:", "https://*"],
-            objectSrc: ["'none'"],
-            upgradeInsecureRequests: [],
+            objectSrc: ["'none'"]
         },
     },
 }));
 
 app.use(express.json());
 
-// Segurança: CORS restrito. Como o backend serve o frontend da mesma origem, 
-// cors() totalmente aberto ('*') é perigoso. Se houver domínios externos, eles devem ser listados.
+// 2. Política CORS
 const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',')
     : [`http://localhost:${process.env.PORT_SERVER || 3000}`, `http://127.0.0.1:${process.env.PORT_SERVER || 3000}`];
@@ -56,104 +56,29 @@ app.use(cors({
     credentials: true
 }));
 
-// Serve os arquivos da pasta 'public' (seu HTML vai aqui dentro!)
-
+// 3. Servir arquivos estáticos do frontend
 const staticPath = path.join(__dirname, '../../frontend/src');
-
 app.use(express.static(staticPath));
 
-app.use('/clientes', verifyToken, apiLimiter, clientesRouter); // Usa o router de clientes para todas as rotas que começam com /clientes, aplicando o middleware de verificação de token e rate limiting
-
-// ---------------------  G E T  => LISTAR  ---------------------
-
+// 4. Redirecionamento da Raiz para a página de autenticação
 app.get('/', (req, res) => {
     res.redirect('/pages/auth/');
 });
 
-app.post('/register', verifyToken, async (req, res) => {
-    createCliente(req, res);
+// 5. Rotas da Aplicação (Padrão MVC)
+app.use('/auth', authRouter);
+app.use('/clientes', verifyToken, clientesRouter);
+
+// Compatibilidade retrógrada com frontend de cadastro
+app.post('/register', verifyToken, (req, res) => {
+    clienteController.createCliente(req, res);
 });
 
-app.delete('/clientes/:id', verifyToken, async (req, res) => {
-    try {
-        const { id } = req.params;
-        const parsedId = Number(id);
-        if (isNaN(parsedId) || !Number.isInteger(parsedId) || parsedId <= 0) {
-            return res.status(400).json({ mensagem: "ID do registro inválido." });
-        }
-
-        const queryDeletarCliente = "DELETE FROM clientes WHERE id = ?";
-        const [result] = await db.query(queryDeletarCliente, [parsedId]);
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ mensagem: 'O ID informado não existe no banco de dados.' });
-        }
-
-        return res.status(200).json({ mensagem: 'Registro excluído com sucesso' });
-    } catch (error) {
-        console.error(`Erro ao excluir registro: ${error}`);
-        return res.status(500).json({ mensagem: "Erro interno no servidor" });
-    }
-});
-
-app.put("/clientes/:id", verifyToken, async (req, res) => {
-
-});
-
-
-app.post('/auth', authLimiter, async (req, res) => {
-    const { user, password } = req.body; // Clean Code: Destructuring
-
-    try {
-        const queryVerificarDB = "SELECT id, user, password, is_active FROM login WHERE user = ? LIMIT 1";
-        const [rows] = await db.query(queryVerificarDB, [user]);
-
-        if (rows.length === 0) {
-            return res.status(401).json({ mensagem: 'Usuário ou senha inválidos.' });
-        }
-
-        const usuario = rows[0];
-
-        // Verifica se o usuário está ativo
-        if (!usuario.is_active) {
-            return res.status(403).json({ mensagem: 'Usuário desativado.' });
-        }
-
-        // Hashing seguro de senha (apenas bcrypt)
-        const senhaValida = await bcrypt.compare(password, usuario.password) || password === usuario.password; // Fallback para senhas não-hashadas (legacy)
-
-        if (!senhaValida) {
-            return res.status(401).json({ mensagem: 'Usuário ou senha inválidos.' });
-        }
-
-        //Lógica para gerar de Token de autenticação
-        const token = jwt.sign(
-            { id: usuario.id, nome: usuario.user },
-            process.env.JWT_SECRET,
-            { expiresIn: '8h' }
-        );
-
-        return res.status(200).json({
-            mensagem: 'Login efetuado com sucesso',
-            redirectUrl: '/pages/main',
-            token: token, // ENVIA O TOKEN LÁ PARA O FRONT-END
-            usuario: {
-                id: usuario.id,
-                nome: usuario.user
-            }
-        });
-
-    } catch (e) {
-        console.error(`Erro na autenticação: ${e}`);
-        return res.status(500).json({ mensagem: 'Erro interno no servidor.' });
-    }
-});
-
-
-const port = process.env.PORT_SERVER;
-const host = process.env.HOST_SERVER;
+// 6. Inicialização do Servidor
+const port = process.env.PORT_SERVER || 3000;
+const host = process.env.HOST_SERVER || '0.0.0.0';
 
 app.listen(port, host, () => {
-    console.log(process.env.MESSAGE_SERVER || ".ENV *NÃO* CARREGADO");
-    console.log(`Servidor rodando`);
+    console.log(process.env.MESSAGE_SERVER || ".ENV carregado");
+    console.log(`Servidor rodando em http://localhost:${port}`);
 });

@@ -1,8 +1,9 @@
 import { clienteModel } from '../models/clienteModel.js';
-import { validateCliente } from '../validator/clientValidator.js'; // Importa a função de validação de cliente
-import { buscarProcesso } from '../services/datajudServices.js'; // Importa a função buscarProcesso
+import { userModel } from '../models/userModel.js';
+import { validateCliente } from '../validator/clientValidator.js';
+import { buscarProcesso } from '../services/datajudServices.js';
 
-export const listClientes = async (req, res) => {
+const listClientes = async (req, res) => {
     try {
         const clientes = await clienteModel.list();
         return res.status(200).json(clientes);
@@ -12,19 +13,20 @@ export const listClientes = async (req, res) => {
     }
 };
 
-export const createCliente = async (req, res) => {
+const createCliente = async (req, res) => {
     try {
-        const validacao = validateCliente(req.body); // envia os dados do body para a função de validação
-        if (!validacao.valido) { // o .valido é vindo do return na função validateCliente, onde retorna um objeto com a propriedade 'valido' e 'mensagem'
+        const validacao = validateCliente(req.body);
+        if (!validacao.valido) {
             return res.status(400).json({ mensagem: validacao.mensagem });
         }
 
-        const { acao, nome, numeroPasta, tipo, numeroProc, status, consultarProcesso, descricao } = req.body; // pega os dados do body da requisição
+        const { acao, nome, numeroPasta, tipo, numeroProc, status, consultarProcesso, descricao } = req.body;
 
         if (consultarProcesso && numeroProc) {
-            await buscarProcesso(numeroProc); // Chama a função para buscar o processo no DataJud
+            await buscarProcesso(numeroProc);
         }
-        const registroExistente = await clienteModel.verificarExistencia(numeroProc, numeroPasta); // Verifica se já existe um cliente com o mesmo número de processo ou número de pasta
+
+        const registroExistente = await clienteModel.verificarExistencia(numeroProc, numeroPasta);
         if (registroExistente) {
             if (numeroProc && registroExistente.numeroProc === numeroProc) {
                 return res.status(400).json({ mensagem: 'Já existe outro cliente com este <span class="type-error">número de processo</span>' });
@@ -51,10 +53,82 @@ export const createCliente = async (req, res) => {
     }
 };
 
+const updateCliente = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const parsedId = Number(id);
+
+        if (isNaN(parsedId) || !Number.isInteger(parsedId) || parsedId <= 0) {
+            return res.status(400).json({ mensagem: "ID do registro inválido." });
+        }
+
+        const validacao = validateCliente(req.body);
+        if (!validacao.valido) {
+            return res.status(400).json({ mensagem: validacao.mensagem });
+        }
+
+        const clienteExistente = await clienteModel.findById(parsedId);
+        if (!clienteExistente) {
+            return res.status(404).json({ mensagem: "Cliente não encontrado." });
+        }
+
+        const { acao, nome, numeroPasta, tipo, numeroProc, status, descricao } = req.body;
+
+        // Verifica duplicidade ignorando o próprio cliente em edição
+        const conflito = await clienteModel.verificarExistencia(numeroProc, numeroPasta, parsedId);
+        if (conflito) {
+            if (numeroProc && conflito.numeroProc === numeroProc) {
+                return res.status(400).json({ mensagem: 'Já existe outro cliente com este <span class="type-error">número de processo</span>' });
+            }
+            if (conflito.numeroPasta === Number(numeroPasta)) {
+                return res.status(400).json({ mensagem: 'Já existe outro cliente com este <span class="type-error">número de pasta</span>' });
+            }
+        }
+
+        await clienteModel.update(parsedId, {
+            acao,
+            nome,
+            numeroPasta,
+            tipo,
+            numeroProc,
+            status,
+            descricao
+        });
+
+        return res.status(200).json({ mensagem: "Cliente atualizado com sucesso!" });
+    } catch (error) {
+        console.error(`Erro ao atualizar registro: ${error}`);
+        return res.status(500).json({ mensagem: "Erro interno no servidor" });
+    }
+};
+
+const deleteCliente = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const parsedId = Number(id);
+
+        if (isNaN(parsedId) || !Number.isInteger(parsedId) || parsedId <= 0) {
+            return res.status(400).json({ mensagem: "ID do registro inválido." });
+        }
+
+        const resultado = await clienteModel.delete(parsedId);
+
+        if (resultado.affectedRows === 0) {
+            return res.status(404).json({ mensagem: 'O ID informado não existe no banco de dados.' });
+        }
+
+        return res.status(200).json({ mensagem: 'Registro excluído com sucesso' });
+    } catch (error) {
+        console.error(`Erro ao excluir registro: ${error}`);
+        return res.status(500).json({ mensagem: "Erro interno no servidor" });
+    }
+};
+
 const clienteController = {
     listClientes,
-    createCliente
+    createCliente,
+    updateCliente,
+    deleteCliente
 };
 
 export { clienteController };
-export default clienteController;

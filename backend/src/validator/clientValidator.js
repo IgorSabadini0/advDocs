@@ -43,7 +43,7 @@ const validateCliente = (data) => {
         return { valido: false, mensagem: "Descrição inválida." };
     }
 
-    if (consultarProcesso !== true && consultarProcesso !== false) {
+    if (consultarProcesso !== undefined && consultarProcesso !== null && consultarProcesso !== true && consultarProcesso !== false) {
         return { valido: false, mensagem: "Opção de consulta de processo inválida (deve ser true ou false)." };
     }
 
