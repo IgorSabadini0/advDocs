@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 import { config } from 'dotenv';
 import cors from 'cors';
 import path from 'path';
-import db from './config/db.js';
+import { db } from './config/db.js';
 import { fileURLToPath } from 'url';
 import helmet from 'helmet';
 import { buscarProcesso } from './services/datajudServices.js'; // Importa a função buscarProcesso do arquivo datajudServices.js
