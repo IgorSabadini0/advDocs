@@ -11,6 +11,7 @@ import { verifyToken } from './middleware/authMiddleware.js';
 // Routers (Padrão MVC)
 import clientesRouter from './routes/clientes.js';
 import authRouter from './routes/auth.js';
+import processosRouter from './routes/processos.js';
 
 // Importado apenas para alias de compatibilidade com o frontend
 import { clienteController } from './controllers/clienteController.js';
@@ -68,6 +69,7 @@ app.get('/', (req, res) => {
 // 5. Rotas da Aplicação (Padrão MVC)
 app.use('/auth', authRouter);
 app.use('/clientes', verifyToken, clientesRouter);
+app.use('/processos', verifyToken, processosRouter);
 
 // Compatibilidade retrógrada com frontend de cadastro
 app.post('/register', verifyToken, (req, res) => {

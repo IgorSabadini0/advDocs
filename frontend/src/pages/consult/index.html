@@ -1,14 +1,298 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consulta Processo</title>
+    <title>Consulta Processual DataJud | Palhares Ferreira Advocacia</title>
+    <link rel="stylesheet" href="css/consult.css">
+    <link rel="shortcut icon" href="/assets/logo.svg" type="image/svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
+        rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap"
+        rel="stylesheet">
+    <script src="https://kit.fontawesome.com/a8f4be2bb0.js" crossorigin="anonymous"></script>
 </head>
 
 <body>
-    <h1>Consulta Processo</h1>
+    <div class="bg-mesh"></div>
+
+    <!-- Top Navigation Bar -->
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="../main" class="brand-logo" title="Voltar ao início">
+                <img src="/assets/logo.svg" alt="Logo Palhares Ferreira">
+                <span class="brand-text">Palhares Ferreira <strong class="gold-text">Advocacia</strong></span>
+            </a>
+
+            <div class="nav-actions">
+                <button class="btn-nav btn-secondary-nav" id="backButton" title="Voltar para Relação de Pastas">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Pastas</span>
+                </button>
+                <button class="btn-nav btn-add-nav" id="addButton" title="Adicionar novo registro">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Nova Pasta</span>
+                </button>
+                <button class="btn-nav btn-config-nav" id="configButton" title="Configurações">
+                    <i class="fa-solid fa-sliders"></i>
+                </button>
+                <button class="btn-nav btn-logout-nav" id="logoutButton" title="Sair do sistema">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Page Header / Intro -->
+        <section class="consult-intro">
+            <div class="intro-content">
+                <div class="intro-badge">
+                    <i class="fa-solid fa-database"></i> Base Nacional CNJ / DataJud
+                </div>
+                <h1>Consulta de Processos Judiciais</h1>
+                <p>Consulte andamentos, metadados e histórico completo de movimentações diretamente da base de dados do Poder Judiciário.</p>
+            </div>
+        </section>
+
+        <!-- Search Form Section -->
+        <section class="search-card">
+            <form id="consultForm" class="consult-form" onsubmit="return false;">
+                <div class="form-group-custom">
+                    <div class="label-wrapper">
+                        <label for="numeroProcesso">
+                            <i class="fa-solid fa-scale-balanced"></i> Número Único do Processo (CNJ)
+                        </label>
+                        <span class="label-format-hint">Formato: NNNNNNN-DD.AAAA.J.TR.OOOO</span>
+                    </div>
+
+                    <div class="input-container">
+                        <i class="fa-solid fa-magnifying-glass input-icon"></i>
+                        <input type="text" id="numeroProcesso" class="input-processo"
+                            placeholder="0000000-00.0000.0.00.0000" maxlength="25"
+                            autocomplete="off" spellcheck="false" required>
+                        <button type="button" id="clearButton" class="btn-clear" title="Limpar campo" style="display: none;">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <!-- Dynamic Court Detection Pill -->
+                    <div id="tribunalBadge" class="tribunal-detected" style="display: none;">
+                        <i class="fa-solid fa-building-columns"></i>
+                        <span id="tribunalText">Tribunal de Justiça de São Paulo (TJSP)</span>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" id="btnConsultar" class="btn-consultar">
+                        <span class="btn-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+                        <span class="btn-text">Consultar Processo</span>
+                        <div class="btn-spinner" style="display: none;"></div>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Quick Suggestion / Demo Pill -->
+            <div class="quick-examples">
+                <span class="example-title"><i class="fa-regular fa-lightbulb"></i> Exemplo rápido:</span>
+                <button type="button" class="example-chip" data-processo="0061362-28.2008.8.26.0000">
+                    <i class="fa-solid fa-arrow-turn-down"></i> 0061362-28.2008.8.26.0000 (TJSP)
+                </button>
+            </div>
+        </section>
+
+        <!-- Display Area for States & Results -->
+        <section class="display-area" id="displayArea">
+
+            <!-- 1. Initial State Placeholder -->
+            <div class="state-card initial-state" id="initialState">
+                <div class="state-icon gold-pulse">
+                    <i class="fa-solid fa-magnifying-glass-chart"></i>
+                </div>
+                <h2>Informe o número do processo para consultar</h2>
+                <p>Digite o número CNJ de 20 dígitos no campo acima. O sistema identificará automaticamente o tribunal (TJ, TRF, TRT, STJ, etc.) e buscará os registros mais recentes.</p>
+                <div class="features-preview">
+                    <div class="feature-item">
+                        <i class="fa-solid fa-bolt"></i>
+                        <span>Dados em Tempo Real</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fa-solid fa-timeline"></i>
+                        <span>Histórico de Movimentações</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        <span>Fonte Oficial CNJ</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Loading State -->
+            <div class="state-card loading-state" id="loadingState" style="display: none;">
+                <div class="spinner-large"></div>
+                <h2>Consultando a base do DataJud...</h2>
+                <p id="loadingCourtText">Comunicando com o tribunal correspondente e consolidando as movimentações.</p>
+            </div>
+
+            <!-- 3. Not Found State -->
+            <div class="state-card empty-state" id="emptyState" style="display: none;">
+                <div class="state-icon warning-icon">
+                    <i class="fa-solid fa-file-circle-xmark"></i>
+                </div>
+                <h2>Nenhum processo localizado</h2>
+                <p id="emptyMessage">Não foram encontrados registros para o número pesquisado no tribunal indicado.</p>
+                <div class="guidance-box">
+                    <h4><i class="fa-solid fa-circle-question"></i> Orientações:</h4>
+                    <ul>
+                        <li>Verifique se todos os 20 dígitos e o ano estão digitados corretamente.</li>
+                        <li>Confirme se o dígito verificador e o código do tribunal correspondem ao caso real.</li>
+                        <li>Processos com segredo de justiça rigoroso não são disponibilizados na API pública do CNJ.</li>
+                        <li>Distribuições muito recentes podem levar algumas horas para indexação no DataJud.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 4. Error State -->
+            <div class="state-card error-state" id="errorState" style="display: none;">
+                <div class="state-icon danger-icon">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <h2>Não foi possível concluir a consulta</h2>
+                <p id="errorMessage">Ocorreu uma falha na conexão com o servidor ou com a API do DataJud.</p>
+                <button type="button" class="btn-retry" id="btnRetry">
+                    <i class="fa-solid fa-rotate-right"></i> Tentar Novamente
+                </button>
+            </div>
+
+            <!-- 5. Success Results State -->
+            <div class="results-wrapper" id="resultsWrapper" style="display: none;">
+
+                <!-- Process Hero / Summary Bar -->
+                <div class="process-hero-card">
+                    <div class="hero-top">
+                        <div class="process-identity">
+                            <span class="hero-label">Processo Judicial</span>
+                            <div class="number-group">
+                                <h2 class="process-number" id="resNumeroProcesso">-</h2>
+                                <button type="button" class="btn-copy" id="btnCopyNumber" title="Copiar número do processo">
+                                    <i class="fa-regular fa-copy"></i>
+                                    <span class="copy-tooltip">Copiar</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="hero-actions">
+                            <button type="button" class="btn-create-folder" id="btnCreateFolder" title="Criar nova pasta com estes dados">
+                                <i class="fa-solid fa-folder-plus"></i>
+                                <span>Cadastrar como Pasta</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Badges Row -->
+                    <div class="badges-row" id="badgesRow">
+                        <span class="meta-badge badge-tribunal" id="badgeTribunal">-</span>
+                        <span class="meta-badge badge-grau" id="badgeGrau">-</span>
+                        <span class="meta-badge badge-sistema" id="badgeSistema">-</span>
+                        <span class="meta-badge badge-status" id="badgeStatus">-</span>
+                        <span class="meta-badge badge-formato" id="badgeFormato">-</span>
+                    </div>
+                </div>
+
+                <!-- Process Metadata Grid (Resumo) -->
+                <div class="summary-section">
+                    <h3 class="section-title">
+                        <i class="fa-solid fa-circle-info"></i> Resumo Processual
+                    </h3>
+                    <div class="summary-grid">
+                        <div class="summary-card">
+                            <div class="card-icon"><i class="fa-solid fa-building-columns"></i></div>
+                            <div class="card-info">
+                                <span class="card-label">Tribunal</span>
+                                <strong class="card-value" id="infoTribunal">-</strong>
+                            </div>
+                        </div>
+
+                        <div class="summary-card">
+                            <div class="card-icon"><i class="fa-solid fa-book-bookmark"></i></div>
+                            <div class="card-info">
+                                <span class="card-label">Classe Processual</span>
+                                <strong class="card-value" id="infoClasse">-</strong>
+                            </div>
+                        </div>
+
+                        <div class="summary-card">
+                            <div class="card-icon"><i class="fa-solid fa-tags"></i></div>
+                            <div class="card-info">
+                                <span class="card-label">Assunto Principal</span>
+                                <strong class="card-value" id="infoAssunto">-</strong>
+                            </div>
+                        </div>
+
+                        <div class="summary-card">
+                            <div class="card-icon"><i class="fa-solid fa-gavel"></i></div>
+                            <div class="card-info">
+                                <span class="card-label">Órgão Julgador</span>
+                                <strong class="card-value" id="infoOrgaoJulgador">-</strong>
+                            </div>
+                        </div>
+
+                        <div class="summary-card">
+                            <div class="card-icon"><i class="fa-regular fa-calendar-check"></i></div>
+                            <div class="card-info">
+                                <span class="card-label">Data de Distribuição / Ajuizamento</span>
+                                <strong class="card-value" id="infoDataDistribuicao">-</strong>
+                            </div>
+                        </div>
+
+                        <div class="summary-card">
+                            <div class="card-icon"><i class="fa-solid fa-arrows-rotate"></i></div>
+                            <div class="card-info">
+                                <span class="card-label">Última Atualização no DataJud</span>
+                                <strong class="card-value" id="infoDataAtualizacao">-</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Process Movements Timeline -->
+                <div class="timeline-section">
+                    <div class="timeline-header">
+                        <div class="timeline-title-wrapper">
+                            <h3 class="section-title">
+                                <i class="fa-solid fa-timeline"></i> Movimentações do Processo
+                            </h3>
+                            <span class="timeline-count" id="timelineCount">0 movimentações</span>
+                        </div>
+
+                        <div class="timeline-search">
+                            <i class="fa-solid fa-filter"></i>
+                            <input type="text" id="timelineFilterInput" placeholder="Filtrar movimentações (ex: sentença, decisão)...">
+                        </div>
+                    </div>
+
+                    <!-- Timeline Items List -->
+                    <div class="timeline-list" id="timelineList">
+                        <!-- Itens renderizados dinamicamente via consult.js -->
+                    </div>
+
+                    <!-- Empty state when timeline filter returns nothing -->
+                    <div class="timeline-filter-empty" id="timelineFilterEmpty" style="display: none;">
+                        <i class="fa-solid fa-filter-circle-xmark"></i>
+                        <p>Nenhuma movimentação corresponde ao filtro informado.</p>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+    </main>
+
+    <script src="js/consult.js" type="module"></script>
 </body>
 
 </html>

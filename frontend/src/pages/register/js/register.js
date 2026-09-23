@@ -25,6 +25,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.getElementById('saveButton').addEventListener('click', salvarRegistro);
+
+    // Pré-preenchimento a partir de parâmetros da URL (vindo da página de consulta)
+    const urlParams = new URLSearchParams(window.location.search);
+    const procParam = urlParams.get('proc');
+    const acaoParam = urlParams.get('acao');
+    if (procParam && inputProcesso) {
+        inputProcesso.value = mascaraProcessoCNJ(procParam);
+    }
+    if (acaoParam && document.getElementById('acao')) {
+        document.getElementById('acao').value = acaoParam;
+    }
 });
 
 const showLoading = (show) => {
