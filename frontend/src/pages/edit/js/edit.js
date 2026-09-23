@@ -129,21 +129,32 @@ const salvarEdicao = async () => {
                 showLoading(true);
                 destruirModal(); // Fecha o modal de confirmação já que deu certo
 
+                sessionStorage.removeItem("itemEmEdicao"); // Limpa o item em edição do sessionStorage
+
                 setTimeout(() => {
-                    showLoading(false);
+                    window.location.href = "/pages/main"; // Redireciona para a página principal
                     // Aqui você pode redirecionar o usuário ou atualizar a tabela/lista
-                }, 300);
+                }, 700);
 
             } else {
                 statusMessage.style.color = '#dc3545';
                 confirmButton.disabled = false; // Reativa o botão se deu erro para ele tentar de novo
 
-                if (response.status === 400) {
-                    const data = await response.json();
-                    statusMessage.textContent = data.mensagem;
-                } else {
-                    statusMessage.textContent = '❌ Erro ao editar. Tente novamente.';
+                if (response.status === 401 || response.status === 403) {
+                    localStorage.removeItem('token');
+                    window.location.href = '/pages/auth/';
+                    return;
                 }
+
+                let errorMsg = '❌ Erro ao editar. Tente novamente.';
+                try {
+                    const data = await response.json();
+                    if (data && data.mensagem) {
+                        errorMsg = data.mensagem;
+                    }
+                } catch (_) { }
+
+                statusMessage.innerHTML = errorMsg;
                 destruirModal(); // Fecha o modal para o usuário ver o erro na tela principal
             }
         } catch (error) {

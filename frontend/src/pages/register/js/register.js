@@ -65,8 +65,8 @@ const salvarRegistro = async () => {
 
         if (response.ok) {
             const statusMessage = document.getElementById('response');
-            statusMessage.textContent = '✅ Registro salvo com sucesso!';
-            statusMessage.style.color = '#28a745';
+            statusMessage.textContent = ''; // caso tenha algo escrito no statusMessage, limpa para não acumular mensagens
+            statusMessage.style.color = '#28a745'; // verde para sucesso
 
             showLoading(true);
             setTimeout(() => {
@@ -78,7 +78,10 @@ const salvarRegistro = async () => {
                 document.getElementById('status').value = '';
                 document.getElementById('consultarProcesso').checked = false; // Resetando o checkbox para desmarcado
                 document.getElementById('descricao').value = '';
+
                 showLoading(false);
+
+                statusMessage.textContent = '✅ Registro salvo com sucesso!';
             }, 300);
 
         } else {
@@ -87,7 +90,7 @@ const salvarRegistro = async () => {
 
             if (response.status === 400) {
                 const data = await response.json();
-                statusMessage.innerHTML = data.mensagem;
+                statusMessage.innerHTML = data.mensagem; // não é necessário usar o textContent = '' porque a mensgem é subscrita aqui
             } else {
                 statusMessage.innerHTML = '❌ Erro ao salvar registro. Tente novamente.';
             }

@@ -13,8 +13,6 @@ const db = mysql.createPool({
     database: process.env.DB_NAME
 });
 
-export default db;
-
 async function testarConexao() { // função para teste de conexão com o DB acima.
     try {
         const connection = await db.getConnection();
@@ -26,3 +24,5 @@ async function testarConexao() { // função para teste de conexão com o DB aci
 }
 
 testarConexao();
+
+export { db };

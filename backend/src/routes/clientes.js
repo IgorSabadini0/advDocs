@@ -1,12 +1,14 @@
 import { Router } from 'express';
-import { listClientes, createCliente } from '../controllers/clienteController.js';
-import { apiLimiter, authLimiter } from '../middleware/rateLimiter.js'; // Importa o middleware de rate limiting
+import { clienteController } from '../controllers/clienteController.js';
+import { apiLimiter } from '../middleware/rateLimiter.js';
 
 const router = Router();
 
-router.use(apiLimiter); // Aplica o rate limiter para TODAS as rotas deste router
+router.use(apiLimiter);
 
-router.get('/', apiLimiter, listClientes);
-router.post('/', authLimiter, createCliente);
+router.get('/', clienteController.listClientes);
+router.post('/', clienteController.createCliente);
+router.put('/:id', clienteController.updateCliente);
+router.delete('/:id', clienteController.deleteCliente);
 
 export default router;
