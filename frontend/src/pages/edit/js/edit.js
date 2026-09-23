@@ -120,10 +120,9 @@ const salvarEdicao = async () => {
                 body: JSON.stringify(edicao)
             });
 
-            const statusMessage = document.getElementById('response');
-
             if (response.ok) {
-                statusMessage.textContent = '✅ Edição salva com sucesso!';
+                const statusMessage = document.getElementById('response');
+                statusMessage.textContent = '';
                 statusMessage.style.color = '#28a745';
 
                 showLoading(true);
@@ -132,9 +131,21 @@ const salvarEdicao = async () => {
                 sessionStorage.removeItem("itemEmEdicao"); // Limpa o item em edição do sessionStorage
 
                 setTimeout(() => {
-                    window.location.href = "/pages/main"; // Redireciona para a página principal
-                    // Aqui você pode redirecionar o usuário ou atualizar a tabela/lista
-                }, 700);
+                    showLoading(false);
+                    statusMessage.textContent = '✅ Edição salva com sucesso!';
+                    setTimeout(() => {
+                        // contagem regressiva de 2 segundos antes de redirecionar
+                        let countdown = 2;
+                        const countdownInterval = setInterval(() => {
+                            statusMessage.textContent = `✅ Edição salva com sucesso! Redirecionando em ${countdown}...`;
+                            countdown--;
+                            if (countdown < 0) {
+                                clearInterval(countdownInterval);
+                                window.location.href = '../main'; // Redireciona para a página principal após 2 segundos
+                            }
+                        }, 1000);
+                    }, 300);
+                }, 400);
 
             } else {
                 statusMessage.style.color = '#dc3545';
