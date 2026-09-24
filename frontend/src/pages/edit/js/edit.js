@@ -132,21 +132,21 @@ const salvarEdicao = async () => {
 
                 setTimeout(() => {
                     showLoading(false);
-                    statusMessage.textContent = '✅ Edição salva com sucesso!';
-                    setTimeout(() => {
-                        // contagem regressiva de 2 segundos antes de redirecionar
-                        let countdown = 2;
-                        const countdownInterval = setInterval(() => {
+
+                    let countdown = 2; // Contagem regressiva de 2 segundos
+                    statusMessage.textContent = `✅ Edição salva com sucesso! Redirecionando em ${countdown}...`;
+                    countdown--; // remove 1 para o próximo setInterval
+
+                    const countdownInterval = setInterval(() => {
+                        if (countdown <= 0) {
+                            clearInterval(countdownInterval);
+                            window.location.href = '/pages/main/';
+                        } else {
                             statusMessage.textContent = `✅ Edição salva com sucesso! Redirecionando em ${countdown}...`;
                             countdown--;
-                            if (countdown < 0) {
-                                clearInterval(countdownInterval);
-                                window.location.href = '../main'; // Redireciona para a página principal após 2 segundos
-                            }
-                        }, 1000);
-                    }, 300);
+                        }
+                    }, 1000);
                 }, 400);
-
             } else {
                 statusMessage.style.color = '#dc3545';
                 confirmButton.disabled = false; // Reativa o botão se deu erro para ele tentar de novo
