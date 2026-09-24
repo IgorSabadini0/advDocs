@@ -163,7 +163,7 @@ const salvarEdicao = async () => {
                     if (data && data.mensagem) {
                         errorMsg = data.mensagem;
                     }
-                } catch (_) { }
+                } catch (_) { } // Se não conseguir parsear o JSON, mantém a mensagem genérica
 
                 statusMessage.innerHTML = errorMsg;
                 destruirModal(); // Fecha o modal para o usuário ver o erro na tela principal
