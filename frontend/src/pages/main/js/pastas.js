@@ -67,13 +67,6 @@ const handleKeyPress = (e) => {
     }
 };
 
-// --- BUSCAR DADOS DO BANCO ---
-// carregarDados().then(() => { // o .then() é chamado após a função carregarDados() ser concluída com sucesso e espera a função atualizarEstatisticas()
-//     atualizarEstatisticas();
-// }).catch((error) => {
-//     console.error('Erro ao carregar dados da API:', error);
-// });
-
 // --- LÓGICA CENTRAL UNIFICADA ---
 const executarBuscaEFiltro = async (isInitialLoad = false) => {
     const searchInput = document.getElementById('search');
@@ -102,11 +95,14 @@ const executarBuscaEFiltro = async (isInitialLoad = false) => {
             // Compara o tipo exato do enum
             const matchTipo = currentFilter === 'all' || item.tipo === tipoNoBanco;
 
+            const numPastaStr = String(item.numeroPasta ?? '');
+            const numProcStr = String(item.numeroProc ?? '');
+
             const matchTexto = query === '' || (
                 (item.acao && item.acao.toLowerCase().includes(query)) ||
                 (item.nome && item.nome.toLowerCase().includes(query)) ||
-                (item.numeroPasta && item.numeroPasta.toLowerCase().includes(query)) ||
-                (item.numeroProc && item.numeroProc.toLowerCase().includes(query)) ||
+                (numPastaStr && numPastaStr.includes(query)) ||
+                (numProcStr && numProcStr.includes(query)) ||
                 (item.descricao && item.descricao.toLowerCase().includes(query))
             );
 
@@ -222,7 +218,10 @@ const hideEmptyState = () => {
     }, 300);
 };
 
-// Converte caracteres especiais em entidades HTML para evitar ataques de XSS.
+const normalizeText = (str) => {
+    if (!str) return '';
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
 
 const traduzirTipo = (tipo) => {
     return mapFiltroParaDB[tipo] || tipo;
