@@ -4,6 +4,7 @@ import { deleteClienteApi, carregarDados } from '../api/clientsApi.js';
 import { createResultCard } from '../components/cardComponent.js';
 import { viewItemModal, fecharModal } from '../components/modalComponent.js';
 import { confirmModal } from '../../../components/confirmModal.js';
+import { normalizeText } from '../../../utils/utils.js';
 
 const adicionar = () => {
     window.location.href = '/pages/register';
@@ -61,16 +62,10 @@ const animateCounter = (element, target) => {
     requestAnimationFrame(update);
 };
 
-const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-        buscar();
-    }
-};
-
 // --- LÓGICA CENTRAL UNIFICADA ---
 const executarBuscaEFiltro = async (isInitialLoad = false) => {
     const searchInput = document.getElementById('search');
-    const query = searchInput.value.trim().toLowerCase();
+    const query = normalizeText(searchInput.value);
 
     if (query.length > 0 && query.length < 2) {
         if (!isInitialLoad) {
@@ -91,7 +86,6 @@ const executarBuscaEFiltro = async (isInitialLoad = false) => {
         const resultados = clientes.filter(item => {
             // Traduz o filtro atual ('santa_casa') para o formato do DB ('Santa Casa')
             const tipoNoBanco = mapFiltroParaDB[currentFilter];
-
             // Compara o tipo exato do enum
             const matchTipo = currentFilter === 'all' || item.tipo === tipoNoBanco;
 
@@ -99,11 +93,12 @@ const executarBuscaEFiltro = async (isInitialLoad = false) => {
             const numProcStr = String(item.numeroProc ?? '');
 
             const matchTexto = query === '' || (
-                (item.acao && item.acao.toLowerCase().includes(query)) ||
-                (item.nome && item.nome.toLowerCase().includes(query)) ||
-                (numPastaStr && numPastaStr.includes(query)) ||
-                (numProcStr && numProcStr.includes(query)) ||
-                (item.descricao && item.descricao.toLowerCase().includes(query))
+                normalizeText(item.acao).includes(query) ||
+                normalizeText(item.nome).includes(query) ||
+                numPastaStr.includes(query) ||
+                numProcStr.includes(query) ||
+                (query.replace(/\D/g, '') !== '' && numProcStr.replace(/\D/g, '').includes(query.replace(/\D/g, ''))) || // Permitir a busca de apenas os números do processo, mesmo que o usuário não digite o formato completo
+                normalizeText(item.descricao).includes(query)
             );
 
             return matchTipo && matchTexto;
@@ -217,11 +212,6 @@ const hideEmptyState = () => {
         if (!emptyState.classList.contains('show')) emptyState.style.display = 'none';
     }, 300);
 };
-
-const normalizeText = (str) => {
-    if (!str) return '';
-    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-}
 
 const traduzirTipo = (tipo) => {
     return mapFiltroParaDB[tipo] || tipo;
