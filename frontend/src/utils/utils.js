@@ -8,4 +8,9 @@ const escapeHtml = (text) => {
 
 const formatDate = (dateString) => new Date(dateString).toLocaleDateString('pt-BR');
 
-export { escapeHtml, formatDate };
+const normalizeText = (str) => {
+    if (!str) return '';
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
+export { escapeHtml, formatDate, normalizeText };
