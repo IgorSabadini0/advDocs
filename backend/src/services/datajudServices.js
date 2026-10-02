@@ -3,7 +3,7 @@ import axios from 'axios'; // Permite fazer HTTP request em API's externas
 export async function buscarProcesso(numeroProcesso) {
     // O endpoint varia conforme o tribunal, mas a chave de API pública é disponibilizada pelo CNJ
     const url = 'https://api-publica.datajud.cnj.jus.br/api_publica_tjsp/_search';
-    const apiKey = 'APIKey cDZHYzlZa0JadVREZDJCendQbXY6SkJlTzNjLV9TRENyQk1RdnFKZGRQdw=='; // Chave pública fornecida no portal do CNJ
+    const apiKey = process.env.DATAJUD_API_KEY; // Chave pública fornecida no portal do CNJ
 
     try {
         const response = await axios.post(
@@ -19,11 +19,18 @@ export async function buscarProcesso(numeroProcesso) {
                 headers: {
                     'Authorization': apiKey,
                     'Content-Type': 'application/json'
-                }
+                },
+                timeout: 5000 // Define um tempo limite de 5 segundos para a requisição
             }
         );
 
-        console.log(response.data.hits.hits[0]._source); // Exibe os dados do processo encontrado
+        const processo = response.data.hits.hits[0]?._source; // Acessa o primeiro resultado retornado
+        if (processo) {
+            return processo; // Retorna os dados do processo encontrado
+        }
+
+        console.log(`Nenhum processo encontrado para o número: ${numeroProcesso}`);
+        return null; // Retorna null se nenhum processo for encontrado
     } catch (error) {
         console.error('Erro ao buscar processo:', error.message);
     }
