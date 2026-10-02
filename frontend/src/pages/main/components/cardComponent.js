@@ -24,7 +24,7 @@ const createResultCard = (item, index, onViewClick) => {
             <div class="card-icon"><i class="fa-solid ${iconMap[item.tipo] || 'fa-file'}"></i></div>
             <div class="card-title">
                 <h3>${escapeHtml(item.nome)}</h3>
-                <span class="card-type">${item.tipo}</span>
+                <span class="card-type">${escapeHtml(item.tipo || '')}</span>
             </div>
         </div>
         <div class="card-body">

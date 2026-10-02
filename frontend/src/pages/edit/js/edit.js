@@ -163,10 +163,17 @@ const salvarEdicao = async () => {
                     if (data && data.mensagem) {
                         errorMsg = data.mensagem;
                     }
-                } catch (_) { } // Se não conseguir parsear o JSON, mantém a mensagem genérica
+                } catch (_) { }
 
-                statusMessage.innerHTML = errorMsg;
-                destruirModal(); // Fecha o modal para o usuário ver o erro na tela principal
+                if (errorMsg.includes('número de processo')) {
+                    statusMessage.innerHTML = 'Já existe outro cliente com este <span class="type-error">número de processo</span>';
+                } else if (errorMsg.includes('número de pasta')) {
+                    statusMessage.innerHTML = 'Já existe outro cliente com este <span class="type-error">número de pasta</span>';
+                } else {
+                    statusMessage.textContent = errorMsg;
+                }
+
+                destruirModal();
             }
         } catch (error) {
             console.error('Erro ao editar:', error);

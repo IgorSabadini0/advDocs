@@ -29,10 +29,10 @@ const createCliente = async (req, res) => {
         const registroExistente = await clienteModel.verificarExistencia(numeroProc, numeroPasta);
         if (registroExistente) {
             if (numeroProc && registroExistente.numeroProc === numeroProc) {
-                return res.status(400).json({ mensagem: 'Já existe outro cliente com este <span class="type-error">número de processo</span>' });
+                return res.status(400).json({ mensagem: 'Já existe outro cliente com este número de processo' });
             }
             if (registroExistente.numeroPasta === Number(numeroPasta)) {
-                return res.status(400).json({ mensagem: 'Já existe outro cliente com este <span class="type-error">número de pasta</span>' });
+                return res.status(400).json({ mensagem: 'Já existe outro cliente com este número de pasta' });
             }
         }
 
@@ -78,10 +78,10 @@ const updateCliente = async (req, res) => {
         const conflito = await clienteModel.verificarExistencia(numeroProc, numeroPasta, parsedId);
         if (conflito) {
             if (numeroProc && conflito.numeroProc === numeroProc) {
-                return res.status(400).json({ mensagem: 'Já existe outro cliente com este <span class="type-error">número de processo</span>' });
+                return res.status(400).json({ mensagem: 'Já existe outro cliente com este número de processo' });
             }
             if (conflito.numeroPasta === Number(numeroPasta)) {
-                return res.status(400).json({ mensagem: 'Já existe outro cliente com este <span class="type-error">número de pasta</span>' });
+                return res.status(400).json({ mensagem: 'Já existe outro cliente com este número de pasta' });
             }
         }
 

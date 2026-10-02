@@ -90,9 +90,15 @@ const salvarRegistro = async () => {
 
             if (response.status === 400) {
                 const data = await response.json();
-                statusMessage.innerHTML = data.mensagem; // não é necessário usar o textContent = '' porque a mensgem é subscrita aqui
+                if (data.mensagem?.includes('número de processo')) {
+                    statusMessage.innerHTML = 'Já existe outro cliente com este <span class="type-error">número de processo</span>';
+                } else if (data.mensagem?.includes('número de pasta')) {
+                    statusMessage.innerHTML = 'Já existe outro cliente com este <span class="type-error">número de pasta</span>';
+                } else {
+                    statusMessage.textContent = data.mensagem || 'Dados inválidos.';
+                }
             } else {
-                statusMessage.innerHTML = '❌ Erro ao salvar registro. Tente novamente.';
+                statusMessage.textContent = '❌ Erro ao salvar registro. Tente novamente.';
             }
         }
     } catch (error) {
