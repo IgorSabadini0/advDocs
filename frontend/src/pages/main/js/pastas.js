@@ -4,7 +4,7 @@ import { deleteClienteApi, carregarDados } from '../api/clientsApi.js';
 import { createResultCard } from '../components/cardComponent.js';
 import { viewItemModal, fecharModal } from '../components/modalComponent.js';
 import { confirmModal } from '../../../components/confirmModal.js';
-import { normalizeText } from '../../../utils/utils.js';
+import { normalizeText, escapeHtml, formatDate } from '../../../utils/utils.js';
 
 const adicionar = () => {
     window.location.href = '/pages/register';
@@ -110,13 +110,15 @@ const executarBuscaEFiltro = async (isInitialLoad = false) => {
             displayResults(resultados);
         } else {
             const nomeFiltro = traduzirTipo(currentFilter);
+            const safeQuery = escapeHtml(query);
+            const safeNomeFiltro = escapeHtml(nomeFiltro);
             if (query) {
                 showEmptyState(`
-                    <strong style="display:block; margin-bottom: 8px;">Nenhum resultado para "${query}" em "${nomeFiltro}".</strong>
+                    <strong style="display:block; margin-bottom: 8px;">Nenhum resultado para "${safeQuery}" em "${safeNomeFiltro}".</strong>
                     <span style="font-size: 0.9em; color: #666;">Tente selecionar outra aba de filtro acima.</span>
                 `);
             } else {
-                showEmptyState(`Nenhum item cadastrado na categoria "${nomeFiltro}".`);
+                showEmptyState(`Nenhum item cadastrado na categoria "${safeNomeFiltro}".`);
             }
         }
 

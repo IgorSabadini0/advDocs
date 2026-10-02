@@ -1,10 +1,16 @@
-// Utiliza o DOM para realizar o escape de forma segura.
-const escapeHtml = (text) => {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-};
+const escapeHtml = (str) => {
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/[&<>"']/g, function (match) {
+        const escapeMap = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        };
+        return escapeMap[match];
+    });
+}
 
 const formatDate = (dateString) => new Date(dateString).toLocaleDateString('pt-BR');
 
