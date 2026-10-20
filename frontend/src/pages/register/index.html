@@ -37,20 +37,19 @@
             <div class="form-grid">
                 <div class="form-group">
                     <label for="numeroPasta"><i class="fa-solid fa-folder-open"></i> Número da Pasta</label>
-                    <input type="number" id="numeroPasta" placeholder="Ex: 1">
+                    <input type="number" id="numeroPasta" min="1" placeholder="Ex: 1">
                 </div>
 
                 <div class="form-group">
-                    <label for="tipo"><i class="fa-solid fa-tags"></i> Tipo de Registro <span
-                            class="obrigatorio">*</span></label>
+                    <div class="label-with-action">
+                        <label for="tipo"><i class="fa-solid fa-tags"></i> Tipo de Registro <span
+                                class="obrigatorio">*</span></label>
+                        <button type="button" class="btn-novo-tipo" id="btnNovoTipo" title="Cadastrar novo tipo de processo">
+                            <i class="fa-solid fa-plus"></i> Novo Tipo
+                        </button>
+                    </div>
                     <select name="tipo" id="tipo" required>
-                        <option value="" disabled selected hidden>Selecione...</option>
-                        <option value="Todos Processos">Todos Processos</option>
-                        <option value="Previdenciário">Previdenciário</option>
-                        <option value="Santa Casa">Santa Casa</option>
-                        <option value="Justiça Gratuita">Justiça Gratuita</option>
-                        <option value="Arquivado">Arquivado</option>
-                        <option value="Outro">Outro</option>
+                        <option value="" disabled selected hidden>Carregando tipos...</option>
                     </select>
                 </div>
             </div>
@@ -96,12 +95,20 @@
                 <p id="response"></p>
             </div>
 
-            <a href="../main" class="back-link">
-                <i class="fa-solid fa-arrow-left"></i> Voltar para Página Inicial
-            </a>
-        </div>
+            <div class="navigation-links">
+                <a href="../consult" id="backToConsultLink" class="back-link back-link-consult" style="display: none;">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span id="backToConsultText">Voltar para a consulta do processo</span>
+                </a>
 
-        <script src="js/register.js" type="module"></script>
+                <a href="../main" class="back-link">
+                    <i class="fa-solid fa-arrow-left"></i> Voltar para Página Inicial
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/register.js" type="module"></script>
 </body>
 
 </html>

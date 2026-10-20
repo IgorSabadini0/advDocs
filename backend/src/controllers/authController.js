@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+import { db } from '../config/db.js';
 import { userModel } from '../models/userModel.js';
 
 export const authController = {
@@ -22,8 +23,20 @@ export const authController = {
                 return res.status(403).json({ mensagem: 'Usuário desativado.' });
             }
 
-            // Hashing de senha com suporte a legacy
-            const senhaValida = (await bcrypt.compare(password, usuario.password)) || password === usuario.password;
+            // Validação de senha com hash bcrypt
+            let senhaValida = false;
+            try {
+                senhaValida = await bcrypt.compare(password, usuario.password);
+            } catch (_) {
+                senhaValida = false;
+            }
+
+            // Migração transparente de senhas legadas que ainda estivessem em texto puro
+            if (!senhaValida && password === usuario.password) {
+                senhaValida = true;
+                const novoHash = await bcrypt.hash(password, 10);
+                await db.query("UPDATE login SET password = ? WHERE id = ?", [novoHash, usuario.id]);
+            }
 
             if (!senhaValida) {
                 return res.status(401).json({ mensagem: 'Usuário ou senha inválidos.' });

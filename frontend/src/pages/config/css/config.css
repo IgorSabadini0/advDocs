@@ -10,7 +10,7 @@ body {
 
 .container {
     width: 100%;
-    max-width: 500px;
+    max-width: 660px;
     padding: 40px;
     background: var(--bg-surface);
     backdrop-filter: blur(20px);
@@ -57,12 +57,20 @@ body {
 
 .profile-info {
     display: flex;
+    justify-content: space-between;
     align-items: center;
     gap: 16px;
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid var(--border-color);
-    padding: 16px;
+    padding: 16px 20px;
     border-radius: var(--radius-sm);
+    flex-wrap: wrap;
+}
+
+.profile-user-group {
+    display: flex;
+    align-items: center;
+    gap: 14px;
 }
 
 .avatar {
@@ -74,81 +82,231 @@ body {
 }
 
 .profile-text h4 {
-    font-size: 1rem;
+    font-size: 1.05rem;
     font-weight: 600;
     color: var(--text-primary);
 }
 
-.profile-text .badge {
-    display: inline-block;
-    font-size: 0.7rem;
-    background: var(--brand-gold-glow);
-    color: var(--brand-gold);
-    border: 1px solid rgba(218, 176, 99, 0.2);
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-weight: 600;
-    margin-top: 4px;
+.profile-text .user-handle {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+    display: block;
 }
 
-.system-status {
+.profile-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-profile-action {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: var(--transition-smooth);
+}
+
+.btn-profile-action:hover {
+    border-color: var(--brand-gold);
+    color: var(--brand-gold);
+    background: var(--brand-gold-glow);
+}
+
+/* --- Badges de Tipos de Processos --- */
+.tipos-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.tipo-badge {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-gold-subtle);
+    color: var(--text-primary);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.84rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition-smooth);
+}
+
+.tipo-badge:hover {
+    border-color: var(--brand-gold);
+    background: var(--brand-gold-glow);
+}
+
+.btn-delete-tipo {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    transition: var(--transition-smooth);
+    padding: 0;
+}
+
+.btn-delete-tipo:hover {
+    color: #ffffff;
+    background: var(--danger);
+}
+
+/* --- Lista de Usuários do Escritório --- */
+.users-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
+    margin-top: 6px;
 }
 
-.status-item {
+.user-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 0.9rem;
+    padding: 12px 16px;
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid var(--border-color);
-    padding: 12px 16px;
     border-radius: var(--radius-sm);
+    gap: 12px;
+    transition: var(--transition-smooth);
 }
 
-.status-item span {
-    color: var(--text-secondary);
+.user-item:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.15);
 }
 
-.status-item strong {
+.user-item-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-item-avatar {
+    font-size: 1.5rem;
+    color: var(--brand-gold);
+}
+
+.user-item-details h4 {
+    font-size: 0.92rem;
     font-weight: 600;
-}
-
-.status-indicator {
-    color: var(--success);
+    color: var(--text-primary);
     display: flex;
     align-items: center;
     gap: 6px;
+}
+
+.user-item-details span.user-login-sub {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+}
+
+.user-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-badge-active {
+    background: var(--success-glow);
+    color: var(--success);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    font-size: 0.72rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-badge-inactive {
+    background: var(--danger-glow);
+    color: var(--danger);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    font-size: 0.72rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-badge-you {
+    background: var(--brand-gold-glow);
+    color: var(--brand-gold);
+    border: 1px solid var(--border-gold-subtle);
+    font-size: 0.72rem;
+    padding: 2px 8px;
+    border-radius: 12px;
     font-weight: 600;
 }
 
-.status-indicator i {
-    font-size: 0.7rem;
-    animation: pulse 2s infinite;
+.btn-sm-action {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: var(--transition-smooth);
 }
 
-@keyframes pulse {
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.4;
-    }
+.btn-sm-action:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
 }
 
-.version-text {
-    color: var(--text-muted);
-    font-weight: 600;
+.btn-sm-action.danger:hover {
+    background: var(--danger);
+    border-color: var(--danger);
+    color: #ffffff;
 }
 
 /* Responsividade */
-@media (max-width: 480px) {
+@media (max-width: 600px) {
     .container {
         padding: 24px;
         gap: 24px;
+    }
+
+    .profile-info {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .profile-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .user-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .user-item-actions {
+        width: 100%;
+        justify-content: flex-end;
     }
 }

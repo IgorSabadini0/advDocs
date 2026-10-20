@@ -1,4 +1,4 @@
-import { escapeHtml } from '../../../utils/utils.js';
+import { escapeHtml, formatDate } from '../../../utils/utils.js';
 
 const fecharModal = () => {
     const modal = document.getElementById('itemModal');
@@ -18,6 +18,9 @@ const viewItemModal = (item, { tipoLegivel, onDelete, onEdit }) => {
     modal.id = 'itemModal';
     modal.className = 'modal-overlay';
 
+    const dataCriacao = item.created_at || item.data;
+    const dataAtualizacao = item.updated_at;
+
     modal.innerHTML = `
         <div class="modal-content">
             <div class="modal-header">
@@ -35,6 +38,8 @@ const viewItemModal = (item, { tipoLegivel, onDelete, onEdit }) => {
                         <div class="modal-info-item"><strong>Tipo:</strong> <span>${escapeHtml(tipoLegivel || item.tipo)}</span></div>
                         <div class="modal-info-item"><strong>Número do Processo:</strong> <span>${escapeHtml(item.numeroProc || 'N/A')}</span></div>
                         <div class="modal-info-item"><strong>Status:</strong> <span class="status-badge">${escapeHtml(item.status || 'N/A')}</span></div>
+                        ${dataCriacao ? `<div class="modal-info-item"><strong>Cadastrado em:</strong> <span>${formatDate(dataCriacao)}</span></div>` : ''}
+                        ${dataAtualizacao ? `<div class="modal-info-item"><strong>Atualizado em:</strong> <span>${formatDate(dataAtualizacao)}</span></div>` : ''}
                     </div>
                 </div>
 
@@ -46,6 +51,7 @@ const viewItemModal = (item, { tipoLegivel, onDelete, onEdit }) => {
             </div>
 
             <div class="modal-footer">
+                ${item.numeroProc ? `<button class="btn-view" data-action="consult"><i class="fa-solid fa-magnifying-glass"></i> Consultar DataJud</button>` : ''}
                 <button class="btn-view-delete" data-action="delete">Deletar</button>
                 <button class="btn-view" data-action="edit">Editar <i class="fa-solid fa-pen-to-square"></i></button>
             </div>
@@ -59,7 +65,7 @@ const viewItemModal = (item, { tipoLegivel, onDelete, onEdit }) => {
         if (e.target === modal) fecharModal();
     });
 
-    // 4. Execução dos callbacks externos de ação
+    // Execução dos callbacks externos de ação
     modal.querySelector('[data-action="delete"]').addEventListener('click', () => {
         if (typeof onDelete === 'function') onDelete(item.id, item.tipo);
     });
@@ -68,9 +74,12 @@ const viewItemModal = (item, { tipoLegivel, onDelete, onEdit }) => {
         if (typeof onEdit === 'function') onEdit(item.id, item.tipo);
     });
 
-    modal.addEventListener('mousedown', (e) => {
-        if (e.target === modal) fecharModal();
-    });
+    const consultBtn = modal.querySelector('[data-action="consult"]');
+    if (consultBtn) {
+        consultBtn.addEventListener('click', () => {
+            window.location.href = `/pages/consult/?proc=${encodeURIComponent(item.numeroProc)}`;
+        });
+    }
 
     setTimeout(() => {
         modal.classList.add('show');

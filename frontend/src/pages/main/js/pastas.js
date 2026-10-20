@@ -1,27 +1,27 @@
 // --- ESTADO DA APLICAÇÃO ---
-import { currentFilter, setCurrentFilter, mapFiltroParaDB, searchTimeout, setSearchTimeout, clientes, setClientes } from './state.js';
+import { currentFilter, setCurrentFilter, searchTimeout, setSearchTimeout, clientes, setClientes, tiposProcesso, setTiposProcesso, API_URL } from './state.js';
 import { deleteClienteApi, carregarDados } from '../api/clientsApi.js';
 import { createResultCard } from '../components/cardComponent.js';
 import { viewItemModal, fecharModal } from '../components/modalComponent.js';
 import { confirmModal } from '../../../components/confirmModal.js';
-import { normalizeText } from '../../../utils/utils.js';
+import { normalizeText, escapeHtml } from '../../../utils/utils.js';
 
 const adicionar = () => {
     window.location.href = '/pages/register';
-}
+};
 
 const sair = () => {
     localStorage.removeItem('token');
     window.location.href = '/pages/auth';
-}
+};
 
 const config = () => {
     window.location.href = '/pages/config';
-}
+};
 
 const consultar = () => {
     window.location.href = '/pages/consult';
-}
+};
 
 // --- ESTATÍSTICAS DO PAINEL ---
 const atualizarEstatisticas = () => {
@@ -34,7 +34,6 @@ const atualizarEstatisticas = () => {
         const ativos = clientes.filter(c => c.status === 'Ativo').length;
         const parados = clientes.filter(c => c.status === 'Parado').length;
 
-        // Animate counter values
         animateCounter(totalEl, total);
         animateCounter(ativosEl, ativos);
         animateCounter(paradosEl, parados);
@@ -49,7 +48,6 @@ const animateCounter = (element, target) => {
     const update = (now) => {
         const elapsed = now - startTime;
         const progress = Math.min(elapsed / duration, 1);
-        // Easing function outQuad
         const value = Math.floor(progress * (2 - progress) * target);
         element.textContent = value;
 
@@ -62,7 +60,50 @@ const animateCounter = (element, target) => {
     requestAnimationFrame(update);
 };
 
-// --- LÓGICA CENTRAL UNIFICADA ---
+// --- CARREGAMENTO DINÂMICO DOS FILTROS DE CATEGORIA ---
+const carregarFiltrosDinamicos = async () => {
+    const container = document.getElementById('filterButtons');
+    if (!container) return;
+
+    const token = localStorage.getItem('token');
+    let listaTipos = [];
+
+    try {
+        const resp = await fetch(`${API_URL}/clientes/tipos`, {
+            headers: { 'Authorization': token }
+        });
+        if (resp.ok) {
+            const data = await resp.json();
+            listaTipos = data.map(t => t.nome);
+        }
+    } catch (e) {
+        console.error('Erro ao carregar tipos de processo para os filtros:', e);
+    }
+
+    // Garante que tipos presentes nos clientes também tenham botão, mesmo que não estejam na tabela tipos_processo
+    for (const c of clientes) {
+        if (c.tipo && !listaTipos.includes(c.tipo)) {
+            listaTipos.push(c.tipo);
+        }
+    }
+
+    setTiposProcesso(listaTipos);
+
+    container.innerHTML = `
+        <button class="filter-btn ${currentFilter === 'all' ? 'active' : ''}" data-filter="all">Todos</button>
+        ${listaTipos.map(nome => `
+            <button class="filter-btn ${normalizeText(currentFilter) === normalizeText(nome) ? 'active' : ''}" data-filter="${escapeHtml(nome)}">
+                ${escapeHtml(nome)}
+            </button>
+        `).join('')}
+    `;
+
+    container.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => filterResults(btn.dataset.filter));
+    });
+};
+
+// --- LÓGICA CENTRAL UNIFICADA DE BUSCA E FILTRAGEM ---
 const executarBuscaEFiltro = async (isInitialLoad = false) => {
     const searchInput = document.getElementById('search');
     const query = normalizeText(searchInput.value);
@@ -79,15 +120,14 @@ const executarBuscaEFiltro = async (isInitialLoad = false) => {
     hideEmptyState();
 
     if (!isInitialLoad) {
-        await new Promise(resolve => setTimeout(resolve, 400));
+        await new Promise(resolve => setTimeout(resolve, 250));
     }
 
     try {
         const resultados = clientes.filter(item => {
-            // Traduz o filtro atual ('santa_casa') para o formato do DB ('Santa Casa')
-            const tipoNoBanco = mapFiltroParaDB[currentFilter];
-            // Compara o tipo exato do enum
-            const matchTipo = currentFilter === 'all' || item.tipo === tipoNoBanco;
+            // Filtro por tipo de processo (funciona dinamicamente com qualquer tipo cadastrado)
+            const matchTipo = (currentFilter === 'all') ||
+                (item.tipo && normalizeText(item.tipo) === normalizeText(currentFilter));
 
             const numPastaStr = String(item.numeroPasta ?? '');
             const numProcStr = String(item.numeroProc ?? '');
@@ -97,7 +137,7 @@ const executarBuscaEFiltro = async (isInitialLoad = false) => {
                 normalizeText(item.nome).includes(query) ||
                 numPastaStr.includes(query) ||
                 numProcStr.includes(query) ||
-                (query.replace(/\D/g, '') !== '' && numProcStr.replace(/\D/g, '').includes(query.replace(/\D/g, ''))) || // Permitir a busca de apenas os números do processo, mesmo que o usuário não digite o formato completo
+                (query.replace(/\D/g, '') !== '' && numProcStr.replace(/\D/g, '').includes(query.replace(/\D/g, ''))) ||
                 normalizeText(item.descricao).includes(query)
             );
 
@@ -112,11 +152,11 @@ const executarBuscaEFiltro = async (isInitialLoad = false) => {
             const nomeFiltro = traduzirTipo(currentFilter);
             if (query) {
                 showEmptyState(`
-                    <strong style="display:block; margin-bottom: 8px;">Nenhum resultado para "${query}" em "${nomeFiltro}".</strong>
-                    <span style="font-size: 0.9em; color: #666;">Tente selecionar outra aba de filtro acima.</span>
+                    <strong style="display:block; margin-bottom: 8px;">Nenhum resultado para "${escapeHtml(query)}" na categoria "${escapeHtml(nomeFiltro)}".</strong>
+                    <span style="font-size: 0.9em; color: #666;">Tente selecionar outra categoria de filtro acima ou limpar o termo pesquisado.</span>
                 `);
             } else {
-                showEmptyState(`Nenhum item cadastrado na categoria "${nomeFiltro}".`);
+                showEmptyState(`Nenhum item cadastrado na categoria "${escapeHtml(nomeFiltro)}".`);
             }
         }
 
@@ -137,22 +177,10 @@ const filterResults = (filter) => {
 
     const botoes = document.querySelectorAll('.filter-btn');
     botoes.forEach(btn => {
-        btn.classList.remove('active');
-        const btnText = btn.textContent.trim().toLowerCase();
-
-        // Mapa para relacionar o parâmetro com o texto visível no botão (em minúsculas)
-        const mapButtonText = {
-            'all': 'todos',
-            'previdenciario': 'previdenciário',
-            'santa_casa': 'santa casa',
-            'justica_gratuita': 'justiça gratuita',
-            'arquivado': 'arquivado',
-            'outro': 'outro'
-        };
-
-        if (mapButtonText[filter] === btnText) {
-            btn.classList.add('active');
-        }
+        const btnFilter = btn.dataset.filter;
+        const isActive = (filter === 'all' && btnFilter === 'all') ||
+                         (filter !== 'all' && normalizeText(btnFilter) === normalizeText(filter));
+        btn.classList.toggle('active', isActive);
     });
 
     executarBuscaEFiltro();
@@ -214,7 +242,7 @@ const hideEmptyState = () => {
 };
 
 const traduzirTipo = (tipo) => {
-    return mapFiltroParaDB[tipo] || tipo;
+    return tipo === 'all' ? 'Todas' : tipo;
 };
 
 // Informa ao navegador que o item a ser editado está armazenado no sessionStorage e redireciona para a página de edição.
@@ -237,7 +265,7 @@ const deletarItem = (id) => {
 
     overlay.innerHTML = confirmModal();
 
-    document.body.appendChild(overlay); // Adiciona o modal de confirmação ao DOM
+    document.body.appendChild(overlay);
 
     const fecharConfirmModal = () => {
         overlay.classList.remove('show');
@@ -246,28 +274,26 @@ const deletarItem = (id) => {
 
     overlay.querySelector('[data-action="cancel-delete"]').addEventListener('click', fecharConfirmModal);
 
-    //pega o botão de confirmação como uma variável
     const confirmButton = document.getElementById('confirmRealDelete');
 
     confirmButton.onclick = async () => {
         try {
             await deleteClienteApi(id);
-            setClientes(clientes.filter(c => String(c.id) !== String(id))); // caso o id seja um number passa para um String
+            setClientes(clientes.filter(c => String(c.id) !== String(id)));
             atualizarEstatisticas();
             fecharConfirmModal();
             fecharModal();
+            await carregarFiltrosDinamicos();
             executarBuscaEFiltro();
 
         } catch (error) {
-            // Verificação dos erros retornados da função deleteClienteApi()
-
             if (error.message === 'UNAUTHORIZED' || error.message === 'TOKEN_MISSING') {
                 sair();
             } else {
                 overlay.innerHTML = `
                 <div class="modal-confirm-content">
                     <i class="fa-solid fa-triangle-exclamation modal-confirm-icon"></i>
-                    <h3 class>Erro na Exclusão</h3>
+                    <h3>Erro na Exclusão</h3>
                     <p><span style="font-weight: bold;">Tente novamente mais tarde.</span></p>
                     <div class="confirm-buttons-group">
                         <button class="btn-confirm-delete-act" id="confirmErrorDelete">Fechar</button>
@@ -276,7 +302,7 @@ const deletarItem = (id) => {
                 document.getElementById('confirmErrorDelete')?.addEventListener('click', fecharConfirmModal);
             }
         }
-    }
+    };
 };
 
 const viewItem = (id, tipo) => {
@@ -292,7 +318,7 @@ const viewItem = (id, tipo) => {
         onDelete: () => deletarItem(id),
         onEdit: () => editarItem(id, tipo)
     });
-}
+};
 
 // --- INICIALIZAÇÃO (DOMContentLoaded) ---
 
@@ -303,16 +329,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('configButton').addEventListener('click', config);
     document.getElementById('logoutButton').addEventListener('click', sair);
     document.getElementById('searchButton').addEventListener('click', buscar);
-    document.querySelectorAll('.filter-btn').forEach((button) => {
-        button.addEventListener('click', () => filterResults(button.dataset.filter));
-    });
     searchInput.focus();
 
     try {
         showLoading(true);
 
-        // Busca os dados (se carregarDados retornar a lista, use: const dados = await carregarDados(); setClientes(dados);)
+        // Busca os dados da lista de clientes
         await carregarDados();
+
+        // Carrega dinamicamente as categorias dos filtros
+        await carregarFiltrosDinamicos();
 
         // Atualiza os cards estatísticos com os dados carregados
         atualizarEstatisticas();
@@ -329,7 +355,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     searchInput.addEventListener('input', () => {
         clearTimeout(searchTimeout);
         const query = searchInput.value.trim();
-        const delay = query.length === 0 ? 0 : 500;
+        const delay = query.length === 0 ? 0 : 400;
 
         setSearchTimeout(setTimeout(() => {
             buscar();

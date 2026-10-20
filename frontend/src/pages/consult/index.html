@@ -1,14 +1,116 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consulta Processo</title>
+    <title>Consultar Processo | Palhares Ferreira Advocacia</title>
+    <link rel="stylesheet" href="css/consult.css">
+    <link rel="shortcut icon" href="/assets/logo.svg" type="image/svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
+        rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap"
+        rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+        rel="stylesheet">
+    <script src="https://kit.fontawesome.com/a8f4be2bb0.js" crossorigin="anonymous"></script>
 </head>
 
 <body>
-    <h1>Consulta Processo</h1>
+    <div class="bg-mesh"></div>
+
+    <!-- Top Navigation Bar -->
+    <header class="navbar">
+        <div class="nav-container">
+            <div class="brand-logo">
+                <img src="/assets/logo.svg" alt="Logo Palhares Ferreira">
+                <span class="brand-text">Palhares Ferreira <strong class="gold-text">Advocacia</strong></span>
+            </div>
+
+            <div class="nav-actions">
+                <a href="/pages/main/" class="btn-nav btn-back-nav" title="Voltar ao Painel Principal">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Voltar ao Painel</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <section class="consult-intro">
+            <h1>Consulta Processual <span class="gold-text">DataJud</span></h1>
+            <p>Consulte informações oficiais, órgão julgador, assuntos e movimentações diretamente na base pública do CNJ</p>
+        </section>
+
+        <!-- Painel de Busca -->
+        <section class="consult-panel">
+            <form id="consultForm" class="consult-form" autocomplete="off">
+                <div class="consult-inputs-grid">
+                    <div class="form-group">
+                        <label for="numeroProcesso">
+                            <i class="fa-solid fa-scale-balanced"></i> Número do Processo (Padrão CNJ) <span class="obrigatorio">*</span>
+                        </label>
+                        <input type="text" id="numeroProcesso" placeholder="0000000-00.0000.0.00.0000" maxlength="25" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tribunalSelect">
+                            <i class="fa-solid fa-building-columns"></i> Tribunal
+                        </label>
+                        <select id="tribunalSelect">
+                            <option value="">Automático (Identificar pelo número CNJ)</option>
+                            <option value="tjsp">TJSP - Tribunal de Justiça de São Paulo</option>
+                            <option value="trf3">TRF3 - Tribunal Regional Federal da 3ª Região</option>
+                            <option value="trt2">TRT2 - Tribunal Regional do Trabalho (2ª Região)</option>
+                            <option value="trt15">TRT15 - Tribunal Regional do Trabalho (15ª Região)</option>
+                            <option value="tjmg">TJMG - Tribunal de Justiça de Minas Gerais</option>
+                            <option value="tjrj">TJRJ - Tribunal de Justiça do Rio de Janeiro</option>
+                            <option value="tjpr">TJPR - Tribunal de Justiça do Paraná</option>
+                            <option value="tjrs">TJRS - Tribunal de Justiça do Rio Grande do Sul</option>
+                            <option value="tjsc">TJSC - Tribunal de Justiça de Santa Catarina</option>
+                            <option value="tjdft">TJDFT - Tribunal de Justiça do Distrito Federal</option>
+                            <option value="stj">STJ - Superior Tribunal de Justiça</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="consult-actions">
+                    <button type="submit" class="btn-save" id="btnConsultar">
+                        <i class="fa-solid fa-magnifying-glass"></i> Consultar Processo
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Loader -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p class="loading-text">Consultando base do CNJ (DataJud)...</p>
+        </div>
+
+        <!-- Mensagem de Erro / Vazio -->
+        <div class="empty-state" id="emptyState" style="display: none;">
+            <div class="empty-icon">
+                <i class="fa-solid fa-scale-unbalanced"></i>
+            </div>
+            <p class="empty-message" id="emptyMessage"></p>
+        </div>
+
+        <!-- Resultados da Consulta -->
+        <main class="consult-results" id="resultadoContainer" style="display: none;">
+            <!-- Vínculo com Pasta do Escritório -->
+            <div id="pastaVinculadaContainer"></div>
+
+            <!-- Dados do Processo no DataJud -->
+            <div id="dadosProcessoContainer"></div>
+        </main>
+    </div>
+
+    <script src="js/consult.js" type="module"></script>
 </body>
 
 </html>

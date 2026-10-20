@@ -19,20 +19,59 @@
     <div class="container">
         <div class="brand-logo">
             <img src="/assets/logo.svg" alt="Logo Palhares Ferreira">
-            <span class="title-page">Configurações</span>
+            <span class="title-page">Configurações do Sistema</span>
         </div>
 
         <div class="config-card">
+            <!-- 1. Perfil do Usuário Logado -->
             <div class="config-section">
-                <h3><i class="fa-solid fa-user-gear"></i> Perfil do Usuário</h3>
+                <h3><i class="fa-solid fa-user-gear"></i> Meu Perfil</h3>
                 <div class="profile-info">
-                    <div class="avatar"><i class="fa-solid fa-circle-user"></i></div>
-                    <div class="profile-text">
-                        <h4 id="user-name">Administrador</h4>
+                    <div class="profile-user-group">
+                        <div class="avatar"><i class="fa-solid fa-circle-user"></i></div>
+                        <div class="profile-text">
+                            <h4 id="user-name">Administrador</h4>
+                            <span class="user-handle" id="user-login">@admin</span>
+                        </div>
+                    </div>
+                    <div class="profile-actions">
+                        <button type="button" class="btn-profile-action" id="btnEditarNome" title="Editar meu nome de exibição">
+                            <i class="fa-solid fa-pen"></i> Editar Nome
+                        </button>
+                        <button type="button" class="btn-profile-action" id="btnAbrirModalSenha" title="Alterar minha senha">
+                            <i class="fa-solid fa-key"></i> Alterar Senha
+                        </button>
                     </div>
                 </div>
             </div>
 
+            <!-- 2. Tipos de Processos -->
+            <div class="config-section">
+                <div class="label-with-action">
+                    <h3><i class="fa-solid fa-tags"></i> Tipos de Processos</h3>
+                    <button type="button" class="btn-novo-tipo" id="btnNovoTipoConfig">
+                        <i class="fa-solid fa-plus"></i> Novo Tipo
+                    </button>
+                </div>
+                <div id="tiposListContainer" class="tipos-container">
+                    <!-- Badges dos tipos de processo -->
+                </div>
+            </div>
+
+            <!-- 3. Gerenciamento de Usuários do Escritório -->
+            <div class="config-section">
+                <div class="label-with-action">
+                    <h3><i class="fa-solid fa-users-gear"></i> Usuários do Escritório</h3>
+                    <button type="button" class="btn-novo-tipo" id="btnNovoUsuario">
+                        <i class="fa-solid fa-user-plus"></i> Novo Usuário
+                    </button>
+                </div>
+                <div id="usuariosListContainer" class="users-list">
+                    <!-- Lista de usuários carregada via JS -->
+                </div>
+            </div>
+
+            <!-- 4. Encerrar Sessão -->
             <div class="config-actions">
                 <button class="btn-logout" id="logoutButton">
                     <i class="fa-solid fa-arrow-right-from-bracket"></i> Encerrar Sessão

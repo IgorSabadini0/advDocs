@@ -3,14 +3,8 @@ export const API_URL = window.location.origin;
 export let currentFilter = 'all';
 export const setCurrentFilter = (novoFiltro) => { currentFilter = novoFiltro; };
 
-export const mapFiltroParaDB = {
-    'all': 'Todos Processos',
-    'previdenciario': 'Previdenciário',
-    'santa_casa': 'Santa Casa',
-    'justica_gratuita': 'Justiça Gratuita',
-    'arquivado': 'Arquivado',
-    'outro': 'Outro'
-};
+export let tiposProcesso = [];
+export const setTiposProcesso = (novosTipos) => { tiposProcesso = novosTipos; };
 
 export let searchTimeout = null;
 export const setSearchTimeout = (novoTimeout) => { searchTimeout = novoTimeout; };

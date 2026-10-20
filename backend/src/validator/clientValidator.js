@@ -21,9 +21,8 @@ const validateCliente = (data) => {
         return { valido: false, mensagem: "Número da pasta inválido (deve ser um número inteiro positivo)." };
     }
 
-    const tiposValidos = ['Todos Processos', 'Previdenciário', 'Santa Casa', 'Justiça Gratuita', 'Arquivado', 'Outro'];
-    if (tipo && !tiposValidos.includes(tipo)) {
-        return { valido: false, mensagem: "Tipo de processo inválido." };
+    if (tipo && (typeof tipo !== 'string' || tipo.trim().length === 0 || tipo.length > 64)) {
+        return { valido: false, mensagem: "Tipo de processo inválido (máximo 64 caracteres)." };
     }
 
     if (acao && (typeof acao !== 'string' || acao.length > 128)) {

@@ -11,9 +11,7 @@ import { verifyToken } from './middleware/authMiddleware.js';
 // Routers (Padrão MVC)
 import clientesRouter from './routes/clientes.js';
 import authRouter from './routes/auth.js';
-
-// Importado apenas para alias de compatibilidade com o frontend
-import { clienteController } from './controllers/clienteController.js';
+import usersRouter from './routes/users.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -68,11 +66,7 @@ app.get('/', (req, res) => {
 // 5. Rotas da Aplicação (Padrão MVC)
 app.use('/auth', authRouter);
 app.use('/clientes', verifyToken, clientesRouter);
-
-// Compatibilidade retrógrada com frontend de cadastro
-app.post('/register', verifyToken, (req, res) => {
-    clienteController.createCliente(req, res);
-});
+app.use('/users', verifyToken, usersRouter);
 
 // 6. Inicialização do Servidor
 const port = process.env.PORT_SERVER || 3000;

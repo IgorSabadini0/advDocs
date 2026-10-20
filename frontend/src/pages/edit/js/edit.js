@@ -1,34 +1,29 @@
+import { mascaraProcessoCNJ } from '../../../utils/utils.js';
+import { carregarTiposSelect, abrirModalNovoTipo } from '../../../utils/tiposService.js';
+
 const API_URL = window.location.origin;
 let idEdicao = null;
 
-const mascaraProcessoCNJ = (valor) => {
-    let v = valor.replace(/\D/g, "");
-
-    // Aplica a formatação progressivamente
-    v = v.replace(/(\d{7})(\d)/, "$1-$2");                       // NNNNNNN-DD...
-    v = v.replace(/(\d{7}-\d{2})(\d)/, "$1.$2");                 // NNNNNNN-DD.AAAA...
-    v = v.replace(/(\d{7}-\d{2}\.\d{4})(\d)/, "$1.$2");          // NNNNNNN-DD.AAAA.J...
-    v = v.replace(/(\d{7}-\d{2}\.\d{4}\.\d{1})(\d)/, "$1.$2");   // NNNNNNN-DD.AAAA.J.TR...
-    v = v.replace(/(\d{7}-\d{2}\.\d{4}\.\d{1}\.\d{2})(\d)/, "$1.$2"); // NNNNNNN-DD.AAAA.J.TR.OO...
-
-    return v.substring(0, 25);
-};
-
 // Aguarda o DOM carregar para selecionar o elemento
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = '../auth';
+        return;
+    }
+
     const inputProcesso = document.getElementById('numeroProc');
+    const selectTipo = document.getElementById('tipo');
 
     if (inputProcesso) {
         inputProcesso.addEventListener('input', (e) => {
-            // Pega o valor atual, passa na máscara e devolve para o input
             e.target.value = mascaraProcessoCNJ(e.target.value);
         });
     }
 
     document.getElementById('saveButton').addEventListener('click', salvarEdicao);
 
-    // Pega os dados salvos no localStorage e preenche os campos do formulário
-
+    // Pega os dados salvos no sessionStorage e preenche os campos do formulário
     const dadosItem = sessionStorage.getItem("itemEmEdicao");
     if (!dadosItem) {
         document.getElementById('response').textContent = "Nenhuma pasta selecionada para edição.";
@@ -39,12 +34,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const item = JSON.parse(dadosItem);
     idEdicao = item.id;
 
-    // Prencher os inputs com os valores coletados e se não houver valor, preencher com uma string vazia "".
+    // Carrega dinamicamente os tipos do banco e já seleciona o tipo do item
+    await carregarTiposSelect(selectTipo, item.tipo || "");
+
+    // Modal para criar novo tipo de processo
+    document.getElementById('btnNovoTipo')?.addEventListener('click', () => {
+        abrirModalNovoTipo((novoTipoNome) => {
+            carregarTiposSelect(selectTipo, novoTipoNome);
+        });
+    });
 
     document.getElementById('acao').value = item.acao || "";
     document.getElementById('nome').value = item.nome || "";
     document.getElementById('numeroPasta').value = item.numeroPasta || "";
-    document.getElementById('tipo').value = item.tipo || "";
     document.getElementById('numeroProc').value = item.numeroProc || "";
     document.getElementById('status').value = item.status || "";
     document.getElementById('descricao').value = item.descricao || "";
@@ -57,7 +59,6 @@ const showLoading = (show) => {
 };
 
 const salvarEdicao = async () => {
-    // 1. Remove o modal anterior se por acaso ele já existir no DOM (evita lixo no HTML)
     const modalAntigo = document.getElementById('confirmEditModal');
     if (modalAntigo) modalAntigo.remove();
 
@@ -65,7 +66,6 @@ const salvarEdicao = async () => {
     overlay.className = 'modal-overlay show';
     overlay.id = 'confirmEditModal';
 
-    // Função interna para destruir o modal e limpar o DOM
     const destruirModal = () => {
         overlay.remove();
     };
@@ -73,7 +73,7 @@ const salvarEdicao = async () => {
     overlay.innerHTML = `
         <div class="modal-confirm-content">
             <i class="fa-solid fa-triangle-exclamation modal-confirm-icon"></i>
-            <h3 class="">Confirmar Edição</h3>
+            <h3>Confirmar Edição</h3>
             <p>Esta ação salvará as alterações feitas na pasta. <span style="font-weight: bold; color: white;">Deseja continuar?</span></p>
             <div class="confirm-buttons-group">
                 <button class="btn-cancel-modal" id="cancelarEditBtn">Cancelar</button>
@@ -87,15 +87,11 @@ const salvarEdicao = async () => {
     const confirmButton = document.getElementById('confirmRealEdit');
     const cancelarButton = document.getElementById('cancelarEditBtn');
 
-    // Fechar ao clicar em cancelar
     cancelarButton.addEventListener('click', () => {
         destruirModal();
-        if (typeof fecharConfirmacao === 'function') fecharConfirmacao(); // Mantém sua função antiga se necessário
     });
 
-    // Evento de confirmação (usando { once: true } para garantir que só execute UMA vez)
     confirmButton.addEventListener('click', async () => {
-        // Desabilita o botão para evitar cliques repetidos enquanto processa
         confirmButton.disabled = true;
 
         const edicao = {
@@ -109,33 +105,33 @@ const salvarEdicao = async () => {
         };
 
         const token = localStorage.getItem('token');
+        const statusMessage = document.getElementById('response');
 
         try {
             const response = await fetch(`${API_URL}/clientes/${idEdicao}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': token // Lembre-se de tratar no backend se precisa do prefixo "Bearer "
+                    'Authorization': token
                 },
                 body: JSON.stringify(edicao)
             });
 
             if (response.ok) {
-                const statusMessage = document.getElementById('response');
                 statusMessage.textContent = '';
                 statusMessage.style.color = '#28a745';
 
                 showLoading(true);
-                destruirModal(); // Fecha o modal de confirmação já que deu certo
+                destruirModal();
 
-                sessionStorage.removeItem("itemEmEdicao"); // Limpa o item em edição do sessionStorage
+                sessionStorage.removeItem("itemEmEdicao");
 
                 setTimeout(() => {
                     showLoading(false);
 
-                    let countdown = 2; // Contagem regressiva de 2 segundos
+                    let countdown = 2;
                     statusMessage.textContent = `✅ Edição salva com sucesso! Redirecionando em ${countdown}...`;
-                    countdown--; // remove 1 para o próximo setInterval
+                    countdown--;
 
                     const countdownInterval = setInterval(() => {
                         if (countdown <= 0) {
@@ -149,7 +145,7 @@ const salvarEdicao = async () => {
                 }, 400);
             } else {
                 statusMessage.style.color = '#dc3545';
-                confirmButton.disabled = false; // Reativa o botão se deu erro para ele tentar de novo
+                confirmButton.disabled = false;
 
                 if (response.status === 401 || response.status === 403) {
                     localStorage.removeItem('token');
@@ -163,15 +159,15 @@ const salvarEdicao = async () => {
                     if (data && data.mensagem) {
                         errorMsg = data.mensagem;
                     }
-                } catch (_) { } // Se não conseguir parsear o JSON, mantém a mensagem genérica
+                } catch (_) { }
 
                 statusMessage.innerHTML = errorMsg;
-                destruirModal(); // Fecha o modal para o usuário ver o erro na tela principal
+                destruirModal();
             }
         } catch (error) {
             console.error('Erro ao editar:', error);
             confirmButton.disabled = false;
             destruirModal();
         }
-    }, { once: true }); // O { once: true } remove o listener automaticamente após o clique
-}
+    }, { once: true });
+};

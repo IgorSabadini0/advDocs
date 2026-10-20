@@ -775,3 +775,50 @@ body {
         transform: translateY(-8px);
     }
 }
+
+/* --- Dynamic Process Types --- */
+.label-with-action {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.btn-novo-tipo {
+    background: transparent;
+    border: 1px dashed var(--border-gold-subtle);
+    color: var(--brand-gold);
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    transition: var(--transition-smooth);
+}
+
+.btn-novo-tipo:hover {
+    background: var(--brand-gold-glow);
+    border-color: var(--brand-gold);
+    color: var(--brand-gold-hover);
+}
+
+.modal-input-novo-tipo {
+    width: 100%;
+    height: 48px;
+    padding: 0 16px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    outline: none;
+    margin-bottom: 20px;
+}
+
+.modal-input-novo-tipo:focus {
+    border-color: var(--brand-gold);
+    box-shadow: 0 0 0 4px var(--brand-gold-glow);
+}
