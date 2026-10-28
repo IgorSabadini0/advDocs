@@ -86,4 +86,4 @@ const viewItemModal = (item, { tipoLegivel, onDelete, onEdit }) => {
     }, 10);
 };
 
-export { viewItemModal, fecharModal, escapeHtml };
+export { viewItemModal, fecharModal };

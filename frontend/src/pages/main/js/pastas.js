@@ -1,10 +1,10 @@
 // --- ESTADO DA APLICAÇÃO ---
-import { currentFilter, setCurrentFilter, searchTimeout, setSearchTimeout, clientes, setClientes, tiposProcesso, setTiposProcesso, API_URL } from './state.js';
+import { currentFilter, setCurrentFilter, searchTimeout, setSearchTimeout, clientes, setClientes, setTiposProcesso } from './state.js';
 import { deleteClienteApi, carregarDados } from '../api/clientsApi.js';
 import { createResultCard } from '../components/cardComponent.js';
 import { viewItemModal, fecharModal } from '../components/modalComponent.js';
 import { confirmModal } from '../../../components/confirmModal.js';
-import { normalizeText, escapeHtml } from '../../../utils/utils.js';
+import { normalizeText, escapeHtml, apiFetch } from '../../../utils/utils.js';
 
 const adicionar = () => {
     window.location.href = '/pages/register';
@@ -41,7 +41,6 @@ const atualizarEstatisticas = () => {
 };
 
 const animateCounter = (element, target) => {
-    let start = 0;
     const duration = 800; // ms
     const startTime = performance.now();
 
@@ -65,17 +64,11 @@ const carregarFiltrosDinamicos = async () => {
     const container = document.getElementById('filterButtons');
     if (!container) return;
 
-    const token = localStorage.getItem('token');
     let listaTipos = [];
 
     try {
-        const resp = await fetch(`${API_URL}/clientes/tipos`, {
-            headers: { 'Authorization': token }
-        });
-        if (resp.ok) {
-            const data = await resp.json();
-            listaTipos = data.map(t => t.nome);
-        }
+        const data = await apiFetch('/clientes/tipos');
+        listaTipos = data.map(t => t.nome);
     } catch (e) {
         console.error('Erro ao carregar tipos de processo para os filtros:', e);
     }

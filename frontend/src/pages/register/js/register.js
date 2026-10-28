@@ -1,27 +1,14 @@
-import { mascaraProcessoCNJ } from '../../../utils/utils.js';
+import { mascaraProcessoCNJ, apiFetch } from '../../../utils/utils.js';
 import { carregarTiposSelect, abrirModalNovoTipo } from '../../../utils/tiposService.js';
 
-const API_URL = window.location.origin;
-
 const carregarMenorPastaDisponivel = async () => {
-    const token = localStorage.getItem('token');
     const inputPasta = document.getElementById('numeroPasta');
-    if (!token || !inputPasta) return;
+    if (!inputPasta) return;
 
     try {
-        const response = await fetch(`${API_URL}/clientes/proxima-pasta`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': token
-            }
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            if (data.numeroPasta && Number(data.numeroPasta) > 0) {
-                inputPasta.value = data.numeroPasta;
-            }
+        const data = await apiFetch('/clientes/proxima-pasta');
+        if (data.numeroPasta && Number(data.numeroPasta) > 0) {
+            inputPasta.value = data.numeroPasta;
         }
     } catch (error) {
         console.error('Erro ao buscar menor número de pasta disponível:', error);
@@ -89,12 +76,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (inputAcao) inputAcao.value = acaoParam;
     }
 
+    // Preserva a pasta sugerida via query string; caso contrário, busca a menor pasta disponível no banco
     if (pastaParam && Number(pastaParam) > 0 && inputPasta) {
         inputPasta.value = Number(pastaParam);
+    } else {
+        await carregarMenorPastaDisponivel();
     }
-
-    // Garante que o campo Número da Pasta seja sempre preenchido com o menor número disponível (> 0) no banco
-    await carregarMenorPastaDisponivel();
 
     document.getElementById('saveButton').addEventListener('click', salvarRegistro);
 });
@@ -126,63 +113,46 @@ const salvarRegistro = async () => {
         descricao
     };
 
-    const token = localStorage.getItem('token');
+    const statusMessage = document.getElementById('response');
 
     try {
         showLoading(true);
-        const response = await fetch(`${API_URL}/clientes`, {
+        const data = await apiFetch('/clientes', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': token },
             body: JSON.stringify(registro)
         });
 
-        const statusMessage = document.getElementById('response');
+        statusMessage.textContent = '';
+        statusMessage.style.color = '#28a745';
 
-        if (response.ok) {
-            const data = await response.json();
-            statusMessage.textContent = '';
-            statusMessage.style.color = '#28a745';
+        setTimeout(async () => {
+            document.getElementById('acao').value = '';
+            document.getElementById('nome').value = '';
+            document.getElementById('tipo').value = '';
+            document.getElementById('numeroProc').value = '';
+            document.getElementById('status').value = '';
+            document.getElementById('consultarProcesso').checked = false;
+            document.getElementById('descricao').value = '';
 
-            setTimeout(async () => {
-                document.getElementById('acao').value = '';
-                document.getElementById('nome').value = '';
-                document.getElementById('tipo').value = '';
-                document.getElementById('numeroProc').value = '';
-                document.getElementById('status').value = '';
-                document.getElementById('consultarProcesso').checked = false;
-                document.getElementById('descricao').value = '';
+            // Atualiza o campo com o próximo menor número de pasta disponível (> 0)
+            await carregarMenorPastaDisponivel();
 
-                // Atualiza o campo com o próximo menor número de pasta disponível (> 0)
-                await carregarMenorPastaDisponivel();
-
-                showLoading(false);
-
-                if (consultarProcesso && data.processo) {
-                    statusMessage.textContent = `✅ Registro salvo! Dados sincronizados com o DataJud (${data.processo.tribunal} - ${data.processo.classe}).`;
-                } else {
-                    statusMessage.textContent = '✅ Registro salvo com sucesso!';
-                }
-            }, 300);
-
-        } else {
             showLoading(false);
-            statusMessage.style.color = '#dc3545';
 
-            if (response.status === 401 || response.status === 403) {
-                localStorage.removeItem('token');
-                window.location.href = '/pages/auth/';
-                return;
-            }
-
-            if (response.status === 400) {
-                const data = await response.json();
-                statusMessage.innerHTML = data.mensagem;
+            if (consultarProcesso && data.processo) {
+                statusMessage.textContent = `✅ Registro salvo! Dados sincronizados com o DataJud (${data.processo.tribunal} - ${data.processo.classe}).`;
             } else {
-                statusMessage.innerHTML = '❌ Erro ao salvar registro. Tente novamente.';
+                statusMessage.textContent = '✅ Registro salvo com sucesso!';
             }
-        }
+        }, 300);
+
     } catch (error) {
         showLoading(false);
         console.error('Erro ao salvar registro:', error);
+        if (error.message === 'UNAUTHORIZED' || error.message === 'TOKEN_MISSING') {
+            return;
+        }
+        statusMessage.style.color = '#dc3545';
+        statusMessage.textContent = error.data?.mensagem || '❌ Erro ao salvar registro. Verifique os dados ou sua conexão.';
     }
 };

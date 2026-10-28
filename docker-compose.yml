@@ -4,12 +4,12 @@ services:
     container_name: advdocs
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-${DB_PASSWORD}}
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "${PORT}:3306"
+      - "127.0.0.1:${DB_PORT:-${PORT:-3306}}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
 

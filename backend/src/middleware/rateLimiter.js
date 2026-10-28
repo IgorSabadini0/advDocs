@@ -4,13 +4,18 @@ import rateLimit from 'express-rate-limit';
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
     max: 100, // Limita cada IP a 100 requisições por windowMs
+    standardHeaders: true,
+    legacyHeaders: false,
     message: { mensagem: "Muitas requisições criadas a partir deste IP, por favor tente novamente após 15 minutos" }
 });
 
 // Segurança: Rate Limiting para rotas de autenticação (login)
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 5, // Limita tentativas de login a 5 por 15 minutos
+    max: 5, // Limita tentativas de login falhas a 5 por 15 minutos
+    skipSuccessfulRequests: true,
+    standardHeaders: true,
+    legacyHeaders: false,
     message: { mensagem: "Muitas tentativas de login. Tente novamente mais tarde." }
 });
 

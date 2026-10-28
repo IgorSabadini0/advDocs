@@ -1,52 +1,43 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
-import { db } from '../config/db.js';
 import { userModel } from '../models/userModel.js';
+
+// Hash dummy pré-computado (custo 10) para mitigar enumeração de usuários por timing attack
+const DUMMY_BCRYPT_HASH = '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy';
 
 export const authController = {
     login: async (req, res) => {
         const { user, password } = req.body;
 
-        if (!user || !password) {
-            return res.status(400).json({ mensagem: 'Usuário e senha são obrigatórios.' });
+        if (typeof user !== 'string' || typeof password !== 'string' || !user.trim() || !password || password.length > 72) {
+            return res.status(400).json({ mensagem: 'Usuário e senha válidos são obrigatórios.' });
         }
 
         try {
-            const usuario = await userModel.findByUsername(user);
+            const usuario = await userModel.findByUsername(user.trim());
+            const hashAlvo = usuario?.password?.startsWith('$2') ? usuario.password : DUMMY_BCRYPT_HASH;
 
-            if (!usuario) {
-                return res.status(401).json({ mensagem: 'Usuário ou senha inválidos.' });
-            }
-
-            // Verifica se o usuário está ativo
-            if (!usuario.is_active) {
-                return res.status(403).json({ mensagem: 'Usuário desativado.' });
-            }
-
-            // Validação de senha com hash bcrypt
             let senhaValida = false;
             try {
-                senhaValida = await bcrypt.compare(password, usuario.password);
+                senhaValida = await bcrypt.compare(password, hashAlvo);
             } catch (_) {
                 senhaValida = false;
             }
 
-            // Migração transparente de senhas legadas que ainda estivessem em texto puro
-            if (!senhaValida && password === usuario.password) {
-                senhaValida = true;
-                const novoHash = await bcrypt.hash(password, 10);
-                await db.query("UPDATE login SET password = ? WHERE id = ?", [novoHash, usuario.id]);
+            if (!usuario || !senhaValida) {
+                return res.status(401).json({ mensagem: 'Usuário ou senha inválidos.' });
             }
 
-            if (!senhaValida) {
-                return res.status(401).json({ mensagem: 'Usuário ou senha inválidos.' });
+            // Verifica se o usuário está ativo somente após validar as credenciais
+            if (!usuario.is_active) {
+                return res.status(403).json({ mensagem: 'Usuário desativado.' });
             }
 
             // Lógica para gerar Token de autenticação JWT
             const token = jwt.sign(
                 { id: usuario.id, nome: usuario.user },
                 process.env.JWT_SECRET,
-                { expiresIn: '8h' }
+                { algorithm: 'HS256', expiresIn: '8h' }
             );
 
             return res.status(200).json({

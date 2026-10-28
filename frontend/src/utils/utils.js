@@ -61,4 +61,50 @@ const mascaraProcessoCNJ = (valor) => {
     return v.substring(0, 25);
 };
 
-export { escapeHtml, formatDate, formatDateTime, normalizeText, mascaraProcessoCNJ };
+/**
+ * Helper centralizado para requisições HTTP autenticadas à API.
+ */
+const apiFetch = async (endpoint, options = {}) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = '/pages/auth/';
+        const err = new Error('TOKEN_MISSING');
+        err.status = 401;
+        throw err;
+    }
+
+    const authHeader = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+
+    const response = await fetch(`${window.location.origin}${endpoint}`, {
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': authHeader,
+            ...(options.headers || {})
+        }
+    });
+
+    if (response.status === 401) {
+        localStorage.removeItem('token');
+        window.location.href = '/pages/auth/';
+        const err = new Error('UNAUTHORIZED');
+        err.status = 401;
+        throw err;
+    }
+
+    const contentType = response.headers.get('content-type') || '';
+    const data = contentType.includes('application/json')
+        ? await response.json().catch(() => ({}))
+        : {};
+
+    if (!response.ok) {
+        const error = new Error(data.mensagem || `Erro HTTP ${response.status}`);
+        error.status = response.status;
+        error.data = data;
+        throw error;
+    }
+
+    return data;
+};
+
+export { escapeHtml, formatDate, formatDateTime, normalizeText, mascaraProcessoCNJ, apiFetch };

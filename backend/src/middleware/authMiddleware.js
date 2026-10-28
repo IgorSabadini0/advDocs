@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { db } from '../config/db.js';
+import { userModel } from '../models/userModel.js';
 
 export const verifyToken = async (req, res, next) => {
     const authHeader = req.headers['authorization'];
@@ -9,24 +9,32 @@ export const verifyToken = async (req, res, next) => {
     }
 
     // Suporta formato "Bearer <token>" ou token direto
-    const token = authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : authHeader;
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : authHeader.trim();
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
 
-        // Verifica se o usuário existe e está ativo no banco de dados
-        const [rows] = await db.query("SELECT is_active FROM login WHERE id = ? LIMIT 1", [decoded.id]);
-        if (rows.length === 0) {
-            return res.status(403).json({ mensagem: 'Usuário não encontrado' });
+        // Verifica se o usuário existe e está ativo no banco de dados via Model
+        const statusUsuario = await userModel.findAuthStatusById(decoded.id);
+        if (!statusUsuario) {
+            return res.status(401).json({ mensagem: 'Usuário não encontrado' });
         }
-        if (!rows[0].is_active) {
-            return res.status(403).json({ mensagem: 'Usuário desativado' });
+        if (!statusUsuario.is_active) {
+            return res.status(401).json({ mensagem: 'Usuário desativado' });
         }
 
-        req.usuarioId = decoded.id;
+        req.usuarioId = statusUsuario.id;
+        req.usuarioRole = statusUsuario.role;
         next();
     } catch (error) {
         console.error('Erro na verificação do token:', error.message);
-        return res.status(403).json({ mensagem: 'Token inválido ou expirado' });
+        return res.status(401).json({ mensagem: 'Token inválido ou expirado' });
     }
+};
+
+export const requireAdmin = (req, res, next) => {
+    if (req.usuarioRole !== 'admin') {
+        return res.status(403).json({ mensagem: 'Permissão insuficiente. Requer perfil de administrador.' });
+    }
+    next();
 };

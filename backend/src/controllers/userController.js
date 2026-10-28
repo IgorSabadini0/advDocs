@@ -13,6 +13,7 @@ export const userController = {
                 id: usuario.id,
                 user: usuario.user,
                 name: usuario.name,
+                role: req.usuarioRole || 'user',
                 is_active: Boolean(usuario.is_active),
                 created_at: usuario.created_at,
                 updated_at: usuario.updated_at
@@ -42,12 +43,12 @@ export const userController = {
         try {
             const { senhaAtual, novaSenha } = req.body;
 
-            if (!senhaAtual || !novaSenha) {
+            if (!senhaAtual || !novaSenha || typeof senhaAtual !== 'string' || typeof novaSenha !== 'string') {
                 return res.status(400).json({ mensagem: 'Senha atual e nova senha são obrigatórias.' });
             }
 
-            if (typeof novaSenha !== 'string' || novaSenha.length < 4) {
-                return res.status(400).json({ mensagem: 'A nova senha deve ter pelo menos 4 caracteres.' });
+            if (novaSenha.length < 8 || novaSenha.length > 72 || senhaAtual.length > 72) {
+                return res.status(400).json({ mensagem: 'A nova senha deve ter entre 8 e 72 caracteres.' });
             }
 
             const usuario = await userModel.findById(req.usuarioId);
@@ -95,21 +96,21 @@ export const userController = {
             const { user, name, password, is_active } = req.body;
 
             if (!user || typeof user !== 'string' || user.trim().length < 3 || user.trim().length > 64) {
-                return res.status(400).json({ mensagem: 'Usuário inválido (mínimo de 3 caracteres).' });
+                return res.status(400).json({ mensagem: 'Usuário inválido (entre 3 e 64 caracteres).' });
             }
 
             if (!name || typeof name !== 'string' || name.trim().length < 2 || name.trim().length > 64) {
-                return res.status(400).json({ mensagem: 'Nome inválido (mínimo de 2 caracteres).' });
+                return res.status(400).json({ mensagem: 'Nome inválido (entre 2 e 64 caracteres).' });
             }
 
-            if (!password || typeof password !== 'string' || password.length < 4) {
-                return res.status(400).json({ mensagem: 'A senha deve conter no mínimo 4 caracteres.' });
+            if (!password || typeof password !== 'string' || password.length < 8 || password.length > 72) {
+                return res.status(400).json({ mensagem: 'A senha deve conter entre 8 e 72 caracteres.' });
             }
 
             const userLimpo = user.trim().toLowerCase();
             const usuarioExistente = await userModel.findByUsername(userLimpo);
             if (usuarioExistente) {
-                return res.status(400).json({ mensagem: 'Já existe um usuário cadastrado com este nome de acesso.' });
+                return res.status(409).json({ mensagem: 'Já existe um usuário cadastrado com este nome de acesso.' });
             }
 
             const hashedPassword = await bcrypt.hash(password, 10);
@@ -138,8 +139,12 @@ export const userController = {
             const { is_active } = req.body;
             const parsedId = Number(id);
 
-            if (isNaN(parsedId) || parsedId <= 0) {
+            if (!Number.isInteger(parsedId) || parsedId <= 0) {
                 return res.status(400).json({ mensagem: 'ID de usuário inválido.' });
+            }
+
+            if (typeof is_active !== 'boolean') {
+                return res.status(400).json({ mensagem: 'O campo is_active deve ser um valor booleano (true ou false).' });
             }
 
             if (parsedId === req.usuarioId && !is_active) {
@@ -154,7 +159,7 @@ export const userController = {
             await userModel.toggleActive(parsedId, is_active);
             return res.status(200).json({
                 mensagem: `Usuário ${is_active ? 'ativado' : 'desativado'} com sucesso!`,
-                is_active: Boolean(is_active)
+                is_active
             });
         } catch (error) {
             console.error(`Erro ao alterar status do usuário: ${error}`);
@@ -167,7 +172,7 @@ export const userController = {
             const { id } = req.params;
             const parsedId = Number(id);
 
-            if (isNaN(parsedId) || parsedId <= 0) {
+            if (!Number.isInteger(parsedId) || parsedId <= 0) {
                 return res.status(400).json({ mensagem: 'ID de usuário inválido.' });
             }
 

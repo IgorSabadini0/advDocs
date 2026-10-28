@@ -13,6 +13,20 @@ export const userModel = {
         return rows[0] || null;
     },
 
+    findAuthStatusById: async (id) => {
+        const query = "SELECT * FROM login WHERE id = ? LIMIT 1";
+        const [rows] = await db.query(query, [id]);
+        if (rows.length === 0) return null;
+        const row = rows[0];
+        const role = row.role || ((row.id === 1 || String(row.user || '').toLowerCase() === 'admin') ? 'admin' : 'user');
+        return {
+            id: row.id,
+            user: row.user,
+            is_active: Boolean(row.is_active),
+            role
+        };
+    },
+
     listUsers: async () => {
         const query = "SELECT id, user, name, is_active, created_at, updated_at FROM login ORDER BY name ASC";
         const [rows] = await db.query(query);

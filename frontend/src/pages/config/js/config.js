@@ -1,7 +1,6 @@
 import { abrirModalNovoTipo } from '../../../utils/tiposService.js';
-import { escapeHtml } from '../../../utils/utils.js';
+import { escapeHtml, apiFetch } from '../../../utils/utils.js';
 
-const API_URL = window.location.origin;
 let usuarioLogado = null;
 
 const sair = () => {
@@ -9,32 +8,16 @@ const sair = () => {
     window.location.href = '../auth';
 };
 
-const getHeaders = () => {
-    const token = localStorage.getItem('token');
-    return {
-        'Content-Type': 'application/json',
-        'Authorization': token
-    };
-};
-
 // --- 1. MEU PERFIL E ALTERAÇÃO DE SENHA / NOME ---
 
 const carregarMeuPerfil = async () => {
     try {
-        const resp = await fetch(`${API_URL}/users/me`, { headers: getHeaders() });
-        if (resp.status === 401 || resp.status === 403) {
-            sair();
-            return;
-        }
+        usuarioLogado = await apiFetch('/users/me');
+        const userNameEl = document.getElementById('user-name');
+        const userLoginEl = document.getElementById('user-login');
 
-        if (resp.ok) {
-            usuarioLogado = await resp.json();
-            const userNameEl = document.getElementById('user-name');
-            const userLoginEl = document.getElementById('user-login');
-
-            if (userNameEl) userNameEl.textContent = usuarioLogado.name;
-            if (userLoginEl) userLoginEl.textContent = `@${usuarioLogado.user}`;
-        }
+        if (userNameEl) userNameEl.textContent = usuarioLogado.name;
+        if (userLoginEl) userLoginEl.textContent = `@${usuarioLogado.user}`;
     } catch (e) {
         console.error('Erro ao carregar dados do perfil:', e);
     }
@@ -94,24 +77,17 @@ const abrirModalEditarNome = () => {
         btnSave.disabled = true;
 
         try {
-            const resp = await fetch(`${API_URL}/users/me`, {
+            await apiFetch('/users/me', {
                 method: 'PUT',
-                headers: getHeaders(),
                 body: JSON.stringify({ name })
             });
 
-            const data = await resp.json();
-            if (resp.ok) {
-                fechar();
-                await carregarMeuPerfil();
-                await carregarUsuariosConfig();
-            } else {
-                msgErro.textContent = data.mensagem || 'Erro ao atualizar nome.';
-                btnSave.disabled = false;
-            }
+            fechar();
+            await carregarMeuPerfil();
+            await carregarUsuariosConfig();
         } catch (e) {
             console.error('Erro ao atualizar nome:', e);
-            msgErro.textContent = 'Erro de conexão com o servidor.';
+            msgErro.textContent = e.data?.mensagem || 'Erro de conexão com o servidor.';
             btnSave.disabled = false;
         }
     };
@@ -136,9 +112,9 @@ const abrirModalAlterarSenha = () => {
             <h3>Alterar Minha Senha</h3>
             <p>Informe sua senha atual e escolha uma nova senha de acesso.</p>
 
-            <input type="password" id="inputSenhaAtual" class="modal-input-novo-tipo" placeholder="Senha Atual" style="margin-bottom: 10px;" autofocus>
-            <input type="password" id="inputNovaSenha" class="modal-input-novo-tipo" placeholder="Nova Senha (mín. 4 caracteres)" style="margin-bottom: 10px;">
-            <input type="password" id="inputConfirmarSenha" class="modal-input-novo-tipo" placeholder="Confirmar Nova Senha">
+            <input type="password" id="inputSenhaAtual" class="modal-input-novo-tipo" placeholder="Senha Atual" maxlength="72" style="margin-bottom: 10px;" autofocus>
+            <input type="password" id="inputNovaSenha" class="modal-input-novo-tipo" placeholder="Nova Senha (mín. 8 caracteres)" maxlength="72" style="margin-bottom: 10px;">
+            <input type="password" id="inputConfirmarSenha" class="modal-input-novo-tipo" placeholder="Confirmar Nova Senha" maxlength="72">
             
             <p id="msgErroSenha" style="color: var(--danger); font-size: 0.84rem; margin-top: -12px; margin-bottom: 16px; min-height: 18px;"></p>
 
@@ -180,8 +156,8 @@ const abrirModalAlterarSenha = () => {
             return;
         }
 
-        if (!novaSenha || novaSenha.length < 4) {
-            msgErro.textContent = 'A nova senha deve ter no mínimo 4 caracteres.';
+        if (!novaSenha || novaSenha.length < 8 || novaSenha.length > 72) {
+            msgErro.textContent = 'A nova senha deve ter entre 8 e 72 caracteres.';
             inputNova.focus();
             return;
         }
@@ -195,30 +171,23 @@ const abrirModalAlterarSenha = () => {
         btnSave.disabled = true;
 
         try {
-            const resp = await fetch(`${API_URL}/users/me/password`, {
+            await apiFetch('/users/me/password', {
                 method: 'PUT',
-                headers: getHeaders(),
                 body: JSON.stringify({ senhaAtual, novaSenha })
             });
 
-            const data = await resp.json();
-            if (resp.ok) {
-                overlay.querySelector('.modal-confirm-content').innerHTML = `
-                    <i class="fa-solid fa-circle-check modal-confirm-icon" style="color: var(--success);"></i>
-                    <h3>Senha Alterada!</h3>
-                    <p>Sua senha de acesso foi atualizada com sucesso.</p>
-                    <div class="confirm-buttons-group">
-                        <button type="button" class="btn-confirm-edit-act" id="btnOkSenha">Concluir</button>
-                    </div>
-                `;
-                document.getElementById('btnOkSenha')?.addEventListener('click', fechar);
-            } else {
-                msgErro.textContent = data.mensagem || 'Erro ao alterar senha.';
-                btnSave.disabled = false;
-            }
+            overlay.querySelector('.modal-confirm-content').innerHTML = `
+                <i class="fa-solid fa-circle-check modal-confirm-icon" style="color: var(--success);"></i>
+                <h3>Senha Alterada!</h3>
+                <p>Sua senha de acesso foi atualizada com sucesso.</p>
+                <div class="confirm-buttons-group">
+                    <button type="button" class="btn-confirm-edit-act" id="btnOkSenha">Concluir</button>
+                </div>
+            `;
+            document.getElementById('btnOkSenha')?.addEventListener('click', fechar);
         } catch (e) {
             console.error('Erro ao alterar senha:', e);
-            msgErro.textContent = 'Erro de conexão com o servidor.';
+            msgErro.textContent = e.data?.mensagem || 'Erro de conexão com o servidor.';
             btnSave.disabled = false;
         }
     };
@@ -270,23 +239,15 @@ const confirmarExclusaoTipo = (id, nome) => {
         msgErro.textContent = '';
 
         try {
-            const resp = await fetch(`${API_URL}/clientes/tipos/${id}`, {
-                method: 'DELETE',
-                headers: getHeaders()
+            await apiFetch(`/clientes/tipos/${id}`, {
+                method: 'DELETE'
             });
 
-            const data = await resp.json();
-
-            if (resp.ok) {
-                fechar();
-                await carregarTiposConfig();
-            } else {
-                msgErro.textContent = data.mensagem || 'Erro ao remover tipo.';
-                btnConfirm.disabled = false;
-            }
+            fechar();
+            await carregarTiposConfig();
         } catch (e) {
             console.error('Erro ao excluir tipo de processo:', e);
-            msgErro.textContent = 'Erro de conexão com o servidor.';
+            msgErro.textContent = e.data?.mensagem || 'Erro de conexão com o servidor.';
             btnConfirm.disabled = false;
         }
     });
@@ -297,31 +258,28 @@ const carregarTiposConfig = async () => {
     if (!container) return;
 
     try {
-        const resp = await fetch(`${API_URL}/clientes/tipos`, { headers: getHeaders() });
-        if (resp.ok) {
-            const tipos = await resp.json();
+        const tipos = await apiFetch('/clientes/tipos');
 
-            if (tipos.length === 0) {
-                container.innerHTML = '<span style="color: var(--text-muted); font-size: 0.85rem;">Nenhum tipo cadastrado.</span>';
-                return;
-            }
-
-            container.innerHTML = tipos.map(t => `
-                <span class="tipo-badge">
-                    <span>${escapeHtml(t.nome)}</span>
-                    <button type="button" class="btn-delete-tipo" data-id="${t.id}" data-nome="${escapeHtml(t.nome)}" title="Remover tipo ${escapeHtml(t.nome)}">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </span>
-            `).join('');
-
-            container.querySelectorAll('.btn-delete-tipo').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    confirmarExclusaoTipo(btn.dataset.id, btn.dataset.nome);
-                });
-            });
+        if (tipos.length === 0) {
+            container.innerHTML = '<span style="color: var(--text-muted); font-size: 0.85rem;">Nenhum tipo cadastrado.</span>';
+            return;
         }
+
+        container.innerHTML = tipos.map(t => `
+            <span class="tipo-badge">
+                <span>${escapeHtml(t.nome)}</span>
+                <button type="button" class="btn-delete-tipo" data-id="${t.id}" data-nome="${escapeHtml(t.nome)}" title="Remover tipo ${escapeHtml(t.nome)}">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </span>
+        `).join('');
+
+        container.querySelectorAll('.btn-delete-tipo').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                confirmarExclusaoTipo(btn.dataset.id, btn.dataset.nome);
+            });
+        });
     } catch (e) {
         console.error('Erro ao listar tipos de processos na config:', e);
     }
@@ -331,90 +289,87 @@ const carregarTiposConfig = async () => {
 
 const carregarUsuariosConfig = async () => {
     const container = document.getElementById('usuariosListContainer');
+    const btnNovoUsuario = document.getElementById('btnNovoUsuario');
     if (!container) return;
 
     try {
-        const resp = await fetch(`${API_URL}/users`, { headers: getHeaders() });
-        if (resp.ok) {
-            const users = await resp.json();
+        const users = await apiFetch('/users');
 
-            if (users.length === 0) {
-                container.innerHTML = '<span style="color: var(--text-muted); font-size: 0.85rem;">Nenhum usuário cadastrado.</span>';
-                return;
-            }
+        if (users.length === 0) {
+            container.innerHTML = '<span style="color: var(--text-muted); font-size: 0.85rem;">Nenhum usuário cadastrado.</span>';
+            return;
+        }
 
-            container.innerHTML = users.map(u => {
-                const badgeStatus = u.is_active
-                    ? '<span class="status-badge-active">Ativo</span>'
-                    : '<span class="status-badge-inactive">Inativo</span>';
+        container.innerHTML = users.map(u => {
+            const badgeStatus = u.is_active
+                ? '<span class="status-badge-active">Ativo</span>'
+                : '<span class="status-badge-inactive">Inativo</span>';
 
-                const badgeVoce = u.is_current
-                    ? '<span class="status-badge-you">Você</span>'
-                    : '';
+            const badgeVoce = u.is_current
+                ? '<span class="status-badge-you">Você</span>'
+                : '';
 
-                const acoes = u.is_current
-                    ? `<span style="font-size: 0.75rem; color: var(--text-muted); font-style: italic;">Logado agora</span>`
-                    : `
-                        <button type="button" class="btn-sm-action" data-action="toggle-status" data-id="${u.id}" data-active="${u.is_active}" title="${u.is_active ? 'Desativar acesso' : 'Reativar acesso'}">
-                            <i class="fa-solid ${u.is_active ? 'fa-user-slash' : 'fa-user-check'}"></i> ${u.is_active ? 'Desativar' : 'Ativar'}
-                        </button>
-                        <button type="button" class="btn-sm-action danger" data-action="delete-user" data-id="${u.id}" data-name="${escapeHtml(u.name)}" title="Excluir usuário">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    `;
+            const acoes = u.is_current
+                ? `<span style="font-size: 0.75rem; color: var(--text-muted); font-style: italic;">Logado agora</span>`
+                : `
+                    <button type="button" class="btn-sm-action" data-action="toggle-status" data-id="${u.id}" data-active="${u.is_active}" title="${u.is_active ? 'Desativar acesso' : 'Reativar acesso'}">
+                        <i class="fa-solid ${u.is_active ? 'fa-user-slash' : 'fa-user-check'}"></i> ${u.is_active ? 'Desativar' : 'Ativar'}
+                    </button>
+                    <button type="button" class="btn-sm-action danger" data-action="delete-user" data-id="${u.id}" data-name="${escapeHtml(u.name)}" title="Excluir usuário">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                `;
 
-                return `
-                    <div class="user-item">
-                        <div class="user-item-info">
-                            <div class="user-item-avatar"><i class="fa-solid fa-circle-user"></i></div>
-                            <div class="user-item-details">
-                                <h4>${escapeHtml(u.name)} ${badgeVoce}</h4>
-                                <span class="user-login-sub">@${escapeHtml(u.user)} &bull; ${badgeStatus}</span>
-                            </div>
-                        </div>
-                        <div class="user-item-actions">
-                            ${acoes}
+            return `
+                <div class="user-item">
+                    <div class="user-item-info">
+                        <div class="user-item-avatar"><i class="fa-solid fa-circle-user"></i></div>
+                        <div class="user-item-details">
+                            <h4>${escapeHtml(u.name)} ${badgeVoce}</h4>
+                            <span class="user-login-sub">@${escapeHtml(u.user)} &bull; ${badgeStatus}</span>
                         </div>
                     </div>
-                `;
-            }).join('');
+                    <div class="user-item-actions">
+                        ${acoes}
+                    </div>
+                </div>
+            `;
+        }).join('');
 
-            // Eventos dos botões de ação
-            container.querySelectorAll('[data-action="toggle-status"]').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const id = btn.dataset.id;
-                    const currentlyActive = btn.dataset.active === 'true';
-                    toggleStatusUsuario(id, !currentlyActive);
-                });
+        // Eventos dos botões de ação
+        container.querySelectorAll('[data-action="toggle-status"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.dataset.id;
+                const currentlyActive = btn.dataset.active === 'true';
+                toggleStatusUsuario(id, !currentlyActive);
             });
+        });
 
-            container.querySelectorAll('[data-action="delete-user"]').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    confirmarExclusaoUsuario(btn.dataset.id, btn.dataset.name);
-                });
+        container.querySelectorAll('[data-action="delete-user"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                confirmarExclusaoUsuario(btn.dataset.id, btn.dataset.name);
             });
-        }
+        });
     } catch (e) {
+        if (e.status === 403) {
+            if (btnNovoUsuario) btnNovoUsuario.style.display = 'none';
+            container.innerHTML = '<span style="color: var(--text-muted); font-size: 0.85rem;">Apenas administradores podem gerenciar usuários do escritório.</span>';
+            return;
+        }
         console.error('Erro ao listar usuários:', e);
     }
 };
 
 const toggleStatusUsuario = async (id, novoStatus) => {
     try {
-        const resp = await fetch(`${API_URL}/users/${id}/status`, {
+        await apiFetch(`/users/${id}/status`, {
             method: 'PATCH',
-            headers: getHeaders(),
-            body: JSON.stringify({ is_active: novoStatus })
+            body: JSON.stringify({ is_active: Boolean(novoStatus) })
         });
-
-        if (resp.ok) {
-            await carregarUsuariosConfig();
-        } else {
-            const data = await resp.json();
-            alert(data.mensagem || 'Erro ao alterar status do usuário.');
-        }
+        await carregarUsuariosConfig();
     } catch (e) {
         console.error('Erro ao alternar status do usuário:', e);
+        alert(e.data?.mensagem || 'Erro ao alterar status do usuário.');
     }
 };
 
@@ -460,22 +415,15 @@ const confirmarExclusaoUsuario = (id, nome) => {
         msgErro.textContent = '';
 
         try {
-            const resp = await fetch(`${API_URL}/users/${id}`, {
-                method: 'DELETE',
-                headers: getHeaders()
+            await apiFetch(`/users/${id}`, {
+                method: 'DELETE'
             });
 
-            const data = await resp.json();
-            if (resp.ok) {
-                fechar();
-                await carregarUsuariosConfig();
-            } else {
-                msgErro.textContent = data.mensagem || 'Erro ao excluir usuário.';
-                btnConfirm.disabled = false;
-            }
+            fechar();
+            await carregarUsuariosConfig();
         } catch (e) {
             console.error('Erro ao excluir usuário:', e);
-            msgErro.textContent = 'Erro de conexão com o servidor.';
+            msgErro.textContent = e.data?.mensagem || 'Erro de conexão com o servidor.';
             btnConfirm.disabled = false;
         }
     });
@@ -495,9 +443,9 @@ const abrirModalNovoUsuario = () => {
             <h3>Novo Usuário do Escritório</h3>
             <p>Cadastre um novo membro da equipe com acesso ao sistema.</p>
 
-            <input type="text" id="inputNovoNomeUsuario" class="modal-input-novo-tipo" placeholder="Nome Completo (ex: Dra. Mariana)" style="margin-bottom: 10px;" autofocus>
-            <input type="text" id="inputNovoUserLogin" class="modal-input-novo-tipo" placeholder="Usuário para login (ex: mariana)" style="margin-bottom: 10px;">
-            <input type="password" id="inputNovaSenhaUsuario" class="modal-input-novo-tipo" placeholder="Senha Inicial (mín. 4 caracteres)">
+            <input type="text" id="inputNovoNomeUsuario" class="modal-input-novo-tipo" placeholder="Nome Completo (ex: Dra. Mariana)" maxlength="64" style="margin-bottom: 10px;" autofocus>
+            <input type="text" id="inputNovoUserLogin" class="modal-input-novo-tipo" placeholder="Usuário para login (ex: mariana)" maxlength="64" style="margin-bottom: 10px;">
+            <input type="password" id="inputNovaSenhaUsuario" class="modal-input-novo-tipo" placeholder="Senha Inicial (mín. 8 caracteres)" maxlength="72">
             
             <p id="msgErroNovoUser" style="color: var(--danger); font-size: 0.84rem; margin-top: -12px; margin-bottom: 16px; min-height: 18px;"></p>
 
@@ -540,13 +488,13 @@ const abrirModalNovoUsuario = () => {
         }
 
         if (!user || user.length < 3) {
-            msgErro.textContent = 'O usuário para login deve ter pelo menos 3 letras.';
+            msgErro.textContent = 'O usuário para login deve ter pelo menos 3 caracteres.';
             inputLogin.focus();
             return;
         }
 
-        if (!password || password.length < 4) {
-            msgErro.textContent = 'A senha inicial deve ter pelo menos 4 caracteres.';
+        if (!password || password.length < 8 || password.length > 72) {
+            msgErro.textContent = 'A senha inicial deve ter entre 8 e 72 caracteres.';
             inputSenha.focus();
             return;
         }
@@ -554,23 +502,16 @@ const abrirModalNovoUsuario = () => {
         btnSave.disabled = true;
 
         try {
-            const resp = await fetch(`${API_URL}/users`, {
+            await apiFetch('/users', {
                 method: 'POST',
-                headers: getHeaders(),
                 body: JSON.stringify({ name, user, password })
             });
 
-            const data = await resp.json();
-            if (resp.ok) {
-                fechar();
-                await carregarUsuariosConfig();
-            } else {
-                msgErro.textContent = data.mensagem || 'Erro ao cadastrar usuário.';
-                btnSave.disabled = false;
-            }
+            fechar();
+            await carregarUsuariosConfig();
         } catch (e) {
             console.error('Erro ao cadastrar usuário:', e);
-            msgErro.textContent = 'Erro de conexão com o servidor.';
+            msgErro.textContent = e.data?.mensagem || 'Erro de conexão com o servidor.';
             btnSave.disabled = false;
         }
     };

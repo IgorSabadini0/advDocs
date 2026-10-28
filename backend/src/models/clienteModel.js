@@ -6,27 +6,29 @@ const clienteModel = {
         const [dados] = await db.query(query);
         return dados;
     },
+
     findById: async (id) => {
         const query = "SELECT * FROM clientes WHERE id = ? LIMIT 1";
         const [registro] = await db.query(query, [id]);
         return registro[0] || null;
     },
+
     getMenorPastaDisponivel: async () => {
-        const query = "SELECT numeroPasta FROM clientes WHERE numeroPasta > 0 ORDER BY numeroPasta ASC";
+        const query = `
+            SELECT CASE
+                WHEN NOT EXISTS (SELECT 1 FROM clientes WHERE numeroPasta = 1) THEN 1
+                ELSE (
+                    SELECT MIN(t1.numeroPasta) + 1
+                    FROM clientes t1
+                    LEFT JOIN clientes t2 ON t2.numeroPasta = t1.numeroPasta + 1
+                    WHERE t1.numeroPasta > 0 AND t2.numeroPasta IS NULL
+                )
+            END AS menorDisponivel
+        `;
         const [rows] = await db.query(query);
-        let menorDisponivel = 1;
-
-        for (const row of rows) {
-            const num = Number(row.numeroPasta);
-            if (num === menorDisponivel) {
-                menorDisponivel++;
-            } else if (num > menorDisponivel) {
-                break;
-            }
-        }
-
-        return menorDisponivel;
+        return Number(rows[0]?.menorDisponivel) || 1;
     },
+
     findByNumeroProc: async (numeroProc) => {
         const numeroLimpo = String(numeroProc || '').replace(/\D/g, '');
         if (!numeroLimpo) return null;
@@ -40,36 +42,110 @@ const clienteModel = {
         const [registro] = await db.query(query, [numeroProc, numeroLimpo]);
         return registro[0] || null;
     },
-    verificarExistencia: async (numeroProc, numeroPasta, idIgnorar = null) => {
-        let query = "SELECT id, numeroProc, numeroPasta FROM clientes WHERE ((numeroProc = ? AND numeroProc IS NOT NULL AND numeroProc != '') OR numeroPasta = ?)";
-        const params = [numeroProc, Number(numeroPasta)];
+
+    verificarExistencia: async (numeroProc, numeroPasta, idIgnorar = null, conn = db, lockForUpdate = false) => {
+        const procLimpo = String(numeroProc || '').replace(/\D/g, '');
+        let query = `
+            SELECT id, numeroProc, numeroPasta
+            FROM clientes
+            WHERE (
+                (? != '' AND REPLACE(REPLACE(REPLACE(numeroProc, '-', ''), '.', ''), ' ', '') = ?)
+                OR numeroPasta = ?
+            )
+        `;
+        const params = [procLimpo, procLimpo, Number(numeroPasta)];
 
         if (idIgnorar) {
             query += " AND id != ?";
             params.push(Number(idIgnorar));
         }
 
-        query += " LIMIT 1";
+        query += lockForUpdate ? " LIMIT 1 FOR UPDATE" : " LIMIT 1";
 
-        const [registro] = await db.query(query, params);
+        const [registro] = await conn.query(query, params);
         return registro[0] || null;
     },
-    create: async (dados) => {
+
+    create: async (dados, conn = db) => {
         const { acao, nome, numeroPasta, tipo, numeroProc, status, descricao } = dados;
         const query = "INSERT INTO clientes (acao, nome, numeroPasta, tipo, numeroProc, status, descricao) VALUES (?, ?, ?, ?, ?, ?, ?)";
-        const [resultado] = await db.query(query, [acao, nome, Number(numeroPasta), tipo, numeroProc, status, descricao]);
+        const [resultado] = await conn.query(query, [acao.trim(), nome.trim(), Number(numeroPasta), tipo.trim(), numeroProc, status, descricao]);
         return resultado;
     },
-    update: async (id, dados) => {
+
+    createWithCheck: async (dados) => {
+        const conn = await db.getConnection();
+        try {
+            await conn.beginTransaction();
+
+            const conflito = await clienteModel.verificarExistencia(dados.numeroProc, dados.numeroPasta, null, conn, true);
+            if (conflito) {
+                await conn.rollback();
+                const procLimpoReq = String(dados.numeroProc || '').replace(/\D/g, '');
+                const procLimpoDb = String(conflito.numeroProc || '').replace(/\D/g, '');
+                const campoConflito = (procLimpoReq && procLimpoDb === procLimpoReq) ? 'numeroProc' : 'numeroPasta';
+                return { conflito: true, campoConflito };
+            }
+
+            const resultado = await clienteModel.create(dados, conn);
+            await conn.commit();
+            return { conflito: false, insertId: resultado.insertId };
+        } catch (error) {
+            await conn.rollback();
+            if (error.code === 'ER_DUP_ENTRY') {
+                return { conflito: true, campoConflito: 'duplicado' };
+            }
+            throw error;
+        } finally {
+            conn.release();
+        }
+    },
+
+    update: async (id, dados, conn = db) => {
         const { acao, nome, numeroPasta, tipo, numeroProc, status, descricao } = dados;
         const query = `
             UPDATE clientes 
             SET acao = ?, nome = ?, numeroPasta = ?, tipo = ?, numeroProc = ?, status = ?, descricao = ? 
             WHERE id = ?
         `;
-        const [resultado] = await db.query(query, [acao, nome, Number(numeroPasta), tipo, numeroProc, status, descricao, id]);
+        const [resultado] = await conn.query(query, [acao.trim(), nome.trim(), Number(numeroPasta), tipo.trim(), numeroProc, status, descricao, id]);
         return resultado;
     },
+
+    updateWithCheck: async (id, dados) => {
+        const conn = await db.getConnection();
+        try {
+            await conn.beginTransaction();
+
+            const [rows] = await conn.query("SELECT id FROM clientes WHERE id = ? LIMIT 1 FOR UPDATE", [id]);
+            if (rows.length === 0) {
+                await conn.rollback();
+                return { naoEncontrado: true };
+            }
+
+            const conflito = await clienteModel.verificarExistencia(dados.numeroProc, dados.numeroPasta, id, conn, true);
+            if (conflito) {
+                await conn.rollback();
+                const procLimpoReq = String(dados.numeroProc || '').replace(/\D/g, '');
+                const procLimpoDb = String(conflito.numeroProc || '').replace(/\D/g, '');
+                const campoConflito = (procLimpoReq && procLimpoDb === procLimpoReq) ? 'numeroProc' : 'numeroPasta';
+                return { conflito: true, campoConflito };
+            }
+
+            await clienteModel.update(id, dados, conn);
+            await conn.commit();
+            return { conflito: false, naoEncontrado: false };
+        } catch (error) {
+            await conn.rollback();
+            if (error.code === 'ER_DUP_ENTRY') {
+                return { conflito: true, campoConflito: 'duplicado' };
+            }
+            throw error;
+        } finally {
+            conn.release();
+        }
+    },
+
     delete: async (id) => {
         const query = "DELETE FROM clientes WHERE id = ?";
         const [resultado] = await db.query(query, [id]);

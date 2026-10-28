@@ -14,6 +14,13 @@ const MAPA_JUSTICA_FEDERAL = {
     '04': 'trf4', '05': 'trf5', '06': 'trf6'
 };
 
+const TRIBUNAIS_PERMITIDOS = new Set([
+    ...Object.values(MAPA_JUSTICA_ESTADUAL),
+    ...Object.values(MAPA_JUSTICA_FEDERAL),
+    ...Array.from({ length: 24 }, (_, i) => `trt${i + 1}`),
+    'stj', 'tst', 'tse', 'stm'
+]);
+
 /**
  * Identifica o alias do tribunal na API pública do DataJud a partir dos 20 dígitos do número CNJ.
  * Formato CNJ: NNNNNNN-DD.AAAA.J.TR.OOOO
@@ -156,9 +163,21 @@ export async function buscarProcesso(numeroProcesso, tribunalOverride = null) {
         throw erro;
     }
 
-    const tribunalAlias = (tribunalOverride || identificarTribunalCNJ(numeroLimpo)).toLowerCase();
-    const url = `https://api-publica.datajud.cnj.jus.br/api_publica_${tribunalAlias}/_search`;
-    const apiKey = process.env.APIKEY || 'APIKey cDZHYzlZa0JadVREZDJCendQbXY6SkJlTzNjLV9TRENyQk1RdnFKZGRQdw==';
+    const tribunalAlias = String(tribunalOverride || identificarTribunalCNJ(numeroLimpo)).trim().toLowerCase();
+    if (!TRIBUNAIS_PERMITIDOS.has(tribunalAlias)) {
+        const erro = new Error('Tribunal informado é inválido ou não permitido.');
+        erro.code = 'INVALID_COURT';
+        throw erro;
+    }
+
+    const apiKey = process.env.APIKEY;
+    if (!apiKey) {
+        const erro = new Error('Chave da API do DataJud (APIKEY) não configurada no ambiente.');
+        erro.code = 'DATAJUD_API_ERROR';
+        throw erro;
+    }
+
+    const url = `https://api-publica.datajud.cnj.jus.br/api_publica_${encodeURIComponent(tribunalAlias)}/_search`;
 
     try {
         const response = await axios.post(

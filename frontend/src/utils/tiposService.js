@@ -1,6 +1,4 @@
-import { escapeHtml } from './utils.js';
-
-const API_URL = window.location.origin;
+import { escapeHtml, apiFetch } from './utils.js';
 
 /**
  * Carrega a lista de tipos de processos da API e preenche um elemento <select>.
@@ -11,20 +9,7 @@ export const carregarTiposSelect = async (selectElement, valorSelecionado = null
     if (!token) return [];
 
     try {
-        const response = await fetch(`${API_URL}/clientes/tipos`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': token
-            }
-        });
-
-        if (!response.ok) {
-            console.error('Erro ao carregar tipos de processo:', response.status);
-            return [];
-        }
-
-        const tipos = await response.json();
+        const tipos = await apiFetch('/clientes/tipos');
 
         selectElement.innerHTML = `
             <option value="" disabled ${!valorSelecionado ? 'selected' : ''} hidden>Selecione o tipo...</option>
@@ -100,33 +85,21 @@ export const abrirModalNovoTipo = (onSuccess) => {
             return;
         }
 
-        const token = localStorage.getItem('token');
         btnSalvar.disabled = true;
 
         try {
-            const resp = await fetch(`${API_URL}/clientes/tipos`, {
+            const data = await apiFetch('/clientes/tipos', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': token
-                },
                 body: JSON.stringify({ nome })
             });
 
-            const data = await resp.json();
-
-            if (resp.ok) {
-                fechar();
-                if (typeof onSuccess === 'function') {
-                    onSuccess(data.nome);
-                }
-            } else {
-                msgErro.textContent = data.mensagem || 'Erro ao cadastrar tipo.';
-                btnSalvar.disabled = false;
+            fechar();
+            if (typeof onSuccess === 'function') {
+                onSuccess(data.nome);
             }
         } catch (err) {
             console.error('Erro ao criar tipo de processo:', err);
-            msgErro.textContent = 'Erro de conexão com o servidor.';
+            msgErro.textContent = err.data?.mensagem || 'Erro de conexão com o servidor.';
             btnSalvar.disabled = false;
         }
     };

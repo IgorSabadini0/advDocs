@@ -1,6 +1,4 @@
-import { escapeHtml, formatDate, formatDateTime, mascaraProcessoCNJ, normalizeText } from '../../../utils/utils.js';
-
-const API_URL = window.location.origin;
+import { escapeHtml, formatDate, formatDateTime, mascaraProcessoCNJ, normalizeText, apiFetch } from '../../../utils/utils.js';
 
 let processoAtual = null;
 let instanciaSelecionadaIndex = 0;
@@ -263,26 +261,8 @@ const restaurarConsultaEmCache = async (numeroFormatado) => {
         const cache = JSON.parse(cacheRaw);
         if (cache.numeroLimpo !== numeroLimpo) return false;
 
-        const token = localStorage.getItem('token');
-        const [clientesResp, proxPastaResp] = await Promise.all([
-            fetch(`${API_URL}/clientes`, { headers: { 'Authorization': token } }),
-            fetch(`${API_URL}/clientes/proxima-pasta`, { headers: { 'Authorization': token } })
-        ]);
-
-        let pastaVinculada = null;
-        let menorPastaDisponivel = null;
-
-        if (clientesResp.ok) {
-            const clientes = await clientesResp.json();
-            pastaVinculada = clientes.find(c =>
-                String(c.numeroProc || '').replace(/\D/g, '') === numeroLimpo
-            ) || null;
-        }
-
-        if (proxPastaResp.ok) {
-            const proxData = await proxPastaResp.json();
-            menorPastaDisponivel = proxData.numeroPasta;
-        }
+        // Busca apenas o vínculo específico e a menor pasta disponível (evita baixar toda a tabela de clientes)
+        const { pastaVinculada, menorPastaDisponivel } = await apiFetch(`/clientes/vinculo/${encodeURIComponent(numeroLimpo)}`);
 
         processoAtual = cache.processo;
         instanciaSelecionadaIndex = 0;
@@ -330,26 +310,7 @@ const consultarProcesso = async (event) => {
 
     try {
         const queryParams = selectTribunal.value ? `?tribunal=${encodeURIComponent(selectTribunal.value)}` : '';
-        const response = await fetch(`${API_URL}/clientes/consulta/${encodeURIComponent(numeroLimpo)}${queryParams}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': token
-            }
-        });
-
-        if (response.status === 401 || response.status === 403) {
-            localStorage.removeItem('token');
-            window.location.href = '/pages/auth/';
-            return;
-        }
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            showEmpty(data.mensagem || 'Não foi possível localizar o processo informado.');
-            return;
-        }
+        const data = await apiFetch(`/clientes/consulta/${encodeURIComponent(numeroLimpo)}${queryParams}`);
 
         processoAtual = data.processo;
         instanciaSelecionadaIndex = 0;
@@ -374,7 +335,10 @@ const consultarProcesso = async (event) => {
         document.getElementById('resultadoContainer').style.display = 'flex';
     } catch (error) {
         console.error('Erro ao consultar processo:', error);
-        showEmpty('Erro de conexão ao consultar o processo. Tente novamente.');
+        if (error.message === 'UNAUTHORIZED' || error.message === 'TOKEN_MISSING') {
+            return;
+        }
+        showEmpty(error.data?.mensagem || 'Não foi possível localizar o processo informado.');
     } finally {
         showLoading(false);
     }

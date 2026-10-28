@@ -1,7 +1,6 @@
-import { mascaraProcessoCNJ } from '../../../utils/utils.js';
+import { mascaraProcessoCNJ, apiFetch } from '../../../utils/utils.js';
 import { carregarTiposSelect, abrirModalNovoTipo } from '../../../utils/tiposService.js';
 
-const API_URL = window.location.origin;
 let idEdicao = null;
 
 // Aguarda o DOM carregar para selecionar o elemento
@@ -104,70 +103,50 @@ const salvarEdicao = async () => {
             descricao: document.getElementById('descricao').value
         };
 
-        const token = localStorage.getItem('token');
         const statusMessage = document.getElementById('response');
 
         try {
-            const response = await fetch(`${API_URL}/clientes/${idEdicao}`, {
+            await apiFetch(`/clientes/${idEdicao}`, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': token
-                },
                 body: JSON.stringify(edicao)
             });
 
-            if (response.ok) {
-                statusMessage.textContent = '';
-                statusMessage.style.color = '#28a745';
+            statusMessage.textContent = '';
+            statusMessage.style.color = '#28a745';
 
-                showLoading(true);
-                destruirModal();
+            showLoading(true);
+            destruirModal();
 
-                sessionStorage.removeItem("itemEmEdicao");
+            sessionStorage.removeItem("itemEmEdicao");
 
-                setTimeout(() => {
-                    showLoading(false);
+            setTimeout(() => {
+                showLoading(false);
 
-                    let countdown = 2;
-                    statusMessage.textContent = `✅ Edição salva com sucesso! Redirecionando em ${countdown}...`;
-                    countdown--;
+                let countdown = 2;
+                statusMessage.textContent = `✅ Edição salva com sucesso! Redirecionando em ${countdown}...`;
+                countdown--;
 
-                    const countdownInterval = setInterval(() => {
-                        if (countdown <= 0) {
-                            clearInterval(countdownInterval);
-                            window.location.href = '/pages/main/';
-                        } else {
-                            statusMessage.textContent = `✅ Edição salva com sucesso! Redirecionando em ${countdown}...`;
-                            countdown--;
-                        }
-                    }, 1000);
-                }, 400);
-            } else {
-                statusMessage.style.color = '#dc3545';
-                confirmButton.disabled = false;
-
-                if (response.status === 401 || response.status === 403) {
-                    localStorage.removeItem('token');
-                    window.location.href = '/pages/auth/';
-                    return;
-                }
-
-                let errorMsg = '❌ Erro ao editar. Tente novamente.';
-                try {
-                    const data = await response.json();
-                    if (data && data.mensagem) {
-                        errorMsg = data.mensagem;
+                const countdownInterval = setInterval(() => {
+                    if (countdown <= 0) {
+                        clearInterval(countdownInterval);
+                        window.location.href = '/pages/main/';
+                    } else {
+                        statusMessage.textContent = `✅ Edição salva com sucesso! Redirecionando em ${countdown}...`;
+                        countdown--;
                     }
-                } catch (_) { }
-
-                statusMessage.innerHTML = errorMsg;
-                destruirModal();
-            }
+                }, 1000);
+            }, 400);
         } catch (error) {
             console.error('Erro ao editar:', error);
             confirmButton.disabled = false;
             destruirModal();
+
+            if (error.message === 'UNAUTHORIZED' || error.message === 'TOKEN_MISSING') {
+                return;
+            }
+
+            statusMessage.style.color = '#dc3545';
+            statusMessage.textContent = error.data?.mensagem || '❌ Erro ao editar registro. Verifique os dados ou sua conexão.';
         }
     }, { once: true });
 };

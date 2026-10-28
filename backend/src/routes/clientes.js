@@ -11,6 +11,7 @@ router.get('/proxima-pasta', clienteController.obterProximaPasta);
 router.get('/tipos', clienteController.listTiposProcesso);
 router.post('/tipos', clienteController.createTipoProcesso);
 router.delete('/tipos/:id', clienteController.deleteTipoProcesso);
+router.get('/vinculo/:numeroProc', clienteController.obterVinculoProcesso);
 router.get('/consulta/:numeroProc', clienteController.consultarProcessoCliente);
 router.post('/', clienteController.createCliente);
 router.put('/:id', clienteController.updateCliente);

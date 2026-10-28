@@ -23,6 +23,26 @@ const obterProximaPasta = async (req, res) => {
     }
 };
 
+const obterVinculoProcesso = async (req, res) => {
+    try {
+        const { numeroProc } = req.params;
+        const numeroLimpo = String(numeroProc || '').replace(/\D/g, '');
+        if (numeroLimpo.length !== 20) {
+            return res.status(400).json({ mensagem: "Número do processo inválido. Informe os 20 dígitos do padrão CNJ." });
+        }
+
+        const [pastaVinculada, menorPastaDisponivel] = await Promise.all([
+            clienteModel.findByNumeroProc(numeroLimpo),
+            clienteModel.getMenorPastaDisponivel()
+        ]);
+
+        return res.status(200).json({ pastaVinculada, menorPastaDisponivel });
+    } catch (error) {
+        console.error(`Erro ao obter vínculo do processo: ${error}`);
+        return res.status(500).json({ mensagem: "Erro interno no servidor" });
+    }
+};
+
 const listTiposProcesso = async (req, res) => {
     try {
         const tipos = await tipoProcessoModel.list();
@@ -43,7 +63,7 @@ const createTipoProcesso = async (req, res) => {
         const nomeFormatado = nome.trim();
         const existente = await tipoProcessoModel.findByName(nomeFormatado);
         if (existente) {
-            return res.status(400).json({ mensagem: "Já existe um tipo de processo cadastrado com este nome." });
+            return res.status(409).json({ mensagem: "Já existe um tipo de processo cadastrado com este nome." });
         }
 
         const resultado = await tipoProcessoModel.create(nomeFormatado);
@@ -96,16 +116,7 @@ const createCliente = async (req, res) => {
 
         let { acao, nome, numeroPasta, tipo, numeroProc, status, consultarProcesso, descricao } = req.body;
 
-        const registroExistente = await clienteModel.verificarExistencia(numeroProc, numeroPasta);
-        if (registroExistente) {
-            if (numeroProc && registroExistente.numeroProc === numeroProc) {
-                return res.status(400).json({ mensagem: 'Já existe outro cliente com este <span class="type-error">número de processo</span>' });
-            }
-            if (registroExistente.numeroPasta === Number(numeroPasta)) {
-                return res.status(400).json({ mensagem: 'Já existe outro cliente com este <span class="type-error">número de pasta</span>' });
-            }
-        }
-
+        // Consulta DataJud ANTES de abrir transação no banco de dados para evitar lock prolongado e race conditions
         let dadosProcesso = null;
         if (consultarProcesso && numeroProc) {
             try {
@@ -121,7 +132,7 @@ const createCliente = async (req, res) => {
             }
         }
 
-        const resultado = await clienteModel.create({
+        const resultado = await clienteModel.createWithCheck({
             acao,
             nome,
             numeroPasta,
@@ -130,6 +141,13 @@ const createCliente = async (req, res) => {
             status,
             descricao
         });
+
+        if (resultado.conflito) {
+            const msg = resultado.campoConflito === 'numeroProc'
+                ? 'Já existe outro cliente com este número de processo.'
+                : 'Já existe outro cliente com este número de pasta.';
+            return res.status(409).json({ mensagem: msg, campoConflito: resultado.campoConflito });
+        }
 
         return res.status(201).json({
             mensagem: "Cliente cadastrado com sucesso!",
@@ -164,6 +182,9 @@ const consultarProcessoCliente = async (req, res) => {
         try {
             processo = await buscarProcesso(numeroLimpo, tribunal || null);
         } catch (err) {
+            if (err.code === 'INVALID_COURT' || err.code === 'INVALID_CNJ_LENGTH') {
+                return res.status(400).json({ mensagem: err.message });
+            }
             erroDatajud = err.message;
         }
 
@@ -186,7 +207,7 @@ const consultarProcessoCliente = async (req, res) => {
         });
     } catch (error) {
         console.error(`Erro ao consultar processo: ${error.message}`);
-        if (error.code === 'INVALID_CNJ_LENGTH') {
+        if (error.code === 'INVALID_CNJ_LENGTH' || error.code === 'INVALID_COURT') {
             return res.status(400).json({ mensagem: error.message });
         }
         return res.status(502).json({
@@ -209,25 +230,9 @@ const updateCliente = async (req, res) => {
             return res.status(400).json({ mensagem: validacao.mensagem });
         }
 
-        const clienteExistente = await clienteModel.findById(parsedId);
-        if (!clienteExistente) {
-            return res.status(404).json({ mensagem: "Cliente não encontrado." });
-        }
-
         const { acao, nome, numeroPasta, tipo, numeroProc, status, descricao } = req.body;
 
-        // Verifica duplicidade ignorando o próprio cliente em edição
-        const conflito = await clienteModel.verificarExistencia(numeroProc, numeroPasta, parsedId);
-        if (conflito) {
-            if (numeroProc && conflito.numeroProc === numeroProc) {
-                return res.status(400).json({ mensagem: 'Já existe outro cliente com este <span class="type-error">número de processo</span>' });
-            }
-            if (conflito.numeroPasta === Number(numeroPasta)) {
-                return res.status(400).json({ mensagem: 'Já existe outro cliente com este <span class="type-error">número de pasta</span>' });
-            }
-        }
-
-        await clienteModel.update(parsedId, {
+        const resultado = await clienteModel.updateWithCheck(parsedId, {
             acao,
             nome,
             numeroPasta,
@@ -236,6 +241,17 @@ const updateCliente = async (req, res) => {
             status,
             descricao
         });
+
+        if (resultado.naoEncontrado) {
+            return res.status(404).json({ mensagem: "Cliente não encontrado." });
+        }
+
+        if (resultado.conflito) {
+            const msg = resultado.campoConflito === 'numeroProc'
+                ? 'Já existe outro cliente com este número de processo.'
+                : 'Já existe outro cliente com este número de pasta.';
+            return res.status(409).json({ mensagem: msg, campoConflito: resultado.campoConflito });
+        }
 
         return res.status(200).json({ mensagem: "Cliente atualizado com sucesso!" });
     } catch (error) {
@@ -269,6 +285,7 @@ const deleteCliente = async (req, res) => {
 const clienteController = {
     listClientes,
     obterProximaPasta,
+    obterVinculoProcesso,
     listTiposProcesso,
     createTipoProcesso,
     deleteTipoProcesso,

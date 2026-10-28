@@ -41,7 +41,7 @@ const acess = async (event) => {
         // Verifica se a resposta é JSON antes de parsear
         const contentType = response.headers.get("content-type");
         let data = {};
-        if (contentType && contentType.indexOf("application/json") !== -1) { // qualquer resposta que seja JSON, mesmo que seja um erro, será parseada para mostrar a mensagem correta
+        if (contentType && contentType.indexOf("application/json") !== -1) {
             data = await response.json();
         }
 
@@ -50,7 +50,7 @@ const acess = async (event) => {
             window.location.href = data.redirectUrl;
         } else {
             status.innerText = data.mensagem || 'Usuário ou senha inválidos.';
-            showLoading(false); // O loading é parado apenas em caso de erro para permitir uma nova tentativa. Se der certo vai redirecionar para a Main
+            showLoading(false);
         }
 
     } catch (error) {
@@ -58,13 +58,15 @@ const acess = async (event) => {
         status.innerText = 'Erro de conexão. Verifique sua internet.';
         showLoading(false);
     }
-}
+};
 
 // Escuta o clique no botão sem depender de uma variável global criada pelo id.
 const submitButton = document.getElementById('submit');
 submitButton.addEventListener('click', acess);
 
-// Permite dar "Enter" nos campos de input e chamar a função de acesso sem precisar clicar no botão
+// Permite dar "Enter" nos campos de input apenas quando o botão não estiver desabilitado
 document.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') acess(e);
+    if (e.key === 'Enter' && !submitButton.disabled) {
+        acess(e);
+    }
 });
