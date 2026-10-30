@@ -1,17 +1,42 @@
 const API_URL = window.location.origin;
 
+// Verifica se o usuário já possui sessão ativa e válida antes de qualquer interação
+const verificarSessaoAtiva = () => {
+    try {
+        const token = localStorage.getItem('token');
+        if (token) {
+            const parts = token.split('.');
+            if (parts.length === 3) {
+                const payload = JSON.parse(atob(parts[1]));
+                if (payload && payload.exp && (payload.exp * 1000 > Date.now())) {
+                    window.location.replace('/pages/main/');
+                    return true;
+                }
+            }
+            localStorage.removeItem('token');
+        }
+    } catch (_) {
+        localStorage.removeItem('token');
+    }
+    return false;
+};
+
 const showLoading = (show) => {
     const loading = document.getElementById('loading');
-    const submitBtn = document.getElementById("submit"); // Referência ao botão
+    const submitBtn = document.getElementById("submit");
 
     if (show) {
-        loading.classList.add('show');
-        submitBtn.disabled = true; // Desativa para evitar cliques duplos
-        submitBtn.style.opacity = "0.5"; // Feedback visual opcional
+        loading?.classList.add('show');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = "0.5";
+        }
     } else {
-        loading.classList.remove('show');
-        submitBtn.disabled = false;
-        submitBtn.style.opacity = "1";
+        loading?.classList.remove('show');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = "1";
+        }
     }
 };
 
@@ -22,10 +47,10 @@ const acess = async (event) => {
     const status = document.getElementById('status');
 
     // Limpa a mensagem de erro anterior ao tentar novamente
-    status.innerText = '';
+    if (status) status.innerText = '';
 
     if (!user || !password) {
-        status.innerText = 'Preencha todos os campos.';
+        if (status) status.innerText = 'Preencha todos os campos.';
         return;
     }
 
@@ -47,26 +72,30 @@ const acess = async (event) => {
 
         if (response.ok) {
             localStorage.setItem('token', data.token);
-            window.location.href = data.redirectUrl;
+            window.location.replace(data.redirectUrl || '/pages/main/');
         } else {
-            status.innerText = data.mensagem || 'Usuário ou senha inválidos.';
+            if (status) status.innerText = data.mensagem || 'Usuário ou senha inválidos.';
             showLoading(false);
         }
 
     } catch (error) {
         console.error('Erro de rede ou servidor:', error);
-        status.innerText = 'Erro de conexão. Verifique sua internet.';
+        if (status) status.innerText = 'Erro de conexão. Verifique sua internet.';
         showLoading(false);
     }
 };
 
-// Escuta o clique no botão sem depender de uma variável global criada pelo id.
-const submitButton = document.getElementById('submit');
-submitButton.addEventListener('click', acess);
-
-// Permite dar "Enter" nos campos de input apenas quando o botão não estiver desabilitado
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !submitButton.disabled) {
-        acess(e);
+if (!verificarSessaoAtiva()) {
+    // Escuta o clique no botão sem depender de uma variável global criada pelo id.
+    const submitButton = document.getElementById('submit');
+    if (submitButton) {
+        submitButton.addEventListener('click', acess);
     }
-});
+
+    // Permite dar "Enter" nos campos de input apenas quando o botão não estiver desabilitado
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && submitButton && !submitButton.disabled) {
+            acess(e);
+        }
+    });
+}

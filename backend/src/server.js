@@ -34,7 +34,7 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "https://kit.fontawesome.com", "https://ka-f.fontawesome.com"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "https://kit.fontawesome.com", "https://ka-f.fontawesome.com"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://ka-f.fontawesome.com"],
             connectSrc: ["'self'", "https://ka-f.fontawesome.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com", "https://ka-f.fontawesome.com"],
@@ -66,9 +66,9 @@ app.use(cors({
 const staticPath = path.join(__dirname, '../../frontend/src');
 app.use(express.static(staticPath));
 
-// 4. Redirecionamento da Raiz para a página de autenticação
+// 4. Rota Raiz: entrega o gateway que valida se o usuário já possui sessão ativa no navegador
 app.get('/', (req, res) => {
-    res.redirect('/pages/auth/');
+    res.sendFile(path.join(staticPath, 'index.html'));
 });
 
 // 5. Rotas da Aplicação (Padrão MVC)
