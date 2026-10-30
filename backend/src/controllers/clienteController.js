@@ -13,6 +13,27 @@ const listClientes = async (req, res) => {
     }
 };
 
+const getClienteById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const parsedId = Number(id);
+
+        if (isNaN(parsedId) || !Number.isInteger(parsedId) || parsedId <= 0) {
+            return res.status(400).json({ mensagem: "ID do registro inválido." });
+        }
+
+        const cliente = await clienteModel.findById(parsedId);
+        if (!cliente) {
+            return res.status(404).json({ mensagem: "Pasta/cliente não encontrado." });
+        }
+
+        return res.status(200).json(cliente);
+    } catch (error) {
+        console.error(`Erro ao buscar cliente por ID: ${error}`);
+        return res.status(500).json({ mensagem: "Erro interno no servidor" });
+    }
+};
+
 const obterProximaPasta = async (req, res) => {
     try {
         const numeroPasta = await clienteModel.getMenorPastaDisponivel();
@@ -284,6 +305,7 @@ const deleteCliente = async (req, res) => {
 
 const clienteController = {
     listClientes,
+    getClienteById,
     obterProximaPasta,
     obterVinculoProcesso,
     listTiposProcesso,

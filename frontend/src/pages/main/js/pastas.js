@@ -239,16 +239,13 @@ const traduzirTipo = (tipo) => {
 };
 
 // Informa ao navegador que o item a ser editado está armazenado no sessionStorage e redireciona para a página de edição.
-const editarItem = (id, tipo) => {
-    const item = clientes.find(c => String(c.id) === String(id) && c.tipo === tipo);
+const editarItem = (id) => {
+    const item = clientes.find(c => String(c.id) === String(id));
 
-    if (!item) {
-        alert('Não foi possível carregar os dados para edição.');
-        return;
+    if (item) {
+        sessionStorage.setItem('itemEmEdicao', JSON.stringify(item));
     }
-
-    sessionStorage.setItem('itemEmEdicao', JSON.stringify(item));
-    window.location.href = '/pages/edit';
+    window.location.href = `/pages/edit/?id=${encodeURIComponent(id)}`;
 };
 
 const deletarItem = (id) => {
@@ -299,23 +296,28 @@ const deletarItem = (id) => {
 };
 
 const viewItem = (id, tipo) => {
-    const item = clientes.find(c => String(c.id) === String(id) && c.tipo === tipo);
+    const item = clientes.find(c => String(c.id) === String(id));
 
     if (!item) {
-        console.error(`[Erro] Item não encontrado: ID ${id} | Tipo: ${tipo}`);
+        console.error(`[Erro] Item não encontrado: ID ${id}`);
         alert('Não foi possível carregar os dados do item. Tente novamente.');
         return;
     }
     viewItemModal(item, {
-        tipoLegivel: traduzirTipo(tipo),
+        tipoLegivel: traduzirTipo(item.tipo || tipo),
         onDelete: () => deletarItem(id),
-        onEdit: () => editarItem(id, tipo)
+        onEdit: () => editarItem(id)
     });
 };
 
 // --- INICIALIZAÇÃO (DOMContentLoaded) ---
 
 document.addEventListener('DOMContentLoaded', async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = '/pages/auth/';
+        return;
+    }
     const searchInput = document.getElementById('search');
     document.getElementById('addButton').addEventListener('click', adicionar);
     document.getElementById('consultButton').addEventListener('click', consultar);

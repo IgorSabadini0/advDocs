@@ -13,7 +13,7 @@ config({ path: path.resolve(__dirname, '../../../.env'), quiet: true });
 const db = mysql.createPool({
     host: process.env.DB_HOST || '127.0.0.1',
     user: process.env.DB_USER,
-    port: Number(process.env.DB_PORT || process.env.PORT || 3306),
+    port: Number(process.env.DB_PORT || (process.env.PORT && process.env.PORT !== process.env.PORT_SERVER ? process.env.PORT : null) || 3306),
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
     waitForConnections: true,

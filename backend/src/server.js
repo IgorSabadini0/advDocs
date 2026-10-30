@@ -34,7 +34,7 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "https://kit.fontawesome.com"],
+            scriptSrc: ["'self'", "https://kit.fontawesome.com", "https://ka-f.fontawesome.com"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://ka-f.fontawesome.com"],
             connectSrc: ["'self'", "https://ka-f.fontawesome.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com", "https://ka-f.fontawesome.com"],

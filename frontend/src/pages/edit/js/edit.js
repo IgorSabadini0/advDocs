@@ -3,11 +3,19 @@ import { carregarTiposSelect, abrirModalNovoTipo } from '../../../utils/tiposSer
 
 let idEdicao = null;
 
+const showLoading = (show) => {
+    const loading = document.getElementById('loading');
+    if (loading) {
+        if (show) loading.classList.add('show');
+        else loading.classList.remove('show');
+    }
+};
+
 // Aguarda o DOM carregar para selecionar o elemento
 document.addEventListener('DOMContentLoaded', async () => {
     const token = localStorage.getItem('token');
     if (!token) {
-        window.location.href = '../auth';
+        window.location.href = '../auth/';
         return;
     }
 
@@ -20,21 +28,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    document.getElementById('saveButton').addEventListener('click', salvarEdicao);
-
-    // Pega os dados salvos no sessionStorage e preenche os campos do formulário
-    const dadosItem = sessionStorage.getItem("itemEmEdicao");
-    if (!dadosItem) {
-        document.getElementById('response').textContent = "Nenhuma pasta selecionada para edição.";
-        window.location.href = "../main";
-        return;
-    }
-
-    const item = JSON.parse(dadosItem);
-    idEdicao = item.id;
-
-    // Carrega dinamicamente os tipos do banco e já seleciona o tipo do item
-    await carregarTiposSelect(selectTipo, item.tipo || "");
+    document.getElementById('saveButton')?.addEventListener('click', salvarEdicao);
 
     // Modal para criar novo tipo de processo
     document.getElementById('btnNovoTipo')?.addEventListener('click', () => {
@@ -43,19 +37,58 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
+    // 1. Tenta carregar o registro pelo parâmetro de URL (?id=...) para garantir dados frescos da API
+    const params = new URLSearchParams(window.location.search);
+    const idParam = params.get('id');
+    let item = null;
+
+    if (idParam && Number(idParam) > 0) {
+        showLoading(true);
+        try {
+            item = await apiFetch(`/clientes/${encodeURIComponent(idParam)}`);
+        } catch (err) {
+            console.warn('Registro não localizado diretamente via ID na API, tentando sessionStorage:', err.message);
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    // 2. Se não veio por URL ou falhou, tenta recuperar do sessionStorage
+    if (!item) {
+        const dadosItem = sessionStorage.getItem("itemEmEdicao");
+        if (dadosItem) {
+            try {
+                item = JSON.parse(dadosItem);
+            } catch (e) {
+                item = null;
+            }
+        }
+    }
+
+    if (!item || !item.id) {
+        const statusEl = document.getElementById('response');
+        if (statusEl) {
+            statusEl.style.color = '#dc3545';
+            statusEl.textContent = "Nenhuma pasta selecionada para edição. Redirecionando...";
+        }
+        setTimeout(() => {
+            window.location.href = "../main/";
+        }, 1200);
+        return;
+    }
+
+    idEdicao = item.id;
+
+    // Carrega dinamicamente os tipos do banco e já seleciona o tipo do item
+    await carregarTiposSelect(selectTipo, item.tipo || "");
+
     document.getElementById('acao').value = item.acao || "";
     document.getElementById('nome').value = item.nome || "";
     document.getElementById('numeroPasta').value = item.numeroPasta || "";
-    document.getElementById('numeroProc').value = item.numeroProc || "";
-    document.getElementById('status').value = item.status || "";
+    document.getElementById('numeroProc').value = item.numeroProc ? mascaraProcessoCNJ(item.numeroProc) : "";
+    document.getElementById('status').value = item.status || "Ativo";
     document.getElementById('descricao').value = item.descricao || "";
 });
-
-const showLoading = (show) => {
-    const loading = document.getElementById('loading');
-    if (show) loading.classList.add('show');
-    else loading.classList.remove('show');
-};
 
 const salvarEdicao = async () => {
     const modalAntigo = document.getElementById('confirmEditModal');

@@ -19,17 +19,34 @@ const carregarMenorPastaDisponivel = async () => {
 document.addEventListener('DOMContentLoaded', async () => {
     const token = localStorage.getItem('token');
     if (!token) {
-        window.location.href = '../auth';
+        window.location.href = '../auth/';
         return;
     }
 
     const inputProcesso = document.getElementById('numeroProc');
     const inputPasta = document.getElementById('numeroPasta');
     const selectTipo = document.getElementById('tipo');
+    const checkConsulta = document.getElementById('consultarProcesso');
 
     if (inputProcesso) {
         inputProcesso.addEventListener('input', (e) => {
             e.target.value = mascaraProcessoCNJ(e.target.value);
+        });
+    }
+
+    if (checkConsulta) {
+        checkConsulta.addEventListener('change', () => {
+            const proc = (inputProcesso?.value || '').replace(/\D/g, '');
+            const statusMessage = document.getElementById('response');
+            if (checkConsulta.checked && proc.length !== 20) {
+                if (statusMessage) {
+                    statusMessage.style.color = '#e0a800';
+                    statusMessage.textContent = 'ℹ️ Informe o número do processo (20 dígitos padrão CNJ) para consultar na API pública do DataJud.';
+                }
+                inputProcesso?.focus();
+            } else if (statusMessage && statusMessage.textContent.startsWith('ℹ️')) {
+                statusMessage.textContent = '';
+            }
         });
     }
 
@@ -83,7 +100,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         await carregarMenorPastaDisponivel();
     }
 
-    document.getElementById('saveButton').addEventListener('click', salvarRegistro);
+    document.getElementById('saveButton')?.addEventListener('click', salvarRegistro);
 });
 
 const showLoading = (show) => {
@@ -101,6 +118,17 @@ const salvarRegistro = async () => {
     const status = document.getElementById('status').value;
     const descricao = document.getElementById('descricao').value;
     const consultarProcesso = document.getElementById('consultarProcesso').checked;
+    const statusMessage = document.getElementById('response');
+
+    if (consultarProcesso) {
+        const procLimpo = (numeroProc || '').replace(/\D/g, '');
+        if (procLimpo.length !== 20) {
+            statusMessage.style.color = '#dc3545';
+            statusMessage.textContent = '❌ Para sincronizar com o DataJud, informe o número completo do processo (20 dígitos). Caso a pasta ainda não possua processo, desmarque a opção.';
+            document.getElementById('numeroProc')?.focus();
+            return;
+        }
+    }
 
     const registro = {
         acao,
@@ -112,8 +140,6 @@ const salvarRegistro = async () => {
         consultarProcesso,
         descricao
     };
-
-    const statusMessage = document.getElementById('response');
 
     try {
         showLoading(true);
@@ -130,7 +156,7 @@ const salvarRegistro = async () => {
             document.getElementById('nome').value = '';
             document.getElementById('tipo').value = '';
             document.getElementById('numeroProc').value = '';
-            document.getElementById('status').value = '';
+            document.getElementById('status').value = 'Ativo';
             document.getElementById('consultarProcesso').checked = false;
             document.getElementById('descricao').value = '';
 

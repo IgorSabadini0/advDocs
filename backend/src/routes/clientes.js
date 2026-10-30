@@ -13,6 +13,7 @@ router.post('/tipos', clienteController.createTipoProcesso);
 router.delete('/tipos/:id', clienteController.deleteTipoProcesso);
 router.get('/vinculo/:numeroProc', clienteController.obterVinculoProcesso);
 router.get('/consulta/:numeroProc', clienteController.consultarProcessoCliente);
+router.get('/:id', clienteController.getClienteById);
 router.post('/', clienteController.createCliente);
 router.put('/:id', clienteController.updateCliente);
 router.delete('/:id', clienteController.deleteCliente);

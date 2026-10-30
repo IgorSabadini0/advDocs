@@ -68,8 +68,15 @@ const clienteModel = {
 
     create: async (dados, conn = db) => {
         const { acao, nome, numeroPasta, tipo, numeroProc, status, descricao } = dados;
+        const acaoLimpa = String(acao || '').trim();
+        const nomeLimpo = String(nome || '').trim();
+        const tipoLimpo = String(tipo || '').trim();
+        const procLimpo = (numeroProc && String(numeroProc).trim() !== '') ? String(numeroProc).trim() : null;
+        const statusLimpo = status === 'Parado' ? 'Parado' : 'Ativo';
+        const descLimpa = (descricao && String(descricao).trim() !== '') ? String(descricao).trim() : null;
+
         const query = "INSERT INTO clientes (acao, nome, numeroPasta, tipo, numeroProc, status, descricao) VALUES (?, ?, ?, ?, ?, ?, ?)";
-        const [resultado] = await conn.query(query, [acao.trim(), nome.trim(), Number(numeroPasta), tipo.trim(), numeroProc, status, descricao]);
+        const [resultado] = await conn.query(query, [acaoLimpa, nomeLimpo, Number(numeroPasta), tipoLimpo, procLimpo, statusLimpo, descLimpa]);
         return resultado;
     },
 
@@ -103,12 +110,19 @@ const clienteModel = {
 
     update: async (id, dados, conn = db) => {
         const { acao, nome, numeroPasta, tipo, numeroProc, status, descricao } = dados;
+        const acaoLimpa = String(acao || '').trim();
+        const nomeLimpo = String(nome || '').trim();
+        const tipoLimpo = String(tipo || '').trim();
+        const procLimpo = (numeroProc && String(numeroProc).trim() !== '') ? String(numeroProc).trim() : null;
+        const statusLimpo = status === 'Parado' ? 'Parado' : 'Ativo';
+        const descLimpa = (descricao && String(descricao).trim() !== '') ? String(descricao).trim() : null;
+
         const query = `
             UPDATE clientes 
             SET acao = ?, nome = ?, numeroPasta = ?, tipo = ?, numeroProc = ?, status = ?, descricao = ? 
             WHERE id = ?
         `;
-        const [resultado] = await conn.query(query, [acao.trim(), nome.trim(), Number(numeroPasta), tipo.trim(), numeroProc, status, descricao, id]);
+        const [resultado] = await conn.query(query, [acaoLimpa, nomeLimpo, Number(numeroPasta), tipoLimpo, procLimpo, statusLimpo, descLimpa, Number(id)]);
         return resultado;
     },
 
