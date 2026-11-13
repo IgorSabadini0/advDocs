@@ -12,6 +12,7 @@ import { verifyToken } from './middleware/authMiddleware.js';
 import clientesRouter from './routes/clientes.js';
 import authRouter from './routes/auth.js';
 import usersRouter from './routes/users.js';
+import rbacRouter from './routes/rbac.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -75,6 +76,7 @@ app.get('/', (req, res) => {
 app.use('/auth', authRouter);
 app.use('/clientes', verifyToken, clientesRouter);
 app.use('/users', verifyToken, usersRouter);
+app.use('/rbac', verifyToken, rbacRouter);
 
 // 6. Middleware Centralizado de Tratamento de Erros
 app.use((err, req, res, next) => {

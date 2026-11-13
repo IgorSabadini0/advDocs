@@ -13,6 +13,7 @@ router.put('/me/password', userController.updateMyPassword);
 
 router.get('/', requireAdmin, userController.listUsers);
 router.post('/', requireAdmin, userController.createUser);
+router.patch('/:id/grupo', requireAdmin, userController.updateUserGrupo);
 router.patch('/:id/status', requireAdmin, userController.toggleUserStatus);
 router.delete('/:id', requireAdmin, userController.deleteUser);
 

@@ -9,79 +9,205 @@
     <link rel="shortcut icon" href="/assets/logo.svg" type="image/svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Inter:wght@400;600&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <script src="https://kit.fontawesome.com/a8f4be2bb0.js" crossorigin="anonymous"></script>
 </head>
 
 <body>
     <div class="bg-mesh"></div>
-    <div class="container">
-        <div class="brand-logo">
-            <img src="/assets/logo.svg" alt="Logo Palhares Ferreira">
-            <span class="title-page">Configurações do Sistema</span>
-        </div>
 
-        <div class="config-card">
-            <!-- 1. Perfil do Usuário Logado -->
-            <div class="config-section">
-                <h3><i class="fa-solid fa-user-gear"></i> Meu Perfil</h3>
-                <div class="profile-info">
-                    <div class="profile-user-group">
-                        <div class="avatar"><i class="fa-solid fa-circle-user"></i></div>
-                        <div class="profile-text">
-                            <h4 id="user-name">Administrador</h4>
-                            <span class="user-handle" id="user-login">@admin</span>
+    <div class="settings-wrapper">
+        <div class="settings-layout">
+            <!-- BARRA LATERAL (SIDEBAR) -->
+            <aside class="settings-sidebar">
+                <div class="sidebar-brand">
+                    <img src="/assets/logo.svg" alt="Logo Palhares Ferreira">
+                    <div class="sidebar-brand-text">
+                        <span class="sidebar-title">Configurações</span>
+                        <span class="sidebar-subtitle">Palhares Ferreira Advocacia</span>
+                    </div>
+                </div>
+
+                <!-- Mini Card do Usuário na Sidebar -->
+                <div class="sidebar-user-summary">
+                    <div class="sidebar-user-avatar">
+                        <i class="fa-solid fa-circle-user"></i>
+                    </div>
+                    <div class="sidebar-user-info">
+                        <strong id="sidebar-user-name">Carregando...</strong>
+                        <span id="sidebar-user-login">@usuario</span>
+                    </div>
+                </div>
+
+                <!-- Menu de Navegação por Função -->
+                <nav class="sidebar-nav" aria-label="Menu de Configurações">
+                    <div class="sidebar-nav-group">
+                        <span class="sidebar-group-label">Geral</span>
+
+                        <button type="button" class="sidebar-nav-item active" data-target="panel-perfil" id="navItemPerfil">
+                            <span class="nav-item-icon"><i class="fa-solid fa-user-gear"></i></span>
+                            <span class="nav-item-text">
+                                <strong>Meu Perfil</strong>
+                                <small>Dados pessoais e senha</small>
+                            </span>
+                        </button>
+
+                        <button type="button" class="sidebar-nav-item" data-target="panel-tipos" id="navItemTipos">
+                            <span class="nav-item-icon"><i class="fa-solid fa-tags"></i></span>
+                            <span class="nav-item-text">
+                                <strong>Tipos de Processos</strong>
+                                <small>Categorias de pastas</small>
+                            </span>
+                        </button>
+                    </div>
+
+                    <div class="sidebar-nav-group" id="sidebarGroupAdmin" style="display: none;">
+                        <span class="sidebar-group-label">Administração</span>
+
+                        <button type="button" class="sidebar-nav-item" data-target="panel-rbac" id="navItemRbac" style="display: none;">
+                            <span class="nav-item-icon"><i class="fa-solid fa-shield-halved"></i></span>
+                            <span class="nav-item-text">
+                                <strong>Grupos e Políticas</strong>
+                                <small>Controle de acesso RBAC</small>
+                            </span>
+                        </button>
+
+                        <button type="button" class="sidebar-nav-item" data-target="panel-usuarios" id="navItemUsuarios" style="display: none;">
+                            <span class="nav-item-icon"><i class="fa-solid fa-users-gear"></i></span>
+                            <span class="nav-item-text">
+                                <strong>Usuários</strong>
+                                <small>Membros da equipe</small>
+                            </span>
+                        </button>
+                    </div>
+                </nav>
+
+                <!-- Rodapé da Barra Lateral -->
+                <div class="sidebar-footer">
+                    <a href="../main" class="sidebar-back-btn">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        <span>Voltar para a Página Inicial</span>
+                    </a>
+                    <button type="button" class="sidebar-logout-btn" id="logoutButton">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                        <span>Encerrar Sessão</span>
+                    </button>
+                </div>
+            </aside>
+
+            <!-- ÁREA DE CONTEÚDO PRINCIPAL -->
+            <main class="settings-content">
+                <!-- PAINEL 1: MEU PERFIL -->
+                <section class="settings-panel active" id="panel-perfil">
+                    <header class="panel-header">
+                        <div class="panel-header-info">
+                            <h2><i class="fa-solid fa-user-gear"></i> Meu Perfil</h2>
+                            <p>Gerencie suas informações de identificação, credenciais de acesso e visualize suas permissões.</p>
+                        </div>
+                    </header>
+
+                    <div class="config-section">
+                        <div class="profile-info">
+                            <div class="profile-user-group">
+                                <div class="avatar"><i class="fa-solid fa-circle-user"></i></div>
+                                <div class="profile-text">
+                                    <div class="profile-name-row">
+                                        <h4 id="user-name">Carregando...</h4>
+                                        <span id="user-grupo-badge" class="status-badge-grupo"></span>
+                                    </div>
+                                    <span class="user-handle" id="user-login">@usuario</span>
+                                </div>
+                            </div>
+                            <div class="profile-actions">
+                                <button type="button" class="btn-profile-action" id="btnEditarNome" title="Editar meu nome de exibição">
+                                    <i class="fa-solid fa-pen"></i> Editar Nome
+                                </button>
+                                <button type="button" class="btn-profile-action" id="btnAbrirModalSenha" title="Alterar minha senha">
+                                    <i class="fa-solid fa-key"></i> Alterar Senha
+                                </button>
+                            </div>
                         </div>
                     </div>
-                    <div class="profile-actions">
-                        <button type="button" class="btn-profile-action" id="btnEditarNome" title="Editar meu nome de exibição">
-                            <i class="fa-solid fa-pen"></i> Editar Nome
-                        </button>
-                        <button type="button" class="btn-profile-action" id="btnAbrirModalSenha" title="Alterar minha senha">
-                            <i class="fa-solid fa-key"></i> Alterar Senha
-                        </button>
+
+                    <div class="config-section">
+                        <h3><i class="fa-solid fa-user-shield"></i> Políticas do Meu Grupo</h3>
+                        <div id="minhasPoliticasContainer" class="grupo-politicas-badges">
+                            <!-- Políticas do usuário logado -->
+                        </div>
                     </div>
-                </div>
-            </div>
+                </section>
 
-            <!-- 2. Tipos de Processos -->
-            <div class="config-section">
-                <div class="label-with-action">
-                    <h3><i class="fa-solid fa-tags"></i> Tipos de Processos</h3>
-                    <button type="button" class="btn-novo-tipo" id="btnNovoTipoConfig">
-                        <i class="fa-solid fa-plus"></i> Novo Tipo
-                    </button>
-                </div>
-                <div id="tiposListContainer" class="tipos-container">
-                    <!-- Badges dos tipos de processo -->
-                </div>
-            </div>
+                <!-- PAINEL 2: TIPOS DE PROCESSOS -->
+                <section class="settings-panel" id="panel-tipos">
+                    <header class="panel-header">
+                        <div class="panel-header-info">
+                            <h2><i class="fa-solid fa-tags"></i> Tipos de Processos</h2>
+                            <p>Cadastre ou remova categorias utilizadas para classificar e filtrar as pastas do escritório.</p>
+                        </div>
+                        <div class="panel-header-actions">
+                            <button type="button" class="btn-novo-tipo" id="btnNovoTipoConfig">
+                                <i class="fa-solid fa-plus"></i> Novo Tipo
+                            </button>
+                        </div>
+                    </header>
 
-            <!-- 3. Gerenciamento de Usuários do Escritório -->
-            <div class="config-section">
-                <div class="label-with-action">
-                    <h3><i class="fa-solid fa-users-gear"></i> Usuários do Escritório</h3>
-                    <button type="button" class="btn-novo-tipo" id="btnNovoUsuario">
-                        <i class="fa-solid fa-user-plus"></i> Novo Usuário
-                    </button>
-                </div>
-                <div id="usuariosListContainer" class="users-list">
-                    <!-- Lista de usuários carregada via JS -->
-                </div>
-            </div>
+                    <div class="config-section">
+                        <h3><i class="fa-solid fa-layer-group"></i> Categorias Cadastradas</h3>
+                        <div id="tiposListContainer" class="tipos-container">
+                            <!-- Badges dos tipos de processo -->
+                        </div>
+                    </div>
+                </section>
 
-            <!-- 4. Encerrar Sessão -->
-            <div class="config-actions">
-                <button class="btn-logout" id="logoutButton">
-                    <i class="fa-solid fa-arrow-right-from-bracket"></i> Encerrar Sessão
-                </button>
-            </div>
+                <!-- PAINEL 3: GRUPOS E POLÍTICAS DE ACESSO (RBAC) -->
+                <section class="settings-panel" id="panel-rbac" data-admin-only="true">
+                    <header class="panel-header">
+                        <div class="panel-header-info">
+                            <h2><i class="fa-solid fa-shield-halved"></i> Grupos e Políticas de Acesso</h2>
+                            <p>Configure os grupos de permissões (N:1) e associe políticas de acesso (N:N) do sistema.</p>
+                        </div>
+                        <div class="panel-header-actions">
+                            <button type="button" class="btn-novo-tipo" id="btnGerenciarPoliticas" title="Criar e gerenciar políticas de permissão">
+                                <i class="fa-solid fa-key"></i> Políticas
+                            </button>
+                            <button type="button" class="btn-novo-tipo" id="btnNovoGrupo" title="Criar novo grupo de permissões">
+                                <i class="fa-solid fa-plus"></i> Novo Grupo
+                            </button>
+                        </div>
+                    </header>
+
+                    <div class="config-section" id="rbacSection">
+                        <h3><i class="fa-solid fa-sitemap"></i> Grupos Cadastrados</h3>
+                        <div id="gruposListContainer" class="grupos-list">
+                            <!-- Lista de grupos e políticas vinculadas via JS -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PAINEL 4: USUÁRIOS DO ESCRITÓRIO -->
+                <section class="settings-panel" id="panel-usuarios" data-admin-only="true">
+                    <header class="panel-header">
+                        <div class="panel-header-info">
+                            <h2><i class="fa-solid fa-users-gear"></i> Usuários do Escritório</h2>
+                            <p>Gerencie as contas de acesso da equipe, grupos de permissões vinculados e status de atividade.</p>
+                        </div>
+                        <div class="panel-header-actions">
+                            <button type="button" class="btn-novo-tipo" id="btnNovoUsuario" style="display: none;">
+                                <i class="fa-solid fa-user-plus"></i> Novo Usuário
+                            </button>
+                        </div>
+                    </header>
+
+                    <div class="config-section" id="usuariosSection">
+                        <h3><i class="fa-solid fa-user-check"></i> Contas Registradas</h3>
+                        <div id="usuariosListContainer" class="users-list">
+                            <!-- Lista de usuários carregada via JS -->
+                        </div>
+                    </div>
+                </section>
+            </main>
         </div>
-
-        <a href="../main" class="back-link">
-            <i class="fa-solid fa-arrow-left"></i> Voltar para a Página Inicial
-        </a>
     </div>
 
     <script src="js/config.js" type="module"></script>

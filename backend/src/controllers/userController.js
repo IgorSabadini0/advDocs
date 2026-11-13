@@ -1,5 +1,8 @@
 import bcrypt from 'bcrypt';
 import { userModel } from '../models/userModel.js';
+import { rbacModel } from '../models/rbacModel.js';
+
+const hasAdminAccess = (req) => req.isAdmin === true || req.usuarioRole === 'admin';
 
 export const userController = {
     getMe: async (req, res) => {
@@ -13,7 +16,12 @@ export const userController = {
                 id: usuario.id,
                 user: usuario.user,
                 name: usuario.name,
-                role: req.usuarioRole || 'user',
+                grupo_id: usuario.grupo_id,
+                grupo_nome: usuario.grupo_nome,
+                politicas: usuario.politicas || [],
+                politicas_chaves: usuario.politicas_chaves || [],
+                is_admin: Boolean(usuario.is_admin),
+                role: usuario.is_admin ? 'admin' : 'user',
                 is_active: Boolean(usuario.is_active),
                 created_at: usuario.created_at,
                 updated_at: usuario.updated_at
@@ -74,11 +82,20 @@ export const userController = {
 
     listUsers: async (req, res) => {
         try {
+            if (!hasAdminAccess(req)) {
+                return res.status(403).json({ mensagem: 'Apenas administradores podem listar usuários.' });
+            }
+
             const users = await userModel.listUsers();
             const formatados = users.map(u => ({
                 id: u.id,
                 user: u.user,
                 name: u.name,
+                grupo_id: u.grupo_id,
+                grupo_nome: u.grupo_nome,
+                politicas: u.politicas || [],
+                is_admin: Boolean(u.is_admin),
+                role: u.is_admin ? 'admin' : 'user',
                 is_active: Boolean(u.is_active),
                 created_at: u.created_at,
                 is_current: u.id === req.usuarioId
@@ -93,7 +110,11 @@ export const userController = {
 
     createUser: async (req, res) => {
         try {
-            const { user, name, password, is_active } = req.body;
+            if (!hasAdminAccess(req)) {
+                return res.status(403).json({ mensagem: 'Apenas administradores podem criar novos usuários.' });
+            }
+
+            const { user, name, password, grupo_id, is_active } = req.body;
 
             if (!user || typeof user !== 'string' || user.trim().length < 3 || user.trim().length > 64) {
                 return res.status(400).json({ mensagem: 'Usuário inválido (entre 3 e 64 caracteres).' });
@@ -107,6 +128,16 @@ export const userController = {
                 return res.status(400).json({ mensagem: 'A senha deve conter entre 8 e 72 caracteres.' });
             }
 
+            const parsedGrupoId = Number(grupo_id);
+            if (!Number.isInteger(parsedGrupoId) || parsedGrupoId <= 0) {
+                return res.status(400).json({ mensagem: 'Selecione um grupo de permissões válido para o usuário.' });
+            }
+
+            const grupo = await rbacModel.findGrupoById(parsedGrupoId);
+            if (!grupo) {
+                return res.status(404).json({ mensagem: 'O grupo de permissões selecionado não existe.' });
+            }
+
             const userLimpo = user.trim().toLowerCase();
             const usuarioExistente = await userModel.findByUsername(userLimpo);
             if (usuarioExistente) {
@@ -118,6 +149,7 @@ export const userController = {
                 user: userLimpo,
                 name: name.trim(),
                 password: hashedPassword,
+                grupo_id: grupo.id,
                 is_active: is_active !== false
             });
 
@@ -125,7 +157,11 @@ export const userController = {
                 mensagem: 'Novo usuário cadastrado com sucesso!',
                 id: resultado.insertId,
                 user: userLimpo,
-                name: name.trim()
+                name: name.trim(),
+                grupo_id: grupo.id,
+                grupo_nome: grupo.nome,
+                is_admin: Boolean(grupo.is_admin_group),
+                role: grupo.is_admin_group ? 'admin' : 'user'
             });
         } catch (error) {
             console.error(`Erro ao cadastrar novo usuário: ${error}`);
@@ -133,8 +169,62 @@ export const userController = {
         }
     },
 
+    updateUserGrupo: async (req, res) => {
+        try {
+            if (!hasAdminAccess(req)) {
+                return res.status(403).json({ mensagem: 'Apenas administradores podem alterar o grupo de um usuário.' });
+            }
+
+            const { id } = req.params;
+            const { grupo_id } = req.body;
+            const parsedId = Number(id);
+            const parsedGrupoId = Number(grupo_id);
+
+            if (!Number.isInteger(parsedId) || parsedId <= 0) {
+                return res.status(400).json({ mensagem: 'ID de usuário inválido.' });
+            }
+
+            if (!Number.isInteger(parsedGrupoId) || parsedGrupoId <= 0) {
+                return res.status(400).json({ mensagem: 'Selecione um grupo de permissões válido.' });
+            }
+
+            const usuario = await userModel.findById(parsedId);
+            if (!usuario) {
+                return res.status(404).json({ mensagem: 'Usuário não encontrado.' });
+            }
+
+            const grupo = await rbacModel.findGrupoById(parsedGrupoId);
+            if (!grupo) {
+                return res.status(404).json({ mensagem: 'Grupo de permissões não encontrado.' });
+            }
+
+            if (parsedId === req.usuarioId && !grupo.is_admin_group) {
+                return res.status(400).json({
+                    mensagem: 'Você não pode remover suas próprias permissões de administrador enquanto estiver logado.'
+                });
+            }
+
+            await userModel.updateGrupo(parsedId, grupo.id);
+
+            return res.status(200).json({
+                mensagem: `Grupo do usuário atualizado para "${grupo.nome}" com sucesso!`,
+                grupo_id: grupo.id,
+                grupo_nome: grupo.nome,
+                is_admin: Boolean(grupo.is_admin_group),
+                role: grupo.is_admin_group ? 'admin' : 'user'
+            });
+        } catch (error) {
+            console.error(`Erro ao atualizar grupo do usuário: ${error}`);
+            return res.status(500).json({ mensagem: 'Erro interno no servidor.' });
+        }
+    },
+
     toggleUserStatus: async (req, res) => {
         try {
+            if (!hasAdminAccess(req)) {
+                return res.status(403).json({ mensagem: 'Apenas administradores podem alterar o status de usuários.' });
+            }
+
             const { id } = req.params;
             const { is_active } = req.body;
             const parsedId = Number(id);
@@ -169,6 +259,10 @@ export const userController = {
 
     deleteUser: async (req, res) => {
         try {
+            if (!hasAdminAccess(req)) {
+                return res.status(403).json({ mensagem: 'Apenas administradores podem excluir usuários.' });
+            }
+
             const { id } = req.params;
             const parsedId = Number(id);
 
