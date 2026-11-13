@@ -195,6 +195,30 @@ body {
     flex-direction: column;
     gap: 2px;
     min-width: 0;
+    flex: 1;
+}
+
+.sidebar-count-pill {
+    font-size: 0.7rem;
+    font-weight: 700;
+    min-width: 22px;
+    height: 20px;
+    padding: 0 7px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: var(--transition-smooth);
+}
+
+.sidebar-nav-item.active .sidebar-count-pill {
+    background: rgba(218, 176, 99, 0.16);
+    border-color: var(--border-gold-subtle);
+    color: var(--brand-gold-hover);
 }
 
 .nav-item-text strong {
@@ -332,8 +356,56 @@ body {
 .panel-header-actions {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     flex-wrap: wrap;
+}
+
+.btn-panel-primary {
+    height: 38px;
+    padding: 0 16px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--brand-gold);
+    background: linear-gradient(135deg, var(--brand-gold) 0%, var(--brand-gold-dark) 100%);
+    color: #07090e;
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: var(--transition-smooth);
+    box-shadow: 0 4px 12px rgba(218, 176, 99, 0.2);
+}
+
+.btn-panel-primary:hover {
+    background: var(--brand-gold-hover);
+    border-color: var(--brand-gold-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(218, 176, 99, 0.3);
+}
+
+.btn-panel-secondary {
+    height: 38px;
+    padding: 0 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-gold-subtle);
+    background: rgba(218, 176, 99, 0.08);
+    color: var(--brand-gold-hover);
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: var(--transition-smooth);
+}
+
+.btn-panel-secondary:hover {
+    background: rgba(218, 176, 99, 0.16);
+    border-color: var(--brand-gold);
+    color: #ffffff;
 }
 
 /* --- Config Section Content --- */
@@ -341,6 +413,15 @@ body {
     display: flex;
     flex-direction: column;
     gap: 14px;
+}
+
+.section-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 8px;
 }
 
 .config-section h3 {
@@ -353,6 +434,37 @@ body {
     gap: 8px;
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 8px;
+}
+
+.section-title-row h3 {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.section-counter {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--brand-gold);
+    background: var(--brand-gold-glow);
+    border: 1px solid var(--border-gold-subtle);
+    padding: 2px 9px;
+    border-radius: 12px;
+}
+
+.surface-box {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.surface-box-helper {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    line-height: 1.45;
 }
 
 .config-section h3 i {
@@ -451,7 +563,7 @@ body {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--border-gold-subtle);
     color: var(--text-primary);
-    padding: 6px 12px;
+    padding: 7px 14px;
     border-radius: 20px;
     font-size: 0.84rem;
     font-weight: 500;
@@ -459,6 +571,11 @@ body {
     align-items: center;
     gap: 8px;
     transition: var(--transition-smooth);
+}
+
+.tipo-badge-icon {
+    color: var(--brand-gold);
+    font-size: 0.72rem;
 }
 
 .tipo-badge:hover {
@@ -573,6 +690,11 @@ body {
     border-top: 1px dashed rgba(255, 255, 255, 0.06);
 }
 
+.grupo-politicas-badges.no-border {
+    border-top: none;
+    padding-top: 2px;
+}
+
 .politica-tag {
     display: inline-flex;
     align-items: center;
@@ -606,7 +728,146 @@ body {
     font-style: italic;
 }
 
+/* --- Catálogo Inline de Políticas no Painel RBAC --- */
+.politicas-catalogo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 10px;
+}
+
+.catalogo-politica-card {
+    background: rgba(0, 0, 0, 0.24);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: var(--transition-smooth);
+}
+
+.catalogo-politica-card:hover {
+    border-color: rgba(218, 176, 99, 0.3);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.catalogo-politica-card.is-core {
+    border-left: 3px solid var(--brand-gold);
+}
+
+.catalogo-politica-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.catalogo-politica-top strong {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.catalogo-politica-top strong i {
+    color: var(--brand-gold);
+    font-size: 0.76rem;
+}
+
+.core-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: var(--brand-gold-glow);
+    color: var(--brand-gold);
+    border: 1px solid var(--border-gold-subtle);
+}
+
+.catalogo-politica-card p {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    line-height: 1.38;
+    flex: 1;
+}
+
+.catalogo-politica-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding-top: 6px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.06);
+}
+
+.catalogo-politica-footer code {
+    font-family: monospace;
+    font-size: 0.68rem;
+    color: var(--brand-gold-hover);
+    background: rgba(0, 0, 0, 0.35);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
 /* --- Lista de Usuários do Escritório --- */
+.users-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.users-search-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.users-search-wrapper i {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    pointer-events: none;
+}
+
+.users-search-wrapper input {
+    width: 100%;
+    height: 42px;
+    padding: 0 14px 0 38px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 0.86rem;
+    outline: none;
+    transition: var(--transition-smooth);
+}
+
+.users-search-wrapper input::placeholder {
+    color: var(--text-muted);
+}
+
+.users-search-wrapper input:focus {
+    border-color: var(--brand-gold);
+    box-shadow: 0 0 0 3px var(--brand-gold-glow);
+}
+
+.current-session-pill {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-style: italic;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px dashed var(--border-color);
+}
+
 .users-list {
     display: flex;
     flex-direction: column;
@@ -948,12 +1209,44 @@ body {
 }
 
 /* --- Modal Gerenciar Políticas --- */
+.btn-link-gold {
+    background: transparent;
+    border: none;
+    color: var(--brand-gold);
+    font-family: var(--font-body);
+    font-size: 0.74rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: var(--transition-smooth);
+}
+
+.btn-link-gold:hover {
+    color: var(--brand-gold-hover);
+    background: var(--brand-gold-glow);
+}
+
 .nova-politica-box {
     background: rgba(0, 0, 0, 0.22);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     padding: 14px;
     text-align: left;
+}
+
+.nova-politica-box-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.politica-manage-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
 }
 
 .nova-politica-grid {
@@ -1075,6 +1368,75 @@ body {
     background: var(--danger);
     border-color: var(--danger);
     color: #ffffff;
+}
+
+/* --- Sistema de Notificações Toast --- */
+.toast-container {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+    max-width: 360px;
+}
+
+.toast-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--bg-surface-solid);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+    color: var(--text-primary);
+    font-size: 0.84rem;
+    font-weight: 500;
+    opacity: 0;
+    transform: translateX(20px);
+    transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: auto;
+}
+
+.toast-item.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast-item.toast-success {
+    border-left: 3px solid var(--success);
+}
+
+.toast-item.toast-success .toast-icon {
+    color: var(--success);
+}
+
+.toast-item.toast-error {
+    border-left: 3px solid var(--danger);
+}
+
+.toast-item.toast-error .toast-icon {
+    color: var(--danger);
+}
+
+.toast-item.toast-info {
+    border-left: 3px solid var(--brand-gold);
+}
+
+.toast-item.toast-info .toast-icon {
+    color: var(--brand-gold);
+}
+
+.toast-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.toast-text {
+    line-height: 1.35;
 }
 
 /* Responsividade (Tablet e Mobile) */

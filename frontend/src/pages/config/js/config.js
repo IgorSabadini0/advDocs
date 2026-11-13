@@ -1,9 +1,10 @@
 import { abrirModalNovoTipo } from '../../../utils/tiposService.js';
-import { escapeHtml, apiFetch } from '../../../utils/utils.js';
+import { escapeHtml, normalizeText, apiFetch } from '../../../utils/utils.js';
 
 let usuarioLogado = null;
 let gruposCache = [];
 let politicasCache = [];
+let usuariosCache = [];
 
 const isUsuarioAdmin = () => Boolean(usuarioLogado && (usuarioLogado.is_admin || usuarioLogado.role === 'admin'));
 
@@ -12,10 +13,62 @@ const sair = () => {
     window.location.href = '../auth';
 };
 
-const alternarPainel = (targetId) => {
+// --- NOTIFICAÇÕES TOAST & UX HELPERS ---
+
+const mostrarToast = (mensagem, tipo = 'success') => {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast-item toast-${tipo}`;
+
+    const icone = tipo === 'error'
+        ? 'fa-circle-exclamation'
+        : tipo === 'info'
+            ? 'fa-circle-info'
+            : 'fa-circle-check';
+
+    toast.innerHTML = `
+        <i class="fa-solid ${icone} toast-icon"></i>
+        <span class="toast-text">${escapeHtml(mensagem)}</span>
+    `;
+
+    container.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('show'));
+
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3400);
+};
+
+const gerarSlugChave = (texto) => {
+    return normalizeText(texto)
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '')
+        .slice(0, 64);
+};
+
+// --- NAVEGAÇÃO ENTRE PAINÉIS (SIDEBAR) ---
+
+const MAPA_HASH_PAINEL = {
+    '#perfil': 'panel-perfil',
+    '#tipos': 'panel-tipos',
+    '#rbac': 'panel-rbac',
+    '#usuarios': 'panel-usuarios'
+};
+
+const MAPA_PAINEL_HASH = {
+    'panel-perfil': '#perfil',
+    'panel-tipos': '#tipos',
+    'panel-rbac': '#rbac',
+    'panel-usuarios': '#usuarios'
+};
+
+const alternarPainel = (targetId, atualizarHash = true) => {
     const adminOnlyPanels = ['panel-rbac', 'panel-usuarios'];
     if (adminOnlyPanels.includes(targetId) && !isUsuarioAdmin()) {
-        return;
+        targetId = 'panel-perfil';
     }
 
     document.querySelectorAll('.sidebar-nav-item').forEach(btn => {
@@ -25,7 +78,23 @@ const alternarPainel = (targetId) => {
     document.querySelectorAll('.settings-panel').forEach(panel => {
         panel.classList.toggle('active', panel.id === targetId);
     });
+
+    if (atualizarHash && MAPA_PAINEL_HASH[targetId]) {
+        history.replaceState(null, '', MAPA_PAINEL_HASH[targetId]);
+    }
 };
+
+// Fecha o modal ativo ao pressionar ESC
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const modaisAbertos = document.querySelectorAll('.modal-overlay.show');
+        if (modaisAbertos.length > 0) {
+            const ultimoModal = modaisAbertos[modaisAbertos.length - 1];
+            ultimoModal.classList.remove('show');
+            setTimeout(() => ultimoModal.remove(), 250);
+        }
+    }
+});
 
 // --- 1. MEU PERFIL E ALTERAÇÃO DE SENHA / NOME ---
 
@@ -38,6 +107,7 @@ const carregarMeuPerfil = async () => {
         const sidebarLoginEl = document.getElementById('sidebar-user-login');
         const userGrupoBadge = document.getElementById('user-grupo-badge');
         const minhasPoliticasContainer = document.getElementById('minhasPoliticasContainer');
+        const minhasPoliticasCount = document.getElementById('minhasPoliticasCount');
 
         const sidebarGroupAdmin = document.getElementById('sidebarGroupAdmin');
         const navItemRbac = document.getElementById('navItemRbac');
@@ -55,8 +125,12 @@ const carregarMeuPerfil = async () => {
             userGrupoBadge.innerHTML = `<i class="fa-solid ${usuarioLogado.is_admin ? 'fa-shield-halved' : 'fa-user-tag'}"></i> ${escapeHtml(nomeGrupo)}`;
         }
 
+        const politicas = Array.isArray(usuarioLogado.politicas) ? usuarioLogado.politicas : [];
+        if (minhasPoliticasCount) {
+            minhasPoliticasCount.textContent = `${politicas.length} ${politicas.length === 1 ? 'política ativa' : 'políticas ativas'}`;
+        }
+
         if (minhasPoliticasContainer) {
-            const politicas = Array.isArray(usuarioLogado.politicas) ? usuarioLogado.politicas : [];
             minhasPoliticasContainer.innerHTML = politicas.length > 0
                 ? politicas.map(p => `
                     <span class="politica-tag" title="${escapeHtml(p.descricao || p.nome)}">
@@ -101,8 +175,11 @@ const abrirModalEditarNome = () => {
             <h3>Editar Nome de Exibição</h3>
             <p>Atualize como seu nome aparece nos registros do escritório.</p>
 
-            <input type="text" id="inputNovoNome" class="modal-input-novo-tipo" value="${escapeHtml(usuarioLogado?.name || '')}" placeholder="Seu nome completo" maxlength="64" autofocus>
-            <p id="msgErroNome" style="color: var(--danger); font-size: 0.84rem; margin-top: -12px; margin-bottom: 16px; min-height: 18px;"></p>
+            <div class="modal-form-left">
+                <label class="modal-field-label" for="inputNovoNome">Nome Completo</label>
+                <input type="text" id="inputNovoNome" class="modal-input-novo-tipo" value="${escapeHtml(usuarioLogado?.name || '')}" placeholder="Seu nome completo" maxlength="64" autofocus>
+            </div>
+            <p id="msgErroNome" style="color: var(--danger); font-size: 0.84rem; margin-top: -10px; margin-bottom: 16px; min-height: 18px;"></p>
 
             <div class="confirm-buttons-group">
                 <button type="button" class="btn-cancel-modal" id="btnCancelEditNome">Cancelar</button>
@@ -147,6 +224,7 @@ const abrirModalEditarNome = () => {
             });
 
             fechar();
+            mostrarToast('Nome de exibição atualizado com sucesso!');
             await carregarMeuPerfil();
             if (isUsuarioAdmin()) {
                 await carregarUsuariosConfig();
@@ -176,13 +254,20 @@ const abrirModalAlterarSenha = () => {
         <div class="modal-confirm-content">
             <i class="fa-solid fa-key modal-confirm-icon"></i>
             <h3>Alterar Minha Senha</h3>
-            <p>Informe sua senha atual e escolha uma nova senha de acesso.</p>
+            <p>Informe sua senha atual e escolha uma nova senha segura.</p>
 
-            <input type="password" id="inputSenhaAtual" class="modal-input-novo-tipo" placeholder="Senha Atual" maxlength="72" style="margin-bottom: 10px;" autofocus>
-            <input type="password" id="inputNovaSenha" class="modal-input-novo-tipo" placeholder="Nova Senha (mín. 8 caracteres)" maxlength="72" style="margin-bottom: 10px;">
-            <input type="password" id="inputConfirmarSenha" class="modal-input-novo-tipo" placeholder="Confirmar Nova Senha" maxlength="72">
+            <div class="modal-form-left">
+                <label class="modal-field-label" for="inputSenhaAtual">Senha Atual</label>
+                <input type="password" id="inputSenhaAtual" class="modal-input-novo-tipo" placeholder="Digite sua senha atual" maxlength="72" style="margin-bottom: 10px;" autofocus>
+
+                <label class="modal-field-label" for="inputNovaSenha">Nova Senha</label>
+                <input type="password" id="inputNovaSenha" class="modal-input-novo-tipo" placeholder="Mínimo de 8 caracteres" maxlength="72" style="margin-bottom: 10px;">
+
+                <label class="modal-field-label" for="inputConfirmarSenha">Confirmar Nova Senha</label>
+                <input type="password" id="inputConfirmarSenha" class="modal-input-novo-tipo" placeholder="Repita a nova senha" maxlength="72">
+            </div>
             
-            <p id="msgErroSenha" style="color: var(--danger); font-size: 0.84rem; margin-top: -12px; margin-bottom: 16px; min-height: 18px;"></p>
+            <p id="msgErroSenha" style="color: var(--danger); font-size: 0.84rem; margin-top: -10px; margin-bottom: 16px; min-height: 18px;"></p>
 
             <div class="confirm-buttons-group">
                 <button type="button" class="btn-cancel-modal" id="btnCancelSenha">Cancelar</button>
@@ -242,15 +327,8 @@ const abrirModalAlterarSenha = () => {
                 body: JSON.stringify({ senhaAtual, novaSenha })
             });
 
-            overlay.querySelector('.modal-confirm-content').innerHTML = `
-                <i class="fa-solid fa-circle-check modal-confirm-icon" style="color: var(--success);"></i>
-                <h3>Senha Alterada!</h3>
-                <p>Sua senha de acesso foi atualizada com sucesso.</p>
-                <div class="confirm-buttons-group">
-                    <button type="button" class="btn-confirm-edit-act" id="btnOkSenha">Concluir</button>
-                </div>
-            `;
-            document.getElementById('btnOkSenha')?.addEventListener('click', fechar);
+            fechar();
+            mostrarToast('Sua senha de acesso foi alterada com sucesso!');
         } catch (e) {
             console.error('Erro ao alterar senha:', e);
             msgErro.textContent = e.data?.mensagem || 'Erro de conexão com o servidor.';
@@ -310,6 +388,7 @@ const confirmarExclusaoTipo = (id, nome) => {
             });
 
             fechar();
+            mostrarToast(`Categoria "${nome}" removida com sucesso!`);
             await carregarTiposConfig();
         } catch (e) {
             console.error('Erro ao excluir tipo de processo:', e);
@@ -321,20 +400,27 @@ const confirmarExclusaoTipo = (id, nome) => {
 
 const carregarTiposConfig = async () => {
     const container = document.getElementById('tiposListContainer');
+    const badgeCountTipos = document.getElementById('badgeCountTipos');
+    const tiposTotalLabel = document.getElementById('tiposTotalLabel');
     if (!container) return;
 
     try {
         const tipos = await apiFetch('/clientes/tipos');
+        const total = Array.isArray(tipos) ? tipos.length : 0;
 
-        if (tipos.length === 0) {
+        if (badgeCountTipos) badgeCountTipos.textContent = total;
+        if (tiposTotalLabel) tiposTotalLabel.textContent = `${total} ${total === 1 ? 'categoria' : 'categorias'}`;
+
+        if (total === 0) {
             container.innerHTML = '<span style="color: var(--text-muted); font-size: 0.85rem;">Nenhum tipo cadastrado.</span>';
             return;
         }
 
         container.innerHTML = tipos.map(t => `
             <span class="tipo-badge">
+                <i class="fa-solid fa-tag tipo-badge-icon"></i>
                 <span>${escapeHtml(t.nome)}</span>
-                <button type="button" class="btn-delete-tipo" data-id="${t.id}" data-nome="${escapeHtml(t.nome)}" title="Remover tipo ${escapeHtml(t.nome)}">
+                <button type="button" class="btn-delete-tipo" data-id="${t.id}" data-nome="${escapeHtml(t.nome)}" title="Remover categoria ${escapeHtml(t.nome)}">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </span>
@@ -368,11 +454,54 @@ const carregarDadosRBAC = async () => {
         gruposCache = Array.isArray(grupos) ? grupos : [];
         politicasCache = Array.isArray(politicas) ? politicas : [];
 
+        const badgeCountGrupos = document.getElementById('badgeCountGrupos');
+        const gruposTotalLabel = document.getElementById('gruposTotalLabel');
+        const politicasTotalLabel = document.getElementById('politicasTotalLabel');
+
+        if (badgeCountGrupos) badgeCountGrupos.textContent = gruposCache.length;
+        if (gruposTotalLabel) {
+            gruposTotalLabel.textContent = `${gruposCache.length} ${gruposCache.length === 1 ? 'grupo' : 'grupos'}`;
+        }
+        if (politicasTotalLabel) {
+            politicasTotalLabel.textContent = `${politicasCache.length} ${politicasCache.length === 1 ? 'política' : 'políticas'}`;
+        }
+
         renderizarGruposRBAC();
+        renderizarCatalogoPoliticas();
     } catch (e) {
         console.error('Erro ao carregar dados RBAC:', e);
         container.innerHTML = '<span style="color: var(--danger); font-size: 0.85rem;">Erro ao carregar grupos e políticas de acesso.</span>';
     }
+};
+
+const renderizarCatalogoPoliticas = () => {
+    const container = document.getElementById('politicasCatalogoContainer');
+    if (!container) return;
+
+    if (politicasCache.length === 0) {
+        container.innerHTML = '<span class="sem-politicas-msg">Nenhuma política cadastrada no sistema.</span>';
+        return;
+    }
+
+    container.innerHTML = politicasCache.map(p => {
+        const isEssencial = p.chave === 'manage_acl';
+        return `
+            <div class="catalogo-politica-card ${isEssencial ? 'is-core' : ''}">
+                <div class="catalogo-politica-top">
+                    <strong>
+                        <i class="fa-solid ${isEssencial ? 'fa-shield-halved' : 'fa-key'}"></i>
+                        ${escapeHtml(p.nome)}
+                    </strong>
+                    <code>${escapeHtml(p.chave)}</code>
+                </div>
+                <p>${escapeHtml(p.descricao || 'Sem descrição cadastrada.')}</p>
+                <div class="catalogo-politica-footer">
+                    <span><i class="fa-solid fa-layer-group"></i> Em ${p.total_grupos ?? 0} grupo(s)</span>
+                    ${isEssencial ? '<span class="core-badge">Política Base</span>' : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
 };
 
 const renderizarGruposRBAC = () => {
@@ -388,7 +517,7 @@ const renderizarGruposRBAC = () => {
         const isGrupoPadraoAdmin = String(g.nome || '').trim().toLowerCase() === 'administrador';
         const badgeTipoGrupo = g.is_admin_group
             ? '<span class="status-badge-admin"><i class="fa-solid fa-shield-halved"></i> Acesso Admin</span>'
-            : '<span class="status-badge-padrao"><i class="fa-solid fa-layer-group"></i> Grupo</span>';
+            : '<span class="status-badge-padrao"><i class="fa-solid fa-layer-group"></i> Grupo Padrão</span>';
 
         const politicasHtml = (g.politicas && g.politicas.length > 0)
             ? g.politicas.map(p => `
@@ -397,7 +526,7 @@ const renderizarGruposRBAC = () => {
                     <code>${escapeHtml(p.chave)}</code>
                 </span>
             `).join('')
-            : '<span class="sem-politicas-msg">Nenhuma política vinculada</span>';
+            : '<span class="sem-politicas-msg">Nenhuma política vinculada a este grupo</span>';
 
         const btnExcluirHtml = isGrupoPadraoAdmin
             ? ''
@@ -415,7 +544,7 @@ const renderizarGruposRBAC = () => {
                             ${escapeHtml(g.nome)}
                             ${badgeTipoGrupo}
                             <span class="grupo-count-users" title="Usuários vinculados a este grupo">
-                                <i class="fa-solid fa-users"></i> ${g.total_usuarios}
+                                <i class="fa-solid fa-users"></i> ${g.total_usuarios} ${g.total_usuarios === 1 ? 'membro' : 'membros'}
                             </span>
                         </h4>
                         <p class="grupo-item-desc">${escapeHtml(g.descricao || 'Sem descrição cadastrada.')}</p>
@@ -495,7 +624,7 @@ const abrirModalGrupo = (grupoEdicao = null) => {
         <div class="modal-confirm-content modal-lg-rbac">
             <i class="fa-solid fa-layer-group modal-confirm-icon"></i>
             <h3>${isEdit ? `Editar Grupo: ${escapeHtml(grupoEdicao.nome)}` : 'Novo Grupo de Permissões'}</h3>
-            <p>Defina os dados do grupo e selecione as políticas de acesso vinculadas a ele.</p>
+            <p>Defina a identificação do grupo e marque as políticas de acesso vinculadas.</p>
 
             <div class="modal-form-left">
                 <label class="modal-field-label" for="inputNomeGrupo">Nome do Grupo</label>
@@ -522,8 +651,8 @@ const abrirModalGrupo = (grupoEdicao = null) => {
                 >
 
                 <div class="modal-field-header">
-                    <label class="modal-field-label">Políticas Vinculadas ao Grupo</label>
-                    <span class="modal-field-hint">Relação N:N</span>
+                    <label class="modal-field-label" style="margin-bottom: 0;">Políticas Vinculadas (<span id="countPolSelecionadas">0</span>/${politicasCache.length})</label>
+                    <button type="button" class="btn-link-gold" id="btnToggleAllPoliticas">Selecionar todas</button>
                 </div>
                 <div class="politicas-checklist" id="checklistPoliticasGrupo">
                     ${checklistHtml}
@@ -548,11 +677,35 @@ const abrirModalGrupo = (grupoEdicao = null) => {
     const msgErro = document.getElementById('msgErroGrupoRBAC');
     const btnCancel = document.getElementById('btnCancelGrupoRBAC');
     const btnSave = document.getElementById('btnSaveGrupoRBAC');
+    const btnToggleAll = document.getElementById('btnToggleAllPoliticas');
+    const countPolEl = document.getElementById('countPolSelecionadas');
+
+    const atualizarContadorCheckboxes = () => {
+        const todos = Array.from(overlay.querySelectorAll('input[name="politicaGrupoCheck"]'));
+        const marcados = todos.filter(c => c.checked).length;
+        if (countPolEl) countPolEl.textContent = marcados;
+        if (btnToggleAll) {
+            btnToggleAll.textContent = marcados === todos.length ? 'Desmarcar opcionais' : 'Selecionar todas';
+        }
+    };
+
+    atualizarContadorCheckboxes();
 
     overlay.querySelectorAll('.politica-check-item input[type="checkbox"]').forEach(chk => {
         chk.addEventListener('change', () => {
             chk.closest('.politica-check-item')?.classList.toggle('checked', chk.checked);
+            atualizarContadorCheckboxes();
         });
+    });
+
+    btnToggleAll?.addEventListener('click', () => {
+        const editaveis = Array.from(overlay.querySelectorAll('input[name="politicaGrupoCheck"]:not(:disabled)'));
+        const todosMarcados = editaveis.every(c => c.checked);
+        editaveis.forEach(c => {
+            c.checked = !todosMarcados;
+            c.closest('.politica-check-item')?.classList.toggle('checked', c.checked);
+        });
+        atualizarContadorCheckboxes();
     });
 
     const fechar = () => {
@@ -588,11 +741,13 @@ const abrirModalGrupo = (grupoEdicao = null) => {
                     method: 'PUT',
                     body: JSON.stringify({ nome, descricao, politicaIds })
                 });
+                mostrarToast(`Grupo "${nome}" atualizado com sucesso!`);
             } else {
                 await apiFetch('/rbac/grupos', {
                     method: 'POST',
                     body: JSON.stringify({ nome, descricao, politicaIds })
                 });
+                mostrarToast(`Grupo "${nome}" criado com sucesso!`);
             }
 
             fechar();
@@ -657,6 +812,7 @@ const confirmarExclusaoGrupo = (id, nome) => {
                 method: 'DELETE'
             });
             fechar();
+            mostrarToast(`Grupo "${nome}" excluído com sucesso!`);
             await carregarDadosRBAC();
         } catch (e) {
             console.error('Erro ao excluir grupo:', e);
@@ -672,9 +828,93 @@ const abrirModalGerenciarPoliticas = () => {
     const modalAntigo = document.getElementById('modalGerenciarPoliticas');
     if (modalAntigo) modalAntigo.remove();
 
+    let politicaEmEdicaoId = null;
+    let chaveEditadaManualmente = false;
+
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay show';
     overlay.id = 'modalGerenciarPoliticas';
+
+    overlay.innerHTML = `
+        <div class="modal-confirm-content modal-lg-rbac">
+            <i class="fa-solid fa-key modal-confirm-icon"></i>
+            <h3>Gerenciar Políticas de Acesso</h3>
+            <p>Crie ou edite políticas de permissão para vincular aos grupos do escritório.</p>
+
+            <div class="nova-politica-box">
+                <div class="nova-politica-box-header">
+                    <span id="tituloFormPolitica">Nova Política de Permissão</span>
+                    <button type="button" class="btn-link-gold" id="btnCancelarEdicaoPol" style="display: none;">Cancelar edição</button>
+                </div>
+                <div class="nova-politica-grid">
+                    <div>
+                        <label class="modal-field-label" for="inputNomePolitica">Nome da Política</label>
+                        <input type="text" id="inputNomePolitica" class="modal-input-novo-tipo" placeholder="Ex: Exportar Relatórios" maxlength="64" style="margin-bottom: 8px;">
+                    </div>
+                    <div>
+                        <label class="modal-field-label" for="inputChavePolitica">Chave Técnica (slug)</label>
+                        <input type="text" id="inputChavePolitica" class="modal-input-novo-tipo" placeholder="Ex: exportar_relatorios" maxlength="64" style="margin-bottom: 8px;">
+                    </div>
+                </div>
+                <label class="modal-field-label" for="inputDescPolitica">Descrição da Permissão</label>
+                <div class="nova-politica-row">
+                    <input type="text" id="inputDescPolitica" class="modal-input-novo-tipo" placeholder="Ex: Permite gerar e baixar relatórios em PDF/CSV" maxlength="255" style="margin-bottom: 0;">
+                    <button type="button" class="btn-confirm-edit-act" id="btnCriarPoliticaModal">
+                        <i class="fa-solid fa-plus"></i> <span id="textoBtnSalvarPol">Adicionar</span>
+                    </button>
+                </div>
+            </div>
+
+            <p id="msgErroPoliticaModal" style="color: var(--danger); font-size: 0.84rem; margin-top: 8px; margin-bottom: 10px; min-height: 18px;"></p>
+
+            <div class="modal-form-left">
+                <label class="modal-field-label">Políticas Cadastradas (${politicasCache.length})</label>
+                <div class="politicas-manage-list" id="listaPoliticasModal"></div>
+            </div>
+
+            <div class="confirm-buttons-group" style="margin-top: 18px;">
+                <button type="button" class="btn-cancel-modal" id="btnFecharPoliticasModal">Concluir</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const inputNome = document.getElementById('inputNomePolitica');
+    const inputChave = document.getElementById('inputChavePolitica');
+    const inputDesc = document.getElementById('inputDescPolitica');
+    const tituloFormPol = document.getElementById('tituloFormPolitica');
+    const textoBtnSalvarPol = document.getElementById('textoBtnSalvarPol');
+    const btnCancelarEdicaoPol = document.getElementById('btnCancelarEdicaoPol');
+    const msgErro = document.getElementById('msgErroPoliticaModal');
+    const btnCriar = document.getElementById('btnCriarPoliticaModal');
+    const btnFechar = document.getElementById('btnFecharPoliticasModal');
+
+    const resetarFormPolitica = () => {
+        politicaEmEdicaoId = null;
+        chaveEditadaManualmente = false;
+        inputNome.value = '';
+        inputChave.value = '';
+        inputChave.readOnly = false;
+        inputDesc.value = '';
+        if (tituloFormPol) tituloFormPol.textContent = 'Nova Política de Permissão';
+        if (textoBtnSalvarPol) textoBtnSalvarPol.textContent = 'Adicionar';
+        if (btnCancelarEdicaoPol) btnCancelarEdicaoPol.style.display = 'none';
+        msgErro.textContent = '';
+    };
+
+    inputNome.addEventListener('input', () => {
+        if (!politicaEmEdicaoId && !chaveEditadaManualmente) {
+            inputChave.value = gerarSlugChave(inputNome.value);
+        }
+    });
+
+    inputChave.addEventListener('input', () => {
+        chaveEditadaManualmente = inputChave.value.trim().length > 0;
+        inputChave.value = inputChave.value.toLowerCase().replace(/\s+/g, '_');
+    });
+
+    btnCancelarEdicaoPol?.addEventListener('click', resetarFormPolitica);
 
     const renderConteudoPoliticas = () => {
         const listaEl = document.getElementById('listaPoliticasModal');
@@ -697,85 +937,66 @@ const abrirModalGerenciarPoliticas = () => {
                         </div>
                         <span class="politica-manage-desc">${escapeHtml(p.descricao || 'Sem descrição.')}</span>
                     </div>
-                    ${isEssencial
-                        ? '<span class="politica-protected-tag" title="Política base do sistema"><i class="fa-solid fa-lock"></i> Sistema</span>'
-                        : `<button type="button" class="btn-sm-action danger" data-action="del-politica" data-id="${p.id}" data-nome="${escapeHtml(p.nome)}" title="Excluir política">
-                            <i class="fa-solid fa-trash"></i>
-                           </button>`
-                    }
+                    <div class="politica-manage-actions">
+                        <button type="button" class="btn-sm-action" data-action="edit-politica" data-id="${p.id}" title="Editar política">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        ${isEssencial
+                            ? '<span class="politica-protected-tag" title="Política base do sistema"><i class="fa-solid fa-lock"></i> Base</span>'
+                            : `<button type="button" class="btn-sm-action danger" data-action="del-politica" data-id="${p.id}" data-nome="${escapeHtml(p.nome)}" title="Excluir política">
+                                <i class="fa-solid fa-trash"></i>
+                               </button>`
+                        }
+                    </div>
                 </div>
             `;
         }).join('');
 
+        listaEl.querySelectorAll('[data-action="edit-politica"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const pol = politicasCache.find(item => String(item.id) === String(btn.dataset.id));
+                if (!pol) return;
+
+                politicaEmEdicaoId = pol.id;
+                chaveEditadaManualmente = true;
+                inputNome.value = pol.nome || '';
+                inputChave.value = pol.chave || '';
+                inputChave.readOnly = pol.chave === 'manage_acl';
+                inputDesc.value = pol.descricao || '';
+                if (tituloFormPol) tituloFormPol.textContent = `Editando Política: ${pol.nome}`;
+                if (textoBtnSalvarPol) textoBtnSalvarPol.textContent = 'Salvar';
+                if (btnCancelarEdicaoPol) btnCancelarEdicaoPol.style.display = 'inline-block';
+                inputNome.focus();
+            });
+        });
+
         listaEl.querySelectorAll('[data-action="del-politica"]').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const polId = btn.dataset.id;
-                const msgErro = document.getElementById('msgErroPoliticaModal');
+                const polNome = btn.dataset.nome;
                 btn.disabled = true;
-                if (msgErro) msgErro.textContent = '';
+                msgErro.textContent = '';
 
                 try {
                     await apiFetch(`/rbac/politicas/${polId}`, {
                         method: 'DELETE'
                     });
+                    if (String(politicaEmEdicaoId) === String(polId)) {
+                        resetarFormPolitica();
+                    }
+                    mostrarToast(`Política "${polNome}" excluída!`);
+                    await carregarMeuPerfil();
                     await carregarDadosRBAC();
                     renderConteudoPoliticas();
                 } catch (e) {
-                    if (msgErro) msgErro.textContent = e.data?.mensagem || 'Erro ao excluir política.';
+                    msgErro.textContent = e.data?.mensagem || 'Erro ao excluir política.';
                     btn.disabled = false;
                 }
             });
         });
     };
 
-    overlay.innerHTML = `
-        <div class="modal-confirm-content modal-lg-rbac">
-            <i class="fa-solid fa-key modal-confirm-icon"></i>
-            <h3>Políticas de Permissão</h3>
-            <p>Cadastre novas políticas de acesso para vincular aos grupos do escritório.</p>
-
-            <div class="nova-politica-box">
-                <div class="nova-politica-grid">
-                    <div>
-                        <label class="modal-field-label" for="inputNomePolitica">Nome da Política</label>
-                        <input type="text" id="inputNomePolitica" class="modal-input-novo-tipo" placeholder="Ex: Exportar Relatórios" maxlength="64" style="margin-bottom: 8px;">
-                    </div>
-                    <div>
-                        <label class="modal-field-label" for="inputChavePolitica">Chave Técnica (identificador)</label>
-                        <input type="text" id="inputChavePolitica" class="modal-input-novo-tipo" placeholder="Ex: export_reports" maxlength="64" style="margin-bottom: 8px;">
-                    </div>
-                </div>
-                <label class="modal-field-label" for="inputDescPolitica">Descrição da Permissão</label>
-                <div class="nova-politica-row">
-                    <input type="text" id="inputDescPolitica" class="modal-input-novo-tipo" placeholder="Ex: Permite gerar e baixar relatórios em PDF/CSV" maxlength="255" style="margin-bottom: 0;">
-                    <button type="button" class="btn-confirm-edit-act" id="btnCriarPoliticaModal">
-                        <i class="fa-solid fa-plus"></i> Adicionar
-                    </button>
-                </div>
-            </div>
-
-            <p id="msgErroPoliticaModal" style="color: var(--danger); font-size: 0.84rem; margin-top: 8px; margin-bottom: 10px; min-height: 18px;"></p>
-
-            <div class="modal-form-left">
-                <label class="modal-field-label">Políticas Cadastradas</label>
-                <div class="politicas-manage-list" id="listaPoliticasModal"></div>
-            </div>
-
-            <div class="confirm-buttons-group" style="margin-top: 18px;">
-                <button type="button" class="btn-cancel-modal" id="btnFecharPoliticasModal">Fechar</button>
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(overlay);
     renderConteudoPoliticas();
-
-    const inputNome = document.getElementById('inputNomePolitica');
-    const inputChave = document.getElementById('inputChavePolitica');
-    const inputDesc = document.getElementById('inputDescPolitica');
-    const msgErro = document.getElementById('msgErroPoliticaModal');
-    const btnCriar = document.getElementById('btnCriarPoliticaModal');
-    const btnFechar = document.getElementById('btnFecharPoliticasModal');
 
     const fechar = () => {
         overlay.classList.remove('show');
@@ -808,20 +1029,27 @@ const abrirModalGerenciarPoliticas = () => {
         btnCriar.disabled = true;
 
         try {
-            await apiFetch('/rbac/politicas', {
-                method: 'POST',
-                body: JSON.stringify({ nome, chave, descricao })
-            });
+            if (politicaEmEdicaoId) {
+                await apiFetch(`/rbac/politicas/${politicaEmEdicaoId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ nome, chave, descricao })
+                });
+                mostrarToast(`Política "${nome}" atualizada!`);
+            } else {
+                await apiFetch('/rbac/politicas', {
+                    method: 'POST',
+                    body: JSON.stringify({ nome, chave, descricao })
+                });
+                mostrarToast(`Política "${nome}" criada com sucesso!`);
+            }
 
-            inputNome.value = '';
-            inputChave.value = '';
-            inputDesc.value = '';
-
+            resetarFormPolitica();
+            await carregarMeuPerfil();
             await carregarDadosRBAC();
             renderConteudoPoliticas();
         } catch (e) {
-            console.error('Erro ao criar política:', e);
-            msgErro.textContent = e.data?.mensagem || 'Erro ao criar política de acesso.';
+            console.error('Erro ao salvar política:', e);
+            msgErro.textContent = e.data?.mensagem || 'Erro ao salvar política de acesso.';
         } finally {
             btnCriar.disabled = false;
         }
@@ -849,12 +1077,109 @@ const renderizarResumoGrupoSelect = (grupoId, containerEl) => {
                     <i class="fa-solid ${grupo.is_admin_group ? 'fa-shield-halved' : 'fa-user-tag'}"></i>
                     ${escapeHtml(grupo.nome)}
                 </strong>
-                <span>${grupo.is_admin_group ? 'Acesso Administrativo' : 'Acesso Padrão'}</span>
+                <span>${grupo.is_admin_group ? 'Acesso Administrativo' : 'Acesso Operacional'}</span>
             </div>
             <p>${escapeHtml(grupo.descricao || 'Grupo de permissões do sistema.')}</p>
             <div class="grupo-select-preview-tags">${politicasTags}</div>
         </div>
     `;
+};
+
+const renderizarListaUsuarios = () => {
+    const container = document.getElementById('usuariosListContainer');
+    const searchInput = document.getElementById('searchUsuariosInput');
+    const usuariosTotalLabel = document.getElementById('usuariosTotalLabel');
+    const badgeCountUsuarios = document.getElementById('badgeCountUsuarios');
+    if (!container) return;
+
+    if (badgeCountUsuarios) badgeCountUsuarios.textContent = usuariosCache.length;
+
+    const termo = normalizeText(searchInput?.value || '');
+    const filtrados = usuariosCache.filter(u => {
+        if (!termo) return true;
+        return (
+            normalizeText(u.name).includes(termo) ||
+            normalizeText(u.user).includes(termo) ||
+            normalizeText(u.grupo_nome).includes(termo)
+        );
+    });
+
+    if (usuariosTotalLabel) {
+        usuariosTotalLabel.textContent = `${filtrados.length} ${filtrados.length === 1 ? 'usuário' : 'usuários'}`;
+    }
+
+    if (filtrados.length === 0) {
+        container.innerHTML = `<span style="color: var(--text-muted); font-size: 0.85rem;">Nenhum usuário encontrado${termo ? ` para "${escapeHtml(searchInput.value)}"` : ''}.</span>`;
+        return;
+    }
+
+    container.innerHTML = filtrados.map(u => {
+        const badgeStatus = u.is_active
+            ? '<span class="status-badge-active">Ativo</span>'
+            : '<span class="status-badge-inactive">Inativo</span>';
+
+        const nomeGrupo = u.grupo_nome || (u.is_admin ? 'Administrador' : 'Operacional');
+        const badgeGrupo = `
+            <span class="status-badge-grupo ${u.is_admin ? 'admin' : ''}" title="Grupo de Permissões">
+                <i class="fa-solid ${u.is_admin ? 'fa-shield-halved' : 'fa-user-tag'}"></i>
+                ${escapeHtml(nomeGrupo)}
+            </span>
+        `;
+
+        const badgeVoce = u.is_current
+            ? '<span class="status-badge-you">Você</span>'
+            : '';
+
+        const acoes = u.is_current
+            ? `<span class="current-session-pill"><i class="fa-solid fa-circle-dot"></i> Sessão Atual</span>`
+            : `
+                <button type="button" class="btn-sm-action" data-action="edit-user-grupo" data-id="${u.id}" title="Alterar grupo de permissões">
+                    <i class="fa-solid fa-user-shield"></i> Grupo
+                </button>
+                <button type="button" class="btn-sm-action" data-action="toggle-status" data-id="${u.id}" data-active="${u.is_active}" title="${u.is_active ? 'Desativar acesso' : 'Reativar acesso'}">
+                    <i class="fa-solid ${u.is_active ? 'fa-user-slash' : 'fa-user-check'}"></i> ${u.is_active ? 'Desativar' : 'Ativar'}
+                </button>
+                <button type="button" class="btn-sm-action danger" data-action="delete-user" data-id="${u.id}" data-name="${escapeHtml(u.name)}" title="Excluir usuário">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            `;
+
+        return `
+            <div class="user-item">
+                <div class="user-item-info">
+                    <div class="user-item-avatar"><i class="fa-solid fa-circle-user"></i></div>
+                    <div class="user-item-details">
+                        <h4>${escapeHtml(u.name)} ${badgeGrupo} ${badgeVoce}</h4>
+                        <span class="user-login-sub">@${escapeHtml(u.user)} &bull; ${badgeStatus}</span>
+                    </div>
+                </div>
+                <div class="user-item-actions">
+                    ${acoes}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    container.querySelectorAll('[data-action="edit-user-grupo"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const alvo = usuariosCache.find(u => String(u.id) === String(btn.dataset.id));
+            if (alvo) abrirModalEditarGrupoUsuario(alvo);
+        });
+    });
+
+    container.querySelectorAll('[data-action="toggle-status"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const id = btn.dataset.id;
+            const currentlyActive = btn.dataset.active === 'true';
+            toggleStatusUsuario(id, !currentlyActive);
+        });
+    });
+
+    container.querySelectorAll('[data-action="delete-user"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            confirmarExclusaoUsuario(btn.dataset.id, btn.dataset.name);
+        });
+    });
 };
 
 const carregarUsuariosConfig = async () => {
@@ -870,79 +1195,8 @@ const carregarUsuariosConfig = async () => {
 
     try {
         const users = await apiFetch('/users');
-
-        if (users.length === 0) {
-            container.innerHTML = '<span style="color: var(--text-muted); font-size: 0.85rem;">Nenhum usuário cadastrado.</span>';
-            return;
-        }
-
-        container.innerHTML = users.map(u => {
-            const badgeStatus = u.is_active
-                ? '<span class="status-badge-active">Ativo</span>'
-                : '<span class="status-badge-inactive">Inativo</span>';
-
-            const nomeGrupo = u.grupo_nome || (u.is_admin ? 'Administrador' : 'Operacional');
-            const badgeGrupo = `
-                <span class="status-badge-grupo ${u.is_admin ? 'admin' : ''}" title="Grupo de Permissões">
-                    <i class="fa-solid ${u.is_admin ? 'fa-shield-halved' : 'fa-user-tag'}"></i>
-                    ${escapeHtml(nomeGrupo)}
-                </span>
-            `;
-
-            const badgeVoce = u.is_current
-                ? '<span class="status-badge-you">Você</span>'
-                : '';
-
-            const acoes = u.is_current
-                ? `<span style="font-size: 0.75rem; color: var(--text-muted); font-style: italic;">Logado agora</span>`
-                : `
-                    <button type="button" class="btn-sm-action" data-action="edit-user-grupo" data-id="${u.id}" title="Alterar grupo de permissões">
-                        <i class="fa-solid fa-user-shield"></i> Grupo
-                    </button>
-                    <button type="button" class="btn-sm-action" data-action="toggle-status" data-id="${u.id}" data-active="${u.is_active}" title="${u.is_active ? 'Desativar acesso' : 'Reativar acesso'}">
-                        <i class="fa-solid ${u.is_active ? 'fa-user-slash' : 'fa-user-check'}"></i> ${u.is_active ? 'Desativar' : 'Ativar'}
-                    </button>
-                    <button type="button" class="btn-sm-action danger" data-action="delete-user" data-id="${u.id}" data-name="${escapeHtml(u.name)}" title="Excluir usuário">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                `;
-
-            return `
-                <div class="user-item">
-                    <div class="user-item-info">
-                        <div class="user-item-avatar"><i class="fa-solid fa-circle-user"></i></div>
-                        <div class="user-item-details">
-                            <h4>${escapeHtml(u.name)} ${badgeGrupo} ${badgeVoce}</h4>
-                            <span class="user-login-sub">@${escapeHtml(u.user)} &bull; ${badgeStatus}</span>
-                        </div>
-                    </div>
-                    <div class="user-item-actions">
-                        ${acoes}
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        container.querySelectorAll('[data-action="edit-user-grupo"]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const alvo = users.find(u => String(u.id) === String(btn.dataset.id));
-                if (alvo) abrirModalEditarGrupoUsuario(alvo);
-            });
-        });
-
-        container.querySelectorAll('[data-action="toggle-status"]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const id = btn.dataset.id;
-                const currentlyActive = btn.dataset.active === 'true';
-                toggleStatusUsuario(id, !currentlyActive);
-            });
-        });
-
-        container.querySelectorAll('[data-action="delete-user"]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                confirmarExclusaoUsuario(btn.dataset.id, btn.dataset.name);
-            });
-        });
+        usuariosCache = Array.isArray(users) ? users : [];
+        renderizarListaUsuarios();
     } catch (e) {
         if (e.status === 403) {
             if (btnNovoUsuario) btnNovoUsuario.style.display = 'none';
@@ -1031,12 +1285,13 @@ const abrirModalEditarGrupoUsuario = async (usuarioAlvo) => {
         btnSave.disabled = true;
 
         try {
-            await apiFetch(`/users/${usuarioAlvo.id}/grupo`, {
+            const resp = await apiFetch(`/users/${usuarioAlvo.id}/grupo`, {
                 method: 'PATCH',
                 body: JSON.stringify({ grupo_id })
             });
 
             fechar();
+            mostrarToast(resp.mensagem || 'Grupo do usuário atualizado!');
             await carregarDadosRBAC();
             await carregarUsuariosConfig();
         } catch (e) {
@@ -1049,14 +1304,15 @@ const abrirModalEditarGrupoUsuario = async (usuarioAlvo) => {
 
 const toggleStatusUsuario = async (id, novoStatus) => {
     try {
-        await apiFetch(`/users/${id}/status`, {
+        const resp = await apiFetch(`/users/${id}/status`, {
             method: 'PATCH',
             body: JSON.stringify({ is_active: Boolean(novoStatus) })
         });
+        mostrarToast(resp.mensagem || `Usuário ${novoStatus ? 'ativado' : 'desativado'} com sucesso!`);
         await carregarUsuariosConfig();
     } catch (e) {
         console.error('Erro ao alternar status do usuário:', e);
-        alert(e.data?.mensagem || 'Erro ao alterar status do usuário.');
+        mostrarToast(e.data?.mensagem || 'Erro ao alterar status do usuário.', 'error');
     }
 };
 
@@ -1107,6 +1363,7 @@ const confirmarExclusaoUsuario = (id, nome) => {
             });
 
             fechar();
+            mostrarToast(`Usuário "${nome}" excluído com sucesso!`);
             await carregarDadosRBAC();
             await carregarUsuariosConfig();
         } catch (e) {
@@ -1240,6 +1497,7 @@ const abrirModalNovoUsuario = async () => {
             });
 
             fechar();
+            mostrarToast(`Usuário "${name}" cadastrado com sucesso!`);
             await carregarDadosRBAC();
             await carregarUsuariosConfig();
         } catch (e) {
@@ -1265,6 +1523,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Carrega perfil primeiro para determinar permissões RBAC
     await carregarMeuPerfil();
+
+    // Restaura aba da URL hash caso exista e o usuário tenha permissão
+    const painelInicial = MAPA_HASH_PAINEL[window.location.hash];
+    if (painelInicial) {
+        alternarPainel(painelInicial, false);
+    }
+
     carregarTiposConfig();
 
     if (isUsuarioAdmin()) {
@@ -1281,13 +1546,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
+    // Filtro de busca de usuários em tempo real
+    document.getElementById('searchUsuariosInput')?.addEventListener('input', () => {
+        renderizarListaUsuarios();
+    });
+
     // Ações do perfil
     document.getElementById('btnEditarNome')?.addEventListener('click', abrirModalEditarNome);
     document.getElementById('btnAbrirModalSenha')?.addEventListener('click', abrirModalAlterarSenha);
 
     // Adicionar tipo
     document.getElementById('btnNovoTipoConfig')?.addEventListener('click', () => {
-        abrirModalNovoTipo(() => {
+        abrirModalNovoTipo((novoNome) => {
+            mostrarToast(`Categoria "${novoNome}" cadastrada com sucesso!`);
             carregarTiposConfig();
         });
     });

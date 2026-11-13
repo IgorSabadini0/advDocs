@@ -9,13 +9,16 @@
     <link rel="shortcut icon" href="/assets/logo.svg" type="image/svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap"
         rel="stylesheet">
     <script src="https://kit.fontawesome.com/a8f4be2bb0.js" crossorigin="anonymous"></script>
 </head>
 
 <body>
     <div class="bg-mesh"></div>
+
+    <!-- Container de Notificações (Toast) -->
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
     <div class="settings-wrapper">
         <div class="settings-layout">
@@ -59,6 +62,7 @@
                                 <strong>Tipos de Processos</strong>
                                 <small>Categorias de pastas</small>
                             </span>
+                            <span class="sidebar-count-pill" id="badgeCountTipos">0</span>
                         </button>
                     </div>
 
@@ -71,6 +75,7 @@
                                 <strong>Grupos e Políticas</strong>
                                 <small>Controle de acesso RBAC</small>
                             </span>
+                            <span class="sidebar-count-pill" id="badgeCountGrupos">0</span>
                         </button>
 
                         <button type="button" class="sidebar-nav-item" data-target="panel-usuarios" id="navItemUsuarios" style="display: none;">
@@ -79,6 +84,7 @@
                                 <strong>Usuários</strong>
                                 <small>Membros da equipe</small>
                             </span>
+                            <span class="sidebar-count-pill" id="badgeCountUsuarios">0</span>
                         </button>
                     </div>
                 </nav>
@@ -87,7 +93,7 @@
                 <div class="sidebar-footer">
                     <a href="../main" class="sidebar-back-btn">
                         <i class="fa-solid fa-arrow-left"></i>
-                        <span>Voltar para a Página Inicial</span>
+                        <span>Voltar ao Painel Principal</span>
                     </a>
                     <button type="button" class="sidebar-logout-btn" id="logoutButton">
                         <i class="fa-solid fa-arrow-right-from-bracket"></i>
@@ -103,11 +109,12 @@
                     <header class="panel-header">
                         <div class="panel-header-info">
                             <h2><i class="fa-solid fa-user-gear"></i> Meu Perfil</h2>
-                            <p>Gerencie suas informações de identificação, credenciais de acesso e visualize suas permissões.</p>
+                            <p>Gerencie suas informações de identificação, credenciais de acesso e consulte as permissões do seu grupo.</p>
                         </div>
                     </header>
 
                     <div class="config-section">
+                        <h3><i class="fa-solid fa-id-card"></i> Credenciais e Identificação</h3>
                         <div class="profile-info">
                             <div class="profile-user-group">
                                 <div class="avatar"><i class="fa-solid fa-circle-user"></i></div>
@@ -131,9 +138,17 @@
                     </div>
 
                     <div class="config-section">
-                        <h3><i class="fa-solid fa-user-shield"></i> Políticas do Meu Grupo</h3>
-                        <div id="minhasPoliticasContainer" class="grupo-politicas-badges">
-                            <!-- Políticas do usuário logado -->
+                        <div class="section-title-row">
+                            <h3><i class="fa-solid fa-user-shield"></i> Políticas Ativas no Meu Grupo</h3>
+                            <span class="section-counter" id="minhasPoliticasCount">0 políticas</span>
+                        </div>
+                        <div class="surface-box">
+                            <p class="surface-box-helper" id="meuGrupoDescTexto">
+                                As políticas abaixo definem as operações liberadas para sua conta no sistema.
+                            </p>
+                            <div id="minhasPoliticasContainer" class="grupo-politicas-badges no-border">
+                                <!-- Políticas do usuário logado -->
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -146,16 +161,21 @@
                             <p>Cadastre ou remova categorias utilizadas para classificar e filtrar as pastas do escritório.</p>
                         </div>
                         <div class="panel-header-actions">
-                            <button type="button" class="btn-novo-tipo" id="btnNovoTipoConfig">
+                            <button type="button" class="btn-panel-primary" id="btnNovoTipoConfig">
                                 <i class="fa-solid fa-plus"></i> Novo Tipo
                             </button>
                         </div>
                     </header>
 
                     <div class="config-section">
-                        <h3><i class="fa-solid fa-layer-group"></i> Categorias Cadastradas</h3>
-                        <div id="tiposListContainer" class="tipos-container">
-                            <!-- Badges dos tipos de processo -->
+                        <div class="section-title-row">
+                            <h3><i class="fa-solid fa-layer-group"></i> Categorias Cadastradas</h3>
+                            <span class="section-counter" id="tiposTotalLabel">0 categorias</span>
+                        </div>
+                        <div class="surface-box">
+                            <div id="tiposListContainer" class="tipos-container">
+                                <!-- Badges dos tipos de processo -->
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -165,22 +185,35 @@
                     <header class="panel-header">
                         <div class="panel-header-info">
                             <h2><i class="fa-solid fa-shield-halved"></i> Grupos e Políticas de Acesso</h2>
-                            <p>Configure os grupos de permissões (N:1) e associe políticas de acesso (N:N) do sistema.</p>
+                            <p>Configure os grupos de permissões (N:1 com usuários) e associe políticas de acesso (N:N com grupos).</p>
                         </div>
                         <div class="panel-header-actions">
-                            <button type="button" class="btn-novo-tipo" id="btnGerenciarPoliticas" title="Criar e gerenciar políticas de permissão">
-                                <i class="fa-solid fa-key"></i> Políticas
+                            <button type="button" class="btn-panel-secondary" id="btnGerenciarPoliticas" title="Criar e gerenciar políticas de permissão">
+                                <i class="fa-solid fa-key"></i> Gerenciar Políticas
                             </button>
-                            <button type="button" class="btn-novo-tipo" id="btnNovoGrupo" title="Criar novo grupo de permissões">
+                            <button type="button" class="btn-panel-primary" id="btnNovoGrupo" title="Criar novo grupo de permissões">
                                 <i class="fa-solid fa-plus"></i> Novo Grupo
                             </button>
                         </div>
                     </header>
 
                     <div class="config-section" id="rbacSection">
-                        <h3><i class="fa-solid fa-sitemap"></i> Grupos Cadastrados</h3>
+                        <div class="section-title-row">
+                            <h3><i class="fa-solid fa-sitemap"></i> Grupos de Permissões</h3>
+                            <span class="section-counter" id="gruposTotalLabel">0 grupos</span>
+                        </div>
                         <div id="gruposListContainer" class="grupos-list">
                             <!-- Lista de grupos e políticas vinculadas via JS -->
+                        </div>
+                    </div>
+
+                    <div class="config-section">
+                        <div class="section-title-row">
+                            <h3><i class="fa-solid fa-key"></i> Catálogo de Políticas Cadastradas</h3>
+                            <span class="section-counter" id="politicasTotalLabel">0 políticas</span>
+                        </div>
+                        <div id="politicasCatalogoContainer" class="politicas-catalogo-grid">
+                            <!-- Resumo das políticas cadastradas -->
                         </div>
                     </div>
                 </section>
@@ -193,14 +226,21 @@
                             <p>Gerencie as contas de acesso da equipe, grupos de permissões vinculados e status de atividade.</p>
                         </div>
                         <div class="panel-header-actions">
-                            <button type="button" class="btn-novo-tipo" id="btnNovoUsuario" style="display: none;">
+                            <button type="button" class="btn-panel-primary" id="btnNovoUsuario" style="display: none;">
                                 <i class="fa-solid fa-user-plus"></i> Novo Usuário
                             </button>
                         </div>
                     </header>
 
                     <div class="config-section" id="usuariosSection">
-                        <h3><i class="fa-solid fa-user-check"></i> Contas Registradas</h3>
+                        <div class="users-toolbar">
+                            <div class="users-search-wrapper">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" id="searchUsuariosInput" placeholder="Buscar usuário por nome, @login ou grupo...">
+                            </div>
+                            <span class="section-counter" id="usuariosTotalLabel">0 usuários</span>
+                        </div>
+
                         <div id="usuariosListContainer" class="users-list">
                             <!-- Lista de usuários carregada via JS -->
                         </div>
