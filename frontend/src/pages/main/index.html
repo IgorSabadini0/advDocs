@@ -19,6 +19,7 @@
 
 <body>
     <div class="bg-mesh"></div>
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
     <!-- Top Navigation Bar -->
     <header class="navbar">
@@ -29,15 +30,23 @@
             </div>
 
             <div class="nav-actions">
+                <div class="nav-user-chip" id="navUserChip" title="Meu Perfil e Permissões">
+                    <i class="fa-solid fa-circle-user"></i>
+                    <div class="nav-user-meta">
+                        <strong id="navUserName">Carregando...</strong>
+                        <span id="navUserGroup">-</span>
+                    </div>
+                </div>
+
                 <button class="btn-nav btn-add-nav" id="addButton" title="Adicionar novo registro">
                     <i class="fa-solid fa-plus"></i>
                     <span>Nova Pasta</span>
                 </button>
-                <button class="btn-nav btn-add-nav" id="consultButton" title="Consultar processo">
+                <button class="btn-nav btn-secondary-nav" id="consultButton" title="Consultar processo no DataJud">
                     <i class="fa-solid fa-magnifying-glass"></i>
                     <span>Consultar Processo</span>
                 </button>
-                <button class="btn-nav btn-config-nav" id="configButton" title="Configurações">
+                <button class="btn-nav btn-config-nav" id="configButton" title="Configurações do sistema">
                     <i class="fa-solid fa-sliders"></i>
                 </button>
                 <button class="btn-nav btn-logout-nav" id="logoutButton" title="Sair do sistema">
@@ -52,32 +61,35 @@
         <section class="dashboard-intro">
             <div class="welcome-text">
                 <h1>Painel de Controle</h1>
-                <p>Monitore e gerencie os registros e pastas do escritório</p>
+                <p>Monitore e gerencie os registros e pastas do escritório. Clique nos indicadores abaixo para filtrar por status.</p>
             </div>
 
             <!-- Statistics Cards Grid -->
             <div class="stats-grid">
-                <div class="stat-card gold-glow">
+                <div class="stat-card gold-glow active-stat" data-status-filter="all" role="button" tabindex="0" title="Exibir todas as pastas">
                     <div class="stat-icon"><i class="fa-solid fa-folder-closed"></i></div>
                     <div class="stat-info">
                         <span class="stat-label">Total de Pastas</span>
                         <h2 class="stat-value" id="stat-total">-</h2>
+                        <small class="stat-hint">Ver todas</small>
                     </div>
                 </div>
 
-                <div class="stat-card success-glow">
+                <div class="stat-card success-glow" data-status-filter="Ativo" role="button" tabindex="0" title="Filtrar apenas casos ativos">
                     <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
                     <div class="stat-info">
                         <span class="stat-label">Casos Ativos</span>
                         <h2 class="stat-value" id="stat-ativos">-</h2>
+                        <small class="stat-hint">Filtrar ativos</small>
                     </div>
                 </div>
 
-                <div class="stat-card info-glow">
+                <div class="stat-card info-glow" data-status-filter="Parado" role="button" tabindex="0" title="Filtrar apenas casos parados">
                     <div class="stat-icon"><i class="fa-solid fa-circle-pause"></i></div>
                     <div class="stat-info">
                         <span class="stat-label">Casos Parados</span>
                         <h2 class="stat-value" id="stat-parados">-</h2>
+                        <small class="stat-hint">Filtrar parados</small>
                     </div>
                 </div>
             </div>
@@ -86,14 +98,26 @@
         <!-- Search and Filter Control Center -->
         <section class="control-panel">
             <div class="search-box">
-                <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                <input type="text" id="search"
-                    placeholder="Pesquise por nome do cliente, número do processo ou pasta...">
-                <button class="search-btn" id="searchButton">Pesquisar</button>
+                <div class="search-input-wrapper">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" id="search"
+                        placeholder="Pesquise por cliente, ação, nº do processo ou nº da pasta (ex: 1, 15)...">
+                    <button type="button" class="clear-search-btn" id="clearSearchBtn" title="Limpar pesquisa" style="display: none;">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <button class="search-btn" id="searchButton">
+                    <i class="fa-solid fa-magnifying-glass"></i> Pesquisar
+                </button>
             </div>
 
             <div class="filter-wrapper">
-                <span class="filter-title"><i class="fa-solid fa-filter"></i> Filtrar por categoria:</span>
+                <div class="filter-header-row">
+                    <span class="filter-title"><i class="fa-solid fa-filter"></i> Filtrar por categoria:</span>
+                    <button type="button" class="btn-reset-filters" id="resetFiltersBtn" style="display: none;">
+                        <i class="fa-solid fa-rotate-left"></i> Limpar filtros ativos
+                    </button>
+                </div>
                 <div class="filter-buttons" id="filterButtons">
                     <button class="filter-btn active" data-filter="all">Todos</button>
                 </div>
@@ -110,6 +134,15 @@
         <main class="results-container" id="resultsContainer">
             <div class="results-header">
                 <div class="results-count" id="resultsCount"></div>
+                <div class="results-sort">
+                    <label for="sortSelect"><i class="fa-solid fa-arrow-up-wide-short"></i> Ordenar:</label>
+                    <select id="sortSelect" class="sort-select">
+                        <option value="pasta_asc">Nº da Pasta (Crescente)</option>
+                        <option value="pasta_desc">Nº da Pasta (Decrescente)</option>
+                        <option value="recentes">Mais Recentes</option>
+                        <option value="nome_asc">Cliente (A - Z)</option>
+                    </select>
+                </div>
             </div>
 
             <div class="results-grid" id="resultsGrid"></div>

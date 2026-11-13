@@ -1,7 +1,76 @@
-import { mascaraProcessoCNJ, apiFetch } from '../../../utils/utils.js';
+import { mascaraProcessoCNJ, escapeHtml, apiFetch } from '../../../utils/utils.js';
 import { carregarTiposSelect, abrirModalNovoTipo } from '../../../utils/tiposService.js';
 
-const carregarMenorPastaDisponivel = async () => {
+// --- NOTIFICAÇÕES TOAST ---
+const mostrarToast = (mensagem, tipo = 'success') => {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast-item toast-${tipo}`;
+
+    const icone = tipo === 'error'
+        ? 'fa-circle-exclamation'
+        : tipo === 'info'
+            ? 'fa-circle-info'
+            : 'fa-circle-check';
+
+    toast.innerHTML = `
+        <i class="fa-solid ${icone} toast-icon"></i>
+        <span class="toast-text">${escapeHtml(mensagem)}</span>
+    `;
+
+    container.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('show'));
+
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3500);
+};
+
+const exibirMensagemStatus = (texto, tipo = 'info') => {
+    const responseBox = document.getElementById('responseBox');
+    const statusMessage = document.getElementById('response');
+    if (!responseBox || !statusMessage) return;
+
+    if (!texto) {
+        responseBox.style.display = 'none';
+        responseBox.className = 'status-message';
+        statusMessage.textContent = '';
+        return;
+    }
+
+    responseBox.style.display = 'flex';
+    responseBox.className = `status-message msg-${tipo}`;
+    statusMessage.style.color = tipo === 'error'
+        ? 'var(--danger)'
+        : tipo === 'success'
+            ? 'var(--success)'
+            : 'var(--brand-gold-hover)';
+    statusMessage.textContent = texto;
+};
+
+const atualizarContadorCNJ = () => {
+    const inputProcesso = document.getElementById('numeroProc');
+    const badge = document.getElementById('cnjCounterBadge');
+    if (!inputProcesso || !badge) return;
+
+    const digitos = (inputProcesso.value || '').replace(/\D/g, '').length;
+    badge.classList.remove('is-valid', 'is-incomplete');
+
+    if (digitos === 0) {
+        badge.textContent = 'Opcional';
+    } else if (digitos === 20) {
+        badge.textContent = 'CNJ válido (20/20)';
+        badge.classList.add('is-valid');
+    } else {
+        badge.textContent = `${digitos}/20 dígitos`;
+        badge.classList.add('is-incomplete');
+    }
+};
+
+const carregarMenorPastaDisponivel = async (exibirFeedback = false) => {
     const inputPasta = document.getElementById('numeroPasta');
     if (!inputPasta) return;
 
@@ -9,13 +78,17 @@ const carregarMenorPastaDisponivel = async () => {
         const data = await apiFetch('/clientes/proxima-pasta');
         if (data.numeroPasta && Number(data.numeroPasta) > 0) {
             inputPasta.value = data.numeroPasta;
+            inputPasta.classList.remove('input-invalid');
+            if (exibirFeedback) {
+                mostrarToast(`Pasta livre nº ${data.numeroPasta} sugerida.`, 'info');
+            }
         }
     } catch (error) {
         console.error('Erro ao buscar menor número de pasta disponível:', error);
     }
 };
 
-// Aguarda o DOM carregar para selecionar o elemento
+// Aguarda o DOM carregar para selecionar os elementos
 document.addEventListener('DOMContentLoaded', async () => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -23,32 +96,48 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
+    const form = document.getElementById('registerForm');
     const inputProcesso = document.getElementById('numeroProc');
     const inputPasta = document.getElementById('numeroPasta');
     const selectTipo = document.getElementById('tipo');
     const checkConsulta = document.getElementById('consultarProcesso');
+    const datajudCard = document.querySelector('.datajud-toggle-card');
+
+    // Remove destaque de erro ao digitar/alterar qualquer campo
+    document.querySelectorAll('#registerForm input, #registerForm select, #registerForm textarea').forEach(el => {
+        el.addEventListener('input', () => el.classList.remove('input-invalid'));
+        el.addEventListener('change', () => el.classList.remove('input-invalid'));
+    });
 
     if (inputProcesso) {
         inputProcesso.addEventListener('input', (e) => {
             e.target.value = mascaraProcessoCNJ(e.target.value);
+            atualizarContadorCNJ();
         });
     }
 
     if (checkConsulta) {
         checkConsulta.addEventListener('change', () => {
+            datajudCard?.classList.toggle('checked', checkConsulta.checked);
             const proc = (inputProcesso?.value || '').replace(/\D/g, '');
-            const statusMessage = document.getElementById('response');
             if (checkConsulta.checked && proc.length !== 20) {
-                if (statusMessage) {
-                    statusMessage.style.color = '#e0a800';
-                    statusMessage.textContent = 'ℹ️ Informe o número do processo (20 dígitos padrão CNJ) para consultar na API pública do DataJud.';
-                }
+                exibirMensagemStatus(
+                    'ℹ️ Informe o número completo do processo (20 dígitos padrão CNJ) para sincronizar os dados na API pública do DataJud.',
+                    'info'
+                );
                 inputProcesso?.focus();
-            } else if (statusMessage && statusMessage.textContent.startsWith('ℹ️')) {
-                statusMessage.textContent = '';
+            } else {
+                const statusMessage = document.getElementById('response');
+                if (statusMessage && statusMessage.textContent.startsWith('ℹ️')) {
+                    exibirMensagemStatus('');
+                }
             }
         });
     }
+
+    document.getElementById('btnSugerirPasta')?.addEventListener('click', () => {
+        carregarMenorPastaDisponivel(true);
+    });
 
     // Carrega dinamicamente os tipos de processos cadastrados no banco
     await carregarTiposSelect(selectTipo);
@@ -57,6 +146,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('btnNovoTipo')?.addEventListener('click', () => {
         abrirModalNovoTipo((novoTipoNome) => {
             carregarTiposSelect(selectTipo, novoTipoNome);
+            selectTipo?.classList.remove('input-invalid');
+            mostrarToast(`Categoria "${novoTipoNome}" criada e selecionada!`, 'success');
         });
     });
 
@@ -76,6 +167,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const procFormatado = mascaraProcessoCNJ(procParam);
         if (inputProcesso) {
             inputProcesso.value = procFormatado;
+            atualizarContadorCNJ();
         }
 
         // Exibe o botão para voltar diretamente ao resultado da consulta deste processo
@@ -100,34 +192,81 @@ document.addEventListener('DOMContentLoaded', async () => {
         await carregarMenorPastaDisponivel();
     }
 
-    document.getElementById('saveButton')?.addEventListener('click', salvarRegistro);
+    form?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        salvarRegistro();
+    });
 });
 
 const showLoading = (show) => {
     const loading = document.getElementById('loading');
+    if (!loading) return;
     if (show) loading.classList.add('show');
     else loading.classList.remove('show');
 };
 
 const salvarRegistro = async () => {
-    const acao = document.getElementById('acao').value;
-    const nome = document.getElementById('nome').value;
-    const numeroPasta = document.getElementById('numeroPasta').value;
-    const tipo = document.getElementById('tipo').value;
-    const numeroProc = document.getElementById('numeroProc').value;
-    const status = document.getElementById('status').value;
-    const descricao = document.getElementById('descricao').value;
-    const consultarProcesso = document.getElementById('consultarProcesso').checked;
-    const statusMessage = document.getElementById('response');
+    const inputAcao = document.getElementById('acao');
+    const inputNome = document.getElementById('nome');
+    const inputPasta = document.getElementById('numeroPasta');
+    const selectTipo = document.getElementById('tipo');
+    const inputProc = document.getElementById('numeroProc');
+    const selectStatus = document.getElementById('status');
+    const inputDescricao = document.getElementById('descricao');
+    const checkConsulta = document.getElementById('consultarProcesso');
+    const saveButton = document.getElementById('saveButton');
 
-    if (consultarProcesso) {
-        const procLimpo = (numeroProc || '').replace(/\D/g, '');
-        if (procLimpo.length !== 20) {
-            statusMessage.style.color = '#dc3545';
-            statusMessage.textContent = '❌ Para sincronizar com o DataJud, informe o número completo do processo (20 dígitos). Caso a pasta ainda não possua processo, desmarque a opção.';
-            document.getElementById('numeroProc')?.focus();
-            return;
-        }
+    const acao = inputAcao.value.trim();
+    const nome = inputNome.value.trim();
+    const numeroPasta = inputPasta.value.trim();
+    const tipo = selectTipo.value;
+    const numeroProc = inputProc.value.trim();
+    const status = selectStatus.value;
+    const descricao = inputDescricao.value.trim();
+    const consultarProcesso = checkConsulta.checked;
+
+    // Validação amigável no cliente antes do envio
+    if (!acao) {
+        inputAcao.classList.add('input-invalid');
+        inputAcao.focus();
+        exibirMensagemStatus('❌ Informe a Ação referente a esta pasta.', 'error');
+        return;
+    }
+
+    if (!nome) {
+        inputNome.classList.add('input-invalid');
+        inputNome.focus();
+        exibirMensagemStatus('❌ Informe o Nome completo do cliente.', 'error');
+        return;
+    }
+
+    if (!numeroPasta || Number(numeroPasta) <= 0 || !Number.isInteger(Number(numeroPasta))) {
+        inputPasta.classList.add('input-invalid');
+        inputPasta.focus();
+        exibirMensagemStatus('❌ Informe um Número da Pasta inteiro positivo válido.', 'error');
+        return;
+    }
+
+    if (!tipo) {
+        selectTipo.classList.add('input-invalid');
+        selectTipo.focus();
+        exibirMensagemStatus('❌ Selecione o Tipo de Registro (categoria do processo).', 'error');
+        return;
+    }
+
+    const procLimpo = (numeroProc || '').replace(/\D/g, '');
+    if (numeroProc && procLimpo.length !== 20) {
+        inputProc.classList.add('input-invalid');
+        inputProc.focus();
+        exibirMensagemStatus('❌ O Número do Processo informado está incompleto (são necessários os 20 dígitos do padrão CNJ).', 'error');
+        return;
+    }
+
+    if (consultarProcesso && procLimpo.length !== 20) {
+        inputProc.classList.add('input-invalid');
+        inputProc.focus();
+        exibirMensagemStatus('❌ Para sincronizar com o DataJud, informe o número completo do processo (20 dígitos). Caso a pasta ainda não possua processo, desmarque a opção.', 'error');
+        return;
     }
 
     const registro = {
@@ -142,43 +281,58 @@ const salvarRegistro = async () => {
     };
 
     try {
+        if (saveButton) {
+            saveButton.disabled = true;
+            saveButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando Registro...';
+        }
         showLoading(true);
+        exibirMensagemStatus('');
+
         const data = await apiFetch('/clientes', {
             method: 'POST',
             body: JSON.stringify(registro)
         });
 
-        statusMessage.textContent = '';
-        statusMessage.style.color = '#28a745';
+        inputAcao.value = '';
+        inputNome.value = '';
+        selectTipo.value = '';
+        inputProc.value = '';
+        selectStatus.value = 'Ativo';
+        checkConsulta.checked = false;
+        document.querySelector('.datajud-toggle-card')?.classList.remove('checked');
+        inputDescricao.value = '';
+        atualizarContadorCNJ();
 
-        setTimeout(async () => {
-            document.getElementById('acao').value = '';
-            document.getElementById('nome').value = '';
-            document.getElementById('tipo').value = '';
-            document.getElementById('numeroProc').value = '';
-            document.getElementById('status').value = 'Ativo';
-            document.getElementById('consultarProcesso').checked = false;
-            document.getElementById('descricao').value = '';
+        await carregarMenorPastaDisponivel();
 
-            // Atualiza o campo com o próximo menor número de pasta disponível (> 0)
-            await carregarMenorPastaDisponivel();
-
-            showLoading(false);
-
-            if (consultarProcesso && data.processo) {
-                statusMessage.textContent = `✅ Registro salvo! Dados sincronizados com o DataJud (${data.processo.tribunal} - ${data.processo.classe}).`;
-            } else {
-                statusMessage.textContent = '✅ Registro salvo com sucesso!';
-            }
-        }, 300);
-
+        if (consultarProcesso && data.processo) {
+            const msg = `✅ Pasta cadastrada! Dados sincronizados com o DataJud (${data.processo.tribunal} - ${data.processo.classe}).`;
+            exibirMensagemStatus(msg, 'success');
+            mostrarToast('Pasta registrada e sincronizada com o DataJud!', 'success');
+        } else {
+            exibirMensagemStatus('✅ Pasta registrada com sucesso!', 'success');
+            mostrarToast('Pasta registrada com sucesso!', 'success');
+        }
     } catch (error) {
-        showLoading(false);
         console.error('Erro ao salvar registro:', error);
         if (error.message === 'UNAUTHORIZED' || error.message === 'TOKEN_MISSING') {
             return;
         }
-        statusMessage.style.color = '#dc3545';
-        statusMessage.textContent = error.data?.mensagem || '❌ Erro ao salvar registro. Verifique os dados ou sua conexão.';
+        if (error.data?.campoConflito === 'numeroPasta') {
+            inputPasta.classList.add('input-invalid');
+            inputPasta.focus();
+        } else if (error.data?.campoConflito === 'numeroProc') {
+            inputProc.classList.add('input-invalid');
+            inputProc.focus();
+        }
+        const msgErro = error.data?.mensagem || 'Erro ao salvar registro. Verifique os dados ou sua conexão.';
+        exibirMensagemStatus(`❌ ${msgErro}`, 'error');
+        mostrarToast(msgErro, 'error');
+    } finally {
+        showLoading(false);
+        if (saveButton) {
+            saveButton.disabled = false;
+            saveButton.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Salvar Registro';
+        }
     }
 };

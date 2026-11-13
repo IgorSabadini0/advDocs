@@ -10,8 +10,8 @@ body {
 
 .container {
     width: 100%;
-    max-width: 580px;
-    padding: 40px;
+    max-width: 620px;
+    padding: 38px 40px;
     background: var(--bg-surface);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -22,8 +22,162 @@ body {
     box-shadow: var(--shadow);
     display: flex;
     flex-direction: column;
-    gap: 30px;
+    gap: 26px;
     animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.register-header {
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.subtitle-page {
+    font-size: 0.84rem;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-top: -4px;
+}
+
+/* Textarea estilizado mantendo consistência com inputs */
+.clientes-add textarea {
+    width: 100%;
+    min-height: 92px;
+    padding: 12px 16px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 0.92rem;
+    line-height: 1.45;
+    outline: none;
+    resize: vertical;
+    transition: var(--transition);
+}
+
+.clientes-add textarea::placeholder {
+    color: var(--text-muted);
+}
+
+.clientes-add textarea:focus {
+    border-color: var(--brand-gold);
+    background-color: rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 0 4px var(--brand-gold-glow);
+}
+
+.clientes-add input.input-invalid,
+.clientes-add select.input-invalid,
+.clientes-add textarea.input-invalid {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 3px var(--danger-glow);
+}
+
+/* Badge contador de dígitos CNJ */
+.cnj-counter-badge {
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+    transition: var(--transition-smooth);
+}
+
+.cnj-counter-badge.is-incomplete {
+    background: var(--warning-glow);
+    border-color: rgba(245, 158, 11, 0.35);
+    color: var(--warning);
+}
+
+.cnj-counter-badge.is-valid {
+    background: var(--success-glow);
+    border-color: rgba(16, 185, 129, 0.35);
+    color: var(--success);
+}
+
+/* Card interativo DataJud */
+.datajud-toggle-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+}
+
+.datajud-toggle-card:hover {
+    border-color: var(--border-gold-subtle);
+    background: rgba(218, 176, 99, 0.05);
+}
+
+.datajud-toggle-card.checked {
+    border-color: var(--brand-gold);
+    background: rgba(218, 176, 99, 0.1);
+}
+
+.datajud-toggle-card .checkbox-group {
+    margin-top: 2px;
+}
+
+.datajud-toggle-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.datajud-toggle-info strong {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.datajud-toggle-info strong i {
+    color: var(--brand-gold);
+}
+
+.datajud-toggle-info span {
+    font-size: 0.76rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+/* Banner de feedback de formulário */
+.status-message {
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.status-message.msg-success {
+    border-color: rgba(16, 185, 129, 0.35);
+    background: var(--success-glow);
+}
+
+.status-message.msg-error {
+    border-color: rgba(239, 68, 68, 0.35);
+    background: var(--danger-glow);
+}
+
+.status-message.msg-info {
+    border-color: var(--border-gold-subtle);
+    background: var(--brand-gold-glow);
+}
+
+#response {
+    font-size: 0.86rem;
+    line-height: 1.4;
 }
 
 .navigation-links {
@@ -31,6 +185,8 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 12px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-color);
 }
 
 .back-link-consult {
@@ -51,10 +207,70 @@ body {
     transform: translateY(-1px);
 }
 
+/* --- Toast Notifications --- */
+.toast-container {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+    max-width: 360px;
+}
+
+.toast-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--bg-surface-solid);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+    color: var(--text-primary);
+    font-size: 0.84rem;
+    font-weight: 500;
+    opacity: 0;
+    transform: translateX(20px);
+    transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: auto;
+}
+
+.toast-item.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast-item.toast-success {
+    border-left: 3px solid var(--success);
+}
+
+.toast-item.toast-success .toast-icon {
+    color: var(--success);
+}
+
+.toast-item.toast-error {
+    border-left: 3px solid var(--danger);
+}
+
+.toast-item.toast-error .toast-icon {
+    color: var(--danger);
+}
+
+.toast-item.toast-info {
+    border-left: 3px solid var(--brand-gold);
+}
+
+.toast-item.toast-info .toast-icon {
+    color: var(--brand-gold);
+}
+
 /* Responsividade */
 @media (max-width: 580px) {
     .container {
         padding: 24px;
-        gap: 24px;
+        gap: 22px;
     }
 }

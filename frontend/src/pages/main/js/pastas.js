@@ -1,5 +1,19 @@
 // --- ESTADO DA APLICAÇÃO ---
-import { currentFilter, setCurrentFilter, searchTimeout, setSearchTimeout, clientes, setClientes, setTiposProcesso } from './state.js';
+import {
+    currentFilter,
+    setCurrentFilter,
+    currentStatusFilter,
+    setCurrentStatusFilter,
+    currentSort,
+    setCurrentSort,
+    searchTimeout,
+    setSearchTimeout,
+    clientes,
+    setClientes,
+    setTiposProcesso,
+    setPermissoesUsuario,
+    temPolitica
+} from './state.js';
 import { deleteClienteApi, carregarDados } from '../api/clientsApi.js';
 import { createResultCard } from '../components/cardComponent.js';
 import { viewItemModal, fecharModal } from '../components/modalComponent.js';
@@ -23,6 +37,57 @@ const consultar = () => {
     window.location.href = '/pages/consult';
 };
 
+// --- NOTIFICAÇÕES TOAST ---
+const mostrarToast = (mensagem, tipo = 'success') => {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast-item toast-${tipo}`;
+
+    const icone = tipo === 'error'
+        ? 'fa-circle-exclamation'
+        : tipo === 'info'
+            ? 'fa-circle-info'
+            : 'fa-circle-check';
+
+    toast.innerHTML = `
+        <i class="fa-solid ${icone} toast-icon"></i>
+        <span class="toast-text">${escapeHtml(mensagem)}</span>
+    `;
+
+    container.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('show'));
+
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3500);
+};
+
+// --- PERFIL E RBAC NA NAVBAR ---
+const carregarPerfilNavbar = async () => {
+    try {
+        const user = await apiFetch('/users/me');
+        const isAdmin = user.is_admin === true || user.is_admin === 1;
+        const politicas = Array.isArray(user.politicas) ? user.politicas.map(p => p.chave) : [];
+
+        setPermissoesUsuario({ isAdmin, politicas });
+
+        const navName = document.getElementById('navUserName');
+        const navGroup = document.getElementById('navUserGroup');
+        if (navName) navName.textContent = user.nome || user.usuario || 'Usuário';
+        if (navGroup) navGroup.textContent = user.grupo_nome || (isAdmin ? 'Administrador' : 'Membro');
+
+        const addButton = document.getElementById('addButton');
+        if (addButton) {
+            addButton.style.display = temPolitica('create_records') ? 'flex' : 'none';
+        }
+    } catch (error) {
+        console.error('Erro ao carregar perfil na navbar:', error);
+    }
+};
+
 // --- ESTATÍSTICAS DO PAINEL ---
 const atualizarEstatisticas = () => {
     const totalEl = document.getElementById('stat-total');
@@ -41,7 +106,7 @@ const atualizarEstatisticas = () => {
 };
 
 const animateCounter = (element, target) => {
-    const duration = 800; // ms
+    const duration = 600; // ms
     const startTime = performance.now();
 
     const update = (now) => {
@@ -82,13 +147,24 @@ const carregarFiltrosDinamicos = async () => {
 
     setTiposProcesso(listaTipos);
 
+    const contarPorTipo = (nomeTipo) => {
+        return clientes.filter(c => c.tipo && normalizeText(c.tipo) === normalizeText(nomeTipo)).length;
+    };
+
     container.innerHTML = `
-        <button class="filter-btn ${currentFilter === 'all' ? 'active' : ''}" data-filter="all">Todos</button>
-        ${listaTipos.map(nome => `
-            <button class="filter-btn ${normalizeText(currentFilter) === normalizeText(nome) ? 'active' : ''}" data-filter="${escapeHtml(nome)}">
-                ${escapeHtml(nome)}
-            </button>
-        `).join('')}
+        <button class="filter-btn ${currentFilter === 'all' ? 'active' : ''}" data-filter="all">
+            <span>Todos</span>
+            <span class="filter-count-pill">${clientes.length}</span>
+        </button>
+        ${listaTipos.map(nome => {
+            const qtd = contarPorTipo(nome);
+            return `
+                <button class="filter-btn ${normalizeText(currentFilter) === normalizeText(nome) ? 'active' : ''}" data-filter="${escapeHtml(nome)}">
+                    <span>${escapeHtml(nome)}</span>
+                    <span class="filter-count-pill">${qtd}</span>
+                </button>
+            `;
+        }).join('')}
     `;
 
     container.querySelectorAll('.filter-btn').forEach(btn => {
@@ -96,66 +172,102 @@ const carregarFiltrosDinamicos = async () => {
     });
 };
 
-// --- LÓGICA CENTRAL UNIFICADA DE BUSCA E FILTRAGEM ---
-const executarBuscaEFiltro = async (isInitialLoad = false) => {
+const atualizarEstadoBotaoReset = () => {
     const searchInput = document.getElementById('search');
-    const query = normalizeText(searchInput.value);
+    const clearBtn = document.getElementById('clearSearchBtn');
+    const resetBtn = document.getElementById('resetFiltersBtn');
 
-    if (query.length > 0 && query.length < 2) {
-        if (!isInitialLoad) {
-            showEmptyState('Digite pelo menos 2 caracteres para pesquisar.');
-        }
-        return;
+    const query = (searchInput?.value || '').trim();
+    if (clearBtn) {
+        clearBtn.style.display = query.length > 0 ? 'inline-flex' : 'none';
     }
 
-    showLoading(true);
-    hideResults();
-    hideEmptyState();
-
-    if (!isInitialLoad) {
-        await new Promise(resolve => setTimeout(resolve, 250));
+    const temFiltroAtivo = query.length > 0 || currentFilter !== 'all' || currentStatusFilter !== 'all';
+    if (resetBtn) {
+        resetBtn.style.display = temFiltroAtivo ? 'inline-flex' : 'none';
     }
+};
+
+// --- ORDENAÇÃO DOS RESULTADOS ---
+const ordenarResultados = (lista) => {
+    const copia = [...lista];
+    switch (currentSort) {
+        case 'pasta_asc':
+            return copia.sort((a, b) => (Number(a.numeroPasta) || 999999) - (Number(b.numeroPasta) || 999999));
+        case 'pasta_desc':
+            return copia.sort((a, b) => (Number(b.numeroPasta) || 0) - (Number(a.numeroPasta) || 0));
+        case 'nome_asc':
+            return copia.sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'));
+        case 'recentes':
+        default:
+            return copia.sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
+    }
+};
+
+// --- LÓGICA CENTRAL UNIFICADA DE BUSCA E FILTRAGEM ---
+const executarBuscaEFiltro = () => {
+    const searchInput = document.getElementById('search');
+    const query = normalizeText(searchInput?.value || '');
+    const queryDigits = query.replace(/\D/g, '');
+    const isNumericQuery = /^\d+$/.test(query);
+
+    atualizarEstadoBotaoReset();
 
     try {
-        const resultados = clientes.filter(item => {
-            // Filtro por tipo de processo (funciona dinamicamente com qualquer tipo cadastrado)
+        const filtrados = clientes.filter(item => {
+            // Filtro por categoria/tipo
             const matchTipo = (currentFilter === 'all') ||
                 (item.tipo && normalizeText(item.tipo) === normalizeText(currentFilter));
 
+            // Filtro por status (Ativo / Parado)
+            const matchStatus = (currentStatusFilter === 'all') ||
+                (item.status && normalizeText(item.status) === normalizeText(currentStatusFilter));
+
+            if (!matchTipo || !matchStatus) return false;
+            if (query === '') return true;
+
             const numPastaStr = String(item.numeroPasta ?? '');
             const numProcStr = String(item.numeroProc ?? '');
+            const numProcDigits = numProcStr.replace(/\D/g, '');
 
-            const matchTexto = query === '' || (
+            // Se digitou apenas 1 caractere numérico (ex: "1"), prioriza número da pasta exato ou que comece com ele
+            if (query.length === 1 && isNumericQuery) {
+                return numPastaStr === query || numPastaStr.startsWith(query);
+            }
+
+            return (
                 normalizeText(item.acao).includes(query) ||
                 normalizeText(item.nome).includes(query) ||
                 numPastaStr.includes(query) ||
                 numProcStr.includes(query) ||
-                (query.replace(/\D/g, '') !== '' && numProcStr.replace(/\D/g, '').includes(query.replace(/\D/g, ''))) ||
+                (queryDigits !== '' && numProcDigits.includes(queryDigits)) ||
                 normalizeText(item.descricao).includes(query)
             );
-
-            return matchTipo && matchTexto;
         });
 
-        showLoading(false);
+        const resultados = ordenarResultados(filtrados);
 
         if (resultados.length > 0) {
+            hideEmptyState();
             displayResults(resultados);
         } else {
+            hideResults();
             const nomeFiltro = traduzirTipo(currentFilter);
+            const sufixoStatus = currentStatusFilter !== 'all' ? ` com status "${escapeHtml(currentStatusFilter)}"` : '';
             if (query) {
                 showEmptyState(`
-                    <strong style="display:block; margin-bottom: 8px;">Nenhum resultado para "${escapeHtml(query)}" na categoria "${escapeHtml(nomeFiltro)}".</strong>
-                    <span style="font-size: 0.9em; color: #666;">Tente selecionar outra categoria de filtro acima ou limpar o termo pesquisado.</span>
+                    <strong class="empty-title">Nenhum resultado para "${escapeHtml(searchInput.value.trim())}" na categoria "${escapeHtml(nomeFiltro)}"${sufixoStatus}.</strong>
+                    <span class="empty-sub">Tente selecionar outra categoria acima ou limpar os filtros ativos.</span>
                 `);
             } else {
-                showEmptyState(`Nenhum item cadastrado na categoria "${escapeHtml(nomeFiltro)}".`);
+                showEmptyState(`
+                    <strong class="empty-title">Nenhum item encontrado na categoria "${escapeHtml(nomeFiltro)}"${sufixoStatus}.</strong>
+                    <span class="empty-sub">Cadastre uma nova pasta ou altere os filtros selecionados.</span>
+                `);
             }
         }
-
     } catch (error) {
         console.error('Erro na busca:', error);
-        showLoading(false);
         showEmptyState('Erro ao processar dados.');
     }
 };
@@ -179,6 +291,34 @@ const filterResults = (filter) => {
     executarBuscaEFiltro();
 };
 
+const filterByStatus = (status) => {
+    // Se clicar novamente no mesmo status ativo (exceto 'all'), volta para 'all'
+    const novoStatus = (currentStatusFilter === status && status !== 'all') ? 'all' : status;
+    setCurrentStatusFilter(novoStatus);
+
+    document.querySelectorAll('.stat-card[data-status-filter]').forEach(card => {
+        card.classList.toggle('active-stat', card.dataset.statusFilter === novoStatus);
+    });
+
+    executarBuscaEFiltro();
+};
+
+const limparTodosFiltros = () => {
+    const searchInput = document.getElementById('search');
+    if (searchInput) searchInput.value = '';
+    setCurrentFilter('all');
+    setCurrentStatusFilter('all');
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.filter === 'all');
+    });
+    document.querySelectorAll('.stat-card[data-status-filter]').forEach(card => {
+        card.classList.toggle('active-stat', card.dataset.statusFilter === 'all');
+    });
+
+    executarBuscaEFiltro();
+};
+
 // --- FUNÇÕES DE UI (DOM MANIPULATION) ---
 const displayResults = (results) => {
     const resultsGrid = document.getElementById('resultsGrid');
@@ -193,45 +333,46 @@ const displayResults = (results) => {
     });
 
     const count = results.length;
-    resultsCount.innerHTML = `<strong>${count}</strong> ${count === 1 ? 'resultado encontrado' : 'resultados encontrados'}`;
+    const statusLabel = currentStatusFilter !== 'all' ? ` (${escapeHtml(currentStatusFilter)}s)` : '';
+    resultsCount.innerHTML = `Exibindo <strong>${count}</strong> ${count === 1 ? 'pasta encontrada' : 'pastas encontradas'}${statusLabel}`;
 
     container.style.display = 'block';
-    setTimeout(() => {
+    requestAnimationFrame(() => {
         container.classList.add('show');
-    }, 10);
+    });
 };
 
 // --- HELPERS E UTILITÁRIOS ---
 const showLoading = (show) => {
     const loading = document.getElementById('loading');
+    if (!loading) return;
     if (show) loading.classList.add('show');
     else loading.classList.remove('show');
 };
 
 const hideResults = () => {
     const container = document.getElementById('resultsContainer');
+    if (!container) return;
     container.classList.remove('show');
-    setTimeout(() => {
-        if (!container.classList.contains('show')) container.style.display = 'none';
-    }, 300);
+    container.style.display = 'none';
 };
 
 const showEmptyState = (messageHTML) => {
     const emptyState = document.getElementById('emptyState');
+    if (!emptyState) return;
     const p = emptyState.querySelector('p');
 
     if (p) p.innerHTML = messageHTML;
 
-    emptyState.style.display = 'block';
-    setTimeout(() => emptyState.classList.add('show'), 10);
+    emptyState.style.display = 'flex';
+    requestAnimationFrame(() => emptyState.classList.add('show'));
 };
 
 const hideEmptyState = () => {
     const emptyState = document.getElementById('emptyState');
+    if (!emptyState) return;
     emptyState.classList.remove('show');
-    setTimeout(() => {
-        if (!emptyState.classList.contains('show')) emptyState.style.display = 'none';
-    }, 300);
+    emptyState.style.display = 'none';
 };
 
 const traduzirTipo = (tipo) => {
@@ -263,10 +404,14 @@ const deletarItem = (id) => {
     };
 
     overlay.querySelector('[data-action="cancel-delete"]').addEventListener('click', fecharConfirmModal);
+    overlay.addEventListener('mousedown', (e) => {
+        if (e.target === overlay) fecharConfirmModal();
+    });
 
     const confirmButton = document.getElementById('confirmRealDelete');
 
     confirmButton.onclick = async () => {
+        confirmButton.disabled = true;
         try {
             await deleteClienteApi(id);
             setClientes(clientes.filter(c => String(c.id) !== String(id)));
@@ -275,16 +420,17 @@ const deletarItem = (id) => {
             fecharModal();
             await carregarFiltrosDinamicos();
             executarBuscaEFiltro();
-
+            mostrarToast('Pasta removida com sucesso!', 'success');
         } catch (error) {
             if (error.message === 'UNAUTHORIZED' || error.message === 'TOKEN_MISSING') {
                 sair();
             } else {
+                const msgErro = error.data?.mensagem || 'Não foi possível excluir esta pasta. Verifique suas permissões.';
                 overlay.innerHTML = `
                 <div class="modal-confirm-content">
-                    <i class="fa-solid fa-triangle-exclamation modal-confirm-icon"></i>
+                    <i class="fa-solid fa-triangle-exclamation modal-confirm-icon danger"></i>
                     <h3>Erro na Exclusão</h3>
-                    <p><span style="font-weight: bold;">Tente novamente mais tarde.</span></p>
+                    <p>${escapeHtml(msgErro)}</p>
                     <div class="confirm-buttons-group">
                         <button class="btn-confirm-delete-act" id="confirmErrorDelete">Fechar</button>
                     </div>
@@ -300,46 +446,90 @@ const viewItem = (id, tipo) => {
 
     if (!item) {
         console.error(`[Erro] Item não encontrado: ID ${id}`);
-        alert('Não foi possível carregar os dados do item. Tente novamente.');
+        mostrarToast('Não foi possível carregar os dados desta pasta.', 'error');
         return;
     }
     viewItemModal(item, {
         tipoLegivel: traduzirTipo(item.tipo || tipo),
+        canEdit: temPolitica('edit_records'),
+        canDelete: temPolitica('delete_records'),
+        onToast: mostrarToast,
         onDelete: () => deletarItem(id),
         onEdit: () => editarItem(id)
     });
 };
 
 // --- INICIALIZAÇÃO (DOMContentLoaded) ---
-
 document.addEventListener('DOMContentLoaded', async () => {
     const token = localStorage.getItem('token');
     if (!token) {
         window.location.href = '/pages/auth/';
         return;
     }
+
     const searchInput = document.getElementById('search');
-    document.getElementById('addButton').addEventListener('click', adicionar);
-    document.getElementById('consultButton').addEventListener('click', consultar);
-    document.getElementById('configButton').addEventListener('click', config);
-    document.getElementById('logoutButton').addEventListener('click', sair);
-    document.getElementById('searchButton').addEventListener('click', buscar);
-    searchInput.focus();
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+    const sortSelect = document.getElementById('sortSelect');
+    const navUserChip = document.getElementById('navUserChip');
+
+    document.getElementById('addButton')?.addEventListener('click', adicionar);
+    document.getElementById('consultButton')?.addEventListener('click', consultar);
+    document.getElementById('configButton')?.addEventListener('click', config);
+    document.getElementById('logoutButton')?.addEventListener('click', sair);
+    document.getElementById('searchButton')?.addEventListener('click', buscar);
+    navUserChip?.addEventListener('click', config);
+
+    clearSearchBtn?.addEventListener('click', () => {
+        if (searchInput) {
+            searchInput.value = '';
+            searchInput.focus();
+            executarBuscaEFiltro();
+        }
+    });
+
+    resetFiltersBtn?.addEventListener('click', limparTodosFiltros);
+
+    sortSelect?.addEventListener('change', (e) => {
+        setCurrentSort(e.target.value);
+        executarBuscaEFiltro();
+    });
+
+    // Clique nos cards de estatísticas para filtrar por status
+    document.querySelectorAll('.stat-card[data-status-filter]').forEach(card => {
+        card.addEventListener('click', () => filterByStatus(card.dataset.statusFilter));
+        card.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                filterByStatus(card.dataset.statusFilter);
+            }
+        });
+    });
+
+    // Atalho global Esc para fechar modais abertos
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const confirmOverlay = document.getElementById('confirmDeleteModal');
+            if (confirmOverlay) {
+                confirmOverlay.classList.remove('show');
+                setTimeout(() => confirmOverlay.remove(), 300);
+                return;
+            }
+            fecharModal();
+        }
+    });
 
     try {
         showLoading(true);
 
-        // Busca os dados da lista de clientes
-        await carregarDados();
+        await Promise.all([
+            carregarPerfilNavbar(),
+            carregarDados()
+        ]);
 
-        // Carrega dinamicamente as categorias dos filtros
         await carregarFiltrosDinamicos();
-
-        // Atualiza os cards estatísticos com os dados carregados
         atualizarEstatisticas();
-
-        // Renderiza os itens na tela
-        executarBuscaEFiltro(true);
+        executarBuscaEFiltro();
     } catch (error) {
         console.error('Erro ao carregar dados iniciais:', error);
         showEmptyState('Erro ao carregar os dados. Verifique sua conexão e tente novamente.');
@@ -347,17 +537,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         showLoading(false);
     }
 
-    searchInput.addEventListener('input', () => {
+    searchInput?.addEventListener('input', () => {
         clearTimeout(searchTimeout);
         const query = searchInput.value.trim();
-        const delay = query.length === 0 ? 0 : 400;
+        const delay = query.length === 0 ? 0 : 180;
 
         setSearchTimeout(setTimeout(() => {
             buscar();
         }, delay));
     });
 
-    searchInput.addEventListener('keypress', (e) => {
+    searchInput?.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             clearTimeout(searchTimeout);
             buscar();

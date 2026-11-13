@@ -9,35 +9,46 @@
     <link rel="shortcut icon" href="/assets/logo.svg" type="image/svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Inter:wght@400;600&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap"
         rel="stylesheet">
     <script src="https://kit.fontawesome.com/a8f4be2bb0.js" crossorigin="anonymous"></script>
 </head>
 
 <body>
     <div class="bg-mesh"></div>
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
     <div class="container">
-        <div class="brand-logo">
-            <img src="/assets/logo.svg" alt="Logo Palhares Ferreira">
-            <span class="title-page">Novo Registro</span>
+        <div class="register-header">
+            <div class="brand-logo">
+                <img src="/assets/logo.svg" alt="Logo Palhares Ferreira">
+                <span class="title-page">Novo Registro de Pasta</span>
+                <p class="subtitle-page">Preencha os dados abaixo para cadastrar uma nova pasta no escritório</p>
+            </div>
         </div>
 
-        <div class="clientes-add">
+        <form id="registerForm" class="clientes-add" novalidate>
             <div class="form-group">
                 <label for="acao"><i class="fa-solid fa-gavel"></i> Ação <span class="obrigatorio">*</span></label>
-                <input type="text" id="acao" required placeholder="Ex: Ação Revisional">
+                <input type="text" id="acao" required maxlength="128" placeholder="Ex: Ação Revisional, Inventário, Divórcio Consensual...">
             </div>
 
             <div class="form-group">
                 <label for="nome"><i class="fa-solid fa-user-tie"></i> Nome do Cliente <span
                         class="obrigatorio">*</span></label>
-                <input type="text" id="nome" required placeholder="Nome completo do cliente">
+                <input type="text" id="nome" required maxlength="128" placeholder="Nome completo do cliente">
             </div>
 
             <div class="form-grid">
                 <div class="form-group">
-                    <label for="numeroPasta"><i class="fa-solid fa-folder-open"></i> Número da Pasta</label>
-                    <input type="number" id="numeroPasta" min="1" placeholder="Ex: 1">
+                    <div class="label-with-action">
+                        <label for="numeroPasta"><i class="fa-solid fa-folder-open"></i> Número da Pasta <span
+                                class="obrigatorio">*</span></label>
+                        <button type="button" class="btn-novo-tipo" id="btnSugerirPasta" title="Buscar menor número de pasta livre">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Sugerir livre
+                        </button>
+                    </div>
+                    <input type="number" id="numeroPasta" min="1" required placeholder="Ex: 1">
                 </div>
 
                 <div class="form-group">
@@ -56,43 +67,50 @@
 
             <div class="form-grid">
                 <div class="form-group">
-                    <label for="numeroProc"><i class="fa-solid fa-scale-balanced"></i> Número do Processo</label>
-                    <input type="text" id="numeroProc" placeholder="Ex: 1234567-00.2026.8.26.0000" maxlength="25">
+                    <div class="label-with-action">
+                        <label for="numeroProc"><i class="fa-solid fa-scale-balanced"></i> Número do Processo</label>
+                        <span class="cnj-counter-badge" id="cnjCounterBadge">Opcional</span>
+                    </div>
+                    <input type="text" id="numeroProc" placeholder="0000000-00.0000.0.00.0000" maxlength="25">
                 </div>
 
                 <div class="form-group">
-                    <label for="status"><i class="fa-solid fa-circle-info"></i> Status Atual</label>
-                    <select name="status" id="status">
-                        <option value="" disabled selected hidden>Selecione...</option>
-                        <option value="Ativo">Ativo</option>
+                    <label for="status"><i class="fa-solid fa-circle-info"></i> Status Atual <span
+                            class="obrigatorio">*</span></label>
+                    <select name="status" id="status" required>
+                        <option value="Ativo" selected>Ativo</option>
                         <option value="Parado">Parado</option>
                     </select>
                 </div>
             </div>
 
             <div class="form-group">
-                <label for="descricao"><i class="fa-solid fa-align-left"></i> Descrição Adicional</label>
-                <input type="text" id="descricao" placeholder="Breve resumo sobre o caso">
+                <label for="descricao"><i class="fa-solid fa-align-left"></i> Descrição / Observações</label>
+                <textarea id="descricao" rows="3" placeholder="Breve resumo sobre o caso, vara, pendências ou observações relevantes..."></textarea>
             </div>
 
-            <div class="checkbox-group">
-                <input type="checkbox" id="consultarProcesso">
-                <label for="consultarProcesso"><i class="fa-solid fa-magnifying-glass"></i> Consultar Processo via API
-                    Datajud</label>
-            </div>
+            <label class="datajud-toggle-card" for="consultarProcesso">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="consultarProcesso">
+                </div>
+                <div class="datajud-toggle-info">
+                    <strong><i class="fa-solid fa-magnifying-glass"></i> Sincronizar com a API Pública do DataJud (CNJ)</strong>
+                    <span>Preenche automaticamente a descrição com Tribunal, Classe, Órgão Julgador e última movimentação caso a descrição esteja em branco.</span>
+                </div>
+            </label>
 
-            <div class="form-group">
-                <button class="btn-save" id="saveButton">
-                    <i class="fa-solid fa-floppy-disk"></i> Salvar Registro
-                </button>
+            <div class="status-message" id="responseBox" style="display: none;">
+                <p id="response"></p>
             </div>
 
             <div class="loading" id="loading">
                 <div class="spinner"></div>
             </div>
 
-            <div class="status-message">
-                <p id="response"></p>
+            <div class="form-group">
+                <button type="submit" class="btn-save" id="saveButton">
+                    <i class="fa-solid fa-floppy-disk"></i> Salvar Registro
+                </button>
             </div>
 
             <div class="navigation-links">
@@ -102,10 +120,10 @@
                 </a>
 
                 <a href="../main" class="back-link">
-                    <i class="fa-solid fa-arrow-left"></i> Voltar para Página Inicial
+                    <i class="fa-solid fa-arrow-left"></i> Voltar para o Painel de Pastas
                 </a>
             </div>
-        </div>
+        </form>
     </div>
 
     <script src="js/register.js" type="module"></script>
