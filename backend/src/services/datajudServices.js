@@ -179,49 +179,77 @@ export async function buscarProcesso(numeroProcesso, tribunalOverride = null) {
 
     const url = `https://api-publica.datajud.cnj.jus.br/api_publica_${encodeURIComponent(tribunalAlias)}/_search`;
 
-    try {
-        const response = await axios.post(
-            url,
-            {
-                query: {
-                    match: {
-                        numeroProcesso: numeroLimpo
+    const maxTentativas = 2;
+    let ultimoErro = null;
+
+    for (let tentativa = 1; tentativa <= maxTentativas; tentativa++) {
+        try {
+            const response = await axios.post(
+                url,
+                {
+                    size: 5,
+                    query: {
+                        match: {
+                            numeroProcesso: numeroLimpo
+                        }
                     }
-                }
-            },
-            {
-                headers: {
-                    'Authorization': apiKey,
-                    'Content-Type': 'application/json'
                 },
-                timeout: 40000
+                {
+                    headers: {
+                        'Authorization': apiKey,
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: 40000
+                }
+            );
+
+            const hits = response.data?.hits?.hits || [];
+            if (hits.length === 0) {
+                return null;
             }
-        );
 
-        const hits = response.data?.hits?.hits || [];
-        if (hits.length === 0) {
-            return null;
+            // Ordena as instâncias retornadas pela última atualização mais recente
+            const hitsOrdenados = [...hits].sort((a, b) => {
+                const dA = a._source?.dataHoraUltimaAtualizacao ? new Date(a._source.dataHoraUltimaAtualizacao).getTime() : 0;
+                const dB = b._source?.dataHoraUltimaAtualizacao ? new Date(b._source.dataHoraUltimaAtualizacao).getTime() : 0;
+                return dB - dA;
+            });
+
+            const principal = normalizarDadosProcesso(hitsOrdenados[0]._source, tribunalAlias);
+            const instancias = hitsOrdenados.map(h => normalizarDadosProcesso(h._source, tribunalAlias));
+
+            return {
+                ...principal,
+                instancias
+            };
+        } catch (error) {
+            ultimoErro = error;
+            const status = error.response?.status;
+            const retryable = status === 429 || status === 503;
+
+            if (retryable && tentativa < maxTentativas) {
+                console.warn(`DataJud retornou HTTP ${status} na tentativa ${tentativa}. Repetindo em 1500ms...`);
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                continue;
+            }
+            break;
         }
-
-        // Ordena as instâncias retornadas pela última atualização mais recente
-        const hitsOrdenados = [...hits].sort((a, b) => {
-            const dA = a._source?.dataHoraUltimaAtualizacao ? new Date(a._source.dataHoraUltimaAtualizacao).getTime() : 0;
-            const dB = b._source?.dataHoraUltimaAtualizacao ? new Date(b._source.dataHoraUltimaAtualizacao).getTime() : 0;
-            return dB - dA;
-        });
-
-        const principal = normalizarDadosProcesso(hitsOrdenados[0]._source, tribunalAlias);
-        const instancias = hitsOrdenados.map(h => normalizarDadosProcesso(h._source, tribunalAlias));
-
-        return {
-            ...principal,
-            instancias
-        };
-    } catch (error) {
-        console.error('Erro ao buscar processo no DataJud:', error.message);
-        const erroApi = new Error('Não foi possível consultar a API do DataJud no momento.');
-        erroApi.code = 'DATAJUD_API_ERROR';
-        erroApi.cause = error;
-        throw erroApi;
     }
+
+    const status = ultimoErro?.response?.status;
+    console.error(`Erro ao buscar processo no DataJud (status=${status || ultimoErro?.code || 'N/A'}):`, ultimoErro?.message);
+
+    let mensagemErro = 'Não foi possível consultar a API pública do DataJud (CNJ) no momento. Tente novamente em instantes.';
+    if (status === 429) {
+        mensagemErro = 'Os servidores públicos do DataJud (CNJ) estão temporariamente sobrecarregados para este tribunal (fila de consultas lotada - Erro 429). Aguarde alguns instantes e tente novamente.';
+    } else if (ultimoErro?.code === 'ECONNABORTED' || ultimoErro?.code === 'ETIMEDOUT' || String(ultimoErro?.message || '').toLowerCase().includes('timeout')) {
+        mensagemErro = 'O servidor público do DataJud (CNJ) demorou muito para responder (tempo limite excedido). Tente novamente em alguns instantes.';
+    } else if (status === 401 || status === 403) {
+        mensagemErro = 'A chave pública da API do DataJud (DATAJUD_API_KEY) foi recusada pelo CNJ. Verifique se o CNJ atualizou a chave pública.';
+    }
+
+    const erroApi = new Error(mensagemErro);
+    erroApi.code = 'DATAJUD_API_ERROR';
+    erroApi.cause = ultimoErro;
+    throw erroApi;
 }

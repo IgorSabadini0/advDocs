@@ -212,7 +212,7 @@ const consultarProcessoCliente = async (req, res) => {
         if (!processo && !pastaVinculada) {
             if (erroDatajud) {
                 return res.status(502).json({
-                    mensagem: "Erro ao comunicar com a API pública do DataJud (CNJ). Verifique sua conexão ou tente novamente."
+                    mensagem: erroDatajud
                 });
             }
             return res.status(404).json({
