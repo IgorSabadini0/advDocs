@@ -170,9 +170,9 @@ export async function buscarProcesso(numeroProcesso, tribunalOverride = null) {
         throw erro;
     }
 
-    const apiKey = process.env.APIKEY;
+    const apiKey = process.env.DATAJUD_API_KEY || process.env.APIKEY;
     if (!apiKey) {
-        const erro = new Error('Chave da API do DataJud (APIKEY) não configurada no ambiente.');
+        const erro = new Error('Chave da API do DataJud (DATAJUD_API_KEY) não configurada no ambiente.');
         erro.code = 'DATAJUD_API_ERROR';
         throw erro;
     }
