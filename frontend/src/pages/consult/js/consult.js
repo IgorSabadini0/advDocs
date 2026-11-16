@@ -1,4 +1,7 @@
 import { escapeHtml, formatDate, formatDateTime, mascaraProcessoCNJ, normalizeText, apiFetch } from '../../../utils/utils.js';
+import { initThemeManager } from '../../../utils/themeManager.js';
+
+initThemeManager();
 
 let processoAtual = null;
 let instanciaSelecionadaIndex = 0;

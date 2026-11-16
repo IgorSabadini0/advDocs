@@ -1,5 +1,8 @@
 import { mascaraProcessoCNJ, apiFetch } from '../../../utils/utils.js';
 import { carregarTiposSelect, abrirModalNovoTipo } from '../../../utils/tiposService.js';
+import { initThemeManager } from '../../../utils/themeManager.js';
+
+initThemeManager();
 
 let idEdicao = null;
 
@@ -106,7 +109,7 @@ const salvarEdicao = async () => {
         <div class="modal-confirm-content">
             <i class="fa-solid fa-triangle-exclamation modal-confirm-icon"></i>
             <h3>Confirmar Edição</h3>
-            <p>Esta ação salvará as alterações feitas na pasta. <span style="font-weight: bold; color: white;">Deseja continuar?</span></p>
+            <p>Esta ação salvará as alterações feitas na pasta. <span style="font-weight: bold; color: var(--text-primary);">Deseja continuar?</span></p>
             <div class="confirm-buttons-group">
                 <button class="btn-cancel-modal" id="cancelarEditBtn">Cancelar</button>
                 <button class="btn-confirm-edit-act" id="confirmRealEdit">Salvar Alterações</button>

@@ -5,6 +5,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Configurações | Palhares Ferreira Advocacia</title>
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem('advdocs-theme') || 'system';
+                var resolved = saved === 'system'
+                    ? (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+                    : saved;
+                document.documentElement.setAttribute('data-theme', resolved === 'dark' ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme-preference', saved);
+            } catch (e) {}
+        })();
+    </script>
     <link rel="stylesheet" href="css/config.css">
     <link rel="shortcut icon" href="/assets/logo.svg" type="image/svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -52,7 +64,7 @@
                             <span class="nav-item-icon"><i class="fa-solid fa-user-gear"></i></span>
                             <span class="nav-item-text">
                                 <strong>Meu Perfil</strong>
-                                <small>Dados pessoais e senha</small>
+                                <small>Perfil, senha e tema</small>
                             </span>
                         </button>
 
@@ -132,6 +144,74 @@
                                 </button>
                                 <button type="button" class="btn-profile-action" id="btnAbrirModalSenha" title="Alterar minha senha">
                                     <i class="fa-solid fa-key"></i> Alterar Senha
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="config-section">
+                        <div class="section-title-row">
+                            <h3><i class="fa-solid fa-palette"></i> Aparência e Tema do Sistema</h3>
+                            <span class="section-counter" id="themeStatusLabel">Sistema</span>
+                        </div>
+                        <div class="surface-box">
+                            <p class="surface-box-helper">
+                                Escolha a paleta visual aplicada imediatamente em todas as páginas do advDocs.
+                            </p>
+                            <div class="theme-selector-grid" role="radiogroup" aria-label="Seleção de tema do sistema">
+                                <button type="button" class="theme-option-card" data-theme-option="light" role="radio" aria-checked="false">
+                                    <span class="theme-option-icon" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="4"></circle>
+                                            <path d="M12 2v2"></path>
+                                            <path d="M12 20v2"></path>
+                                            <path d="m4.93 4.93 1.41 1.41"></path>
+                                            <path d="m17.66 17.66 1.41 1.41"></path>
+                                            <path d="M2 12h2"></path>
+                                            <path d="M20 12h2"></path>
+                                            <path d="m6.34 17.66-1.41 1.41"></path>
+                                            <path d="m19.07 4.93-1.41 1.41"></path>
+                                        </svg>
+                                    </span>
+                                    <span class="theme-option-text">
+                                        <strong>Claro</strong>
+                                        <small>Superfícies claras e nítidas</small>
+                                    </span>
+                                    <span class="theme-option-check" aria-hidden="true">
+                                        <i class="fa-solid fa-check"></i>
+                                    </span>
+                                </button>
+
+                                <button type="button" class="theme-option-card" data-theme-option="dark" role="radio" aria-checked="false">
+                                    <span class="theme-option-icon" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+                                        </svg>
+                                    </span>
+                                    <span class="theme-option-text">
+                                        <strong>Escuro</strong>
+                                        <small>Tons de ardósia para conforto visual</small>
+                                    </span>
+                                    <span class="theme-option-check" aria-hidden="true">
+                                        <i class="fa-solid fa-check"></i>
+                                    </span>
+                                </button>
+
+                                <button type="button" class="theme-option-card" data-theme-option="system" role="radio" aria-checked="false">
+                                    <span class="theme-option-icon" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <rect width="20" height="14" x="2" y="3" rx="2"></rect>
+                                            <line x1="8" x2="16" y1="21" y2="21"></line>
+                                            <line x1="12" x2="12" y1="17" y2="21"></line>
+                                        </svg>
+                                    </span>
+                                    <span class="theme-option-text">
+                                        <strong>Sistema</strong>
+                                        <small>Acompanha o tema do dispositivo</small>
+                                    </span>
+                                    <span class="theme-option-check" aria-hidden="true">
+                                        <i class="fa-solid fa-check"></i>
+                                    </span>
                                 </button>
                             </div>
                         </div>

@@ -19,6 +19,9 @@ import { createResultCard } from '../components/cardComponent.js';
 import { viewItemModal, fecharModal } from '../components/modalComponent.js';
 import { confirmModal } from '../../../components/confirmModal.js';
 import { normalizeText, escapeHtml, apiFetch } from '../../../utils/utils.js';
+import { initThemeManager } from '../../../utils/themeManager.js';
+
+initThemeManager();
 
 const adicionar = () => {
     window.location.href = '/pages/register';

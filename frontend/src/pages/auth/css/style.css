@@ -17,10 +17,10 @@ body {
     bottom: 0;
     z-index: 1;
     background:
-        radial-gradient(circle at 10% 20%, rgba(218, 176, 99, 0.08) 0%, transparent 40%),
-        radial-gradient(circle at 90% 80%, rgba(37, 99, 235, 0.08) 0%, transparent 50%),
-        radial-gradient(circle at 50% 50%, rgba(10, 13, 20, 1) 0%, rgba(5, 7, 12, 1) 100%);
-    opacity: 0.9;
+        radial-gradient(circle at 10% 20%, var(--mesh-grad-1) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, var(--mesh-grad-2) 0%, transparent 50%),
+        linear-gradient(160deg, var(--mesh-base-start) 0%, var(--mesh-base-end) 100%);
+    opacity: 0.96;
     animation: backgroundShift 20s ease-in-out infinite alternate;
 }
 
@@ -127,7 +127,7 @@ body {
     width: 100%;
     height: 54px;
     padding: 0 20px 0 52px;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--bg-input);
     border: 1px solid var(--border-color);
     border-radius: 12px;
     color: var(--text-primary);
@@ -141,7 +141,7 @@ body {
 }
 
 .input-group input:focus {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--bg-input-focus);
     border-color: var(--brand-gold);
     box-shadow: 0 0 0 4px var(--brand-gold-glow);
 }
@@ -182,7 +182,7 @@ body {
 
 .status {
     font-size: 0.9rem;
-    color: #f87171;
+    color: var(--danger);
     font-weight: 500;
     display: flex;
     align-items: center;

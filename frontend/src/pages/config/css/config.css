@@ -23,8 +23,8 @@ body {
     -webkit-backdrop-filter: blur(20px);
     border-radius: var(--radius-lg);
     border: 1px solid var(--border-color);
-    border-top: 1px solid rgba(218, 176, 99, 0.3);
-    border-left: 1px solid rgba(218, 176, 99, 0.3);
+    border-top: 1px solid var(--border-gold-subtle);
+    border-left: 1px solid var(--border-gold-subtle);
     box-shadow: var(--shadow);
     overflow: hidden;
 }
@@ -33,7 +33,7 @@ body {
    BARRA LATERAL (SIDEBAR)
    ========================================================================== */
 .settings-sidebar {
-    background: rgba(8, 11, 17, 0.65);
+    background: var(--bg-sidebar);
     border-right: 1px solid var(--border-color);
     padding: 28px 18px;
     display: flex;
@@ -79,7 +79,7 @@ body {
     align-items: center;
     gap: 10px;
     padding: 10px 12px;
-    background: rgba(255, 255, 255, 0.025);
+    background: var(--bg-subtle);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
 }
@@ -151,9 +151,9 @@ body {
 }
 
 .sidebar-nav-item:hover {
-    background: rgba(255, 255, 255, 0.035);
+    background: var(--bg-subtle-hover);
     color: var(--text-primary);
-    border-color: rgba(255, 255, 255, 0.06);
+    border-color: var(--border-color);
 }
 
 .sidebar-nav-item.active {
@@ -167,7 +167,7 @@ body {
     width: 34px;
     height: 34px;
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--bg-subtle);
     border: 1px solid var(--border-color);
     display: inline-flex;
     align-items: center;
@@ -185,9 +185,9 @@ body {
 
 .sidebar-nav-item.active .nav-item-icon {
     background: linear-gradient(135deg, var(--brand-gold) 0%, var(--brand-gold-dark) 100%);
-    color: #07090e;
+    color: var(--text-on-gold);
     border-color: var(--brand-gold);
-    box-shadow: 0 4px 10px rgba(218, 176, 99, 0.25);
+    box-shadow: 0 4px 10px var(--brand-gold-glow);
 }
 
 .nav-item-text {
@@ -205,7 +205,7 @@ body {
     height: 20px;
     padding: 0 7px;
     border-radius: 10px;
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--bg-subtle-hover);
     border: 1px solid var(--border-color);
     color: var(--text-secondary);
     display: inline-flex;
@@ -256,7 +256,7 @@ body {
     padding: 10px 12px;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-color);
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--bg-subtle);
     color: var(--text-secondary);
     text-decoration: none;
     font-size: 0.8rem;
@@ -366,7 +366,7 @@ body {
     border-radius: var(--radius-sm);
     border: 1px solid var(--brand-gold);
     background: linear-gradient(135deg, var(--brand-gold) 0%, var(--brand-gold-dark) 100%);
-    color: #07090e;
+    color: var(--text-on-gold);
     font-family: var(--font-body);
     font-size: 0.82rem;
     font-weight: 700;
@@ -375,14 +375,15 @@ body {
     align-items: center;
     gap: 7px;
     transition: var(--transition-smooth);
-    box-shadow: 0 4px 12px rgba(218, 176, 99, 0.2);
+    box-shadow: 0 4px 12px var(--brand-gold-glow);
 }
 
 .btn-panel-primary:hover {
-    background: var(--brand-gold-hover);
-    border-color: var(--brand-gold-hover);
+    background: linear-gradient(135deg, var(--brand-gold) 0%, var(--brand-gold-dark) 100%);
+    filter: brightness(1.08);
+    border-color: var(--brand-gold);
     transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(218, 176, 99, 0.3);
+    box-shadow: 0 6px 16px var(--brand-gold-glow);
 }
 
 .btn-panel-secondary {
@@ -390,7 +391,7 @@ body {
     padding: 0 14px;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-gold-subtle);
-    background: rgba(218, 176, 99, 0.08);
+    background: var(--brand-gold-glow);
     color: var(--brand-gold-hover);
     font-family: var(--font-body);
     font-size: 0.82rem;
@@ -403,9 +404,10 @@ body {
 }
 
 .btn-panel-secondary:hover {
-    background: rgba(218, 176, 99, 0.16);
+    background: var(--brand-gold-glow);
+    filter: brightness(1.06);
     border-color: var(--brand-gold);
-    color: #ffffff;
+    color: var(--text-primary);
 }
 
 /* --- Config Section Content --- */
@@ -452,7 +454,7 @@ body {
 }
 
 .surface-box {
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--bg-subtle);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     padding: 16px 18px;
@@ -483,7 +485,7 @@ body {
     justify-content: space-between;
     align-items: center;
     gap: 16px;
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--bg-subtle);
     border: 1px solid var(--border-color);
     padding: 18px 22px;
     border-radius: var(--radius-sm);
@@ -560,7 +562,7 @@ body {
 }
 
 .tipo-badge {
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--bg-subtle);
     border: 1px solid var(--border-gold-subtle);
     color: var(--text-primary);
     padding: 7px 14px;
@@ -617,15 +619,15 @@ body {
     flex-direction: column;
     gap: 10px;
     padding: 14px 16px;
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--bg-subtle);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     transition: var(--transition-smooth);
 }
 
 .grupo-item:hover {
-    background: rgba(255, 255, 255, 0.035);
-    border-color: rgba(255, 255, 255, 0.14);
+    background: var(--bg-subtle-hover);
+    border-color: var(--border-hover);
 }
 
 .grupo-item.is-admin-group {
@@ -660,7 +662,7 @@ body {
     font-size: 0.72rem;
     font-weight: 500;
     color: var(--text-secondary);
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--bg-subtle-hover);
     border: 1px solid var(--border-color);
     padding: 2px 8px;
     border-radius: 12px;
@@ -687,7 +689,7 @@ body {
     flex-wrap: wrap;
     gap: 6px;
     padding-top: 8px;
-    border-top: 1px dashed rgba(255, 255, 255, 0.06);
+    border-top: 1px dashed var(--border-color);
 }
 
 .grupo-politicas-badges.no-border {
@@ -703,8 +705,8 @@ body {
     font-weight: 500;
     padding: 3px 9px;
     border-radius: 6px;
-    background: rgba(218, 176, 99, 0.08);
-    border: 1px solid rgba(218, 176, 99, 0.22);
+    background: var(--brand-gold-glow);
+    border: 1px solid var(--border-gold-subtle);
     color: var(--text-primary);
 }
 
@@ -717,7 +719,7 @@ body {
     font-family: monospace;
     font-size: 0.68rem;
     color: var(--brand-gold-hover);
-    background: rgba(0, 0, 0, 0.35);
+    background: var(--bg-code);
     padding: 1px 5px;
     border-radius: 4px;
 }
@@ -736,7 +738,7 @@ body {
 }
 
 .catalogo-politica-card {
-    background: rgba(0, 0, 0, 0.24);
+    background: var(--bg-subtle);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     padding: 12px 14px;
@@ -747,8 +749,8 @@ body {
 }
 
 .catalogo-politica-card:hover {
-    border-color: rgba(218, 176, 99, 0.3);
-    background: rgba(255, 255, 255, 0.03);
+    border-color: var(--border-hover);
+    background: var(--bg-subtle-hover);
 }
 
 .catalogo-politica-card.is-core {
@@ -801,14 +803,14 @@ body {
     align-items: center;
     gap: 8px;
     padding-top: 6px;
-    border-top: 1px dashed rgba(255, 255, 255, 0.06);
+    border-top: 1px dashed var(--border-color);
 }
 
 .catalogo-politica-footer code {
     font-family: monospace;
     font-size: 0.68rem;
     color: var(--brand-gold-hover);
-    background: rgba(0, 0, 0, 0.35);
+    background: var(--bg-code);
     padding: 2px 6px;
     border-radius: 4px;
 }
@@ -839,7 +841,7 @@ body {
     width: 100%;
     height: 42px;
     padding: 0 14px 0 38px;
-    background: rgba(0, 0, 0, 0.25);
+    background: var(--bg-input);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     color: var(--text-primary);
@@ -854,6 +856,7 @@ body {
 }
 
 .users-search-wrapper input:focus {
+    background: var(--bg-input-focus);
     border-color: var(--brand-gold);
     box-shadow: 0 0 0 3px var(--brand-gold-glow);
 }
@@ -864,7 +867,7 @@ body {
     font-style: italic;
     padding: 4px 10px;
     border-radius: 6px;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--bg-subtle);
     border: 1px dashed var(--border-color);
 }
 
@@ -880,7 +883,7 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 12px 16px;
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--bg-subtle);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     gap: 12px;
@@ -888,8 +891,8 @@ body {
 }
 
 .user-item:hover {
-    background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(255, 255, 255, 0.15);
+    background: var(--bg-subtle-hover);
+    border-color: var(--border-hover);
 }
 
 .user-item-info {
@@ -976,7 +979,7 @@ body {
 
 .status-badge-padrao,
 .status-badge-grupo {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--bg-subtle-hover);
     color: var(--text-secondary);
     border: 1px solid var(--border-color);
     font-size: 0.7rem;
@@ -1031,7 +1034,7 @@ body {
     width: 100%;
     height: 48px;
     padding: 0 38px 0 14px;
-    background-color: rgba(0, 0, 0, 0.35);
+    background-color: var(--bg-input);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     color: var(--text-primary);
@@ -1056,6 +1059,7 @@ body {
 }
 
 .modal-select-grupo:focus {
+    background-color: var(--bg-input-focus);
     border-color: var(--brand-gold);
     box-shadow: 0 0 0 4px var(--brand-gold-glow);
 }
@@ -1066,7 +1070,7 @@ body {
 }
 
 .grupo-select-preview {
-    background: rgba(0, 0, 0, 0.28);
+    background: var(--bg-subtle);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     padding: 10px 12px;
@@ -1127,7 +1131,7 @@ body {
     font-size: 0.68rem;
     padding: 2px 7px;
     border-radius: 4px;
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--bg-subtle-hover);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
 }
@@ -1147,7 +1151,7 @@ body {
     align-items: flex-start;
     gap: 10px;
     padding: 10px 12px;
-    background: rgba(0, 0, 0, 0.25);
+    background: var(--bg-subtle);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     cursor: pointer;
@@ -1156,12 +1160,12 @@ body {
 
 .politica-check-item:hover {
     border-color: var(--border-gold-subtle);
-    background: rgba(218, 176, 99, 0.04);
+    background: var(--brand-gold-glow);
 }
 
 .politica-check-item.checked {
     border-color: var(--brand-gold);
-    background: rgba(218, 176, 99, 0.1);
+    background: var(--brand-gold-glow);
 }
 
 .politica-check-item input[type="checkbox"] {
@@ -1197,7 +1201,7 @@ body {
 .politica-check-title code {
     font-size: 0.7rem;
     color: var(--brand-gold-hover);
-    background: rgba(0, 0, 0, 0.4);
+    background: var(--bg-code);
     padding: 1px 6px;
     border-radius: 4px;
 }
@@ -1228,7 +1232,7 @@ body {
 }
 
 .nova-politica-box {
-    background: rgba(0, 0, 0, 0.22);
+    background: var(--bg-subtle);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     padding: 14px;
@@ -1289,7 +1293,7 @@ body {
     align-items: center;
     gap: 10px;
     padding: 10px 12px;
-    background: rgba(0, 0, 0, 0.25);
+    background: var(--bg-subtle);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
 }
@@ -1316,7 +1320,7 @@ body {
 .politica-manage-title code {
     font-size: 0.7rem;
     color: var(--brand-gold-hover);
-    background: rgba(0, 0, 0, 0.4);
+    background: var(--bg-code);
     padding: 1px 6px;
     border-radius: 4px;
 }
@@ -1324,7 +1328,7 @@ body {
 .politica-grupos-badge {
     font-size: 0.68rem;
     color: var(--text-secondary);
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--bg-subtle-hover);
     padding: 1px 6px;
     border-radius: 10px;
 }
@@ -1360,7 +1364,7 @@ body {
 }
 
 .btn-sm-action:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--bg-subtle-hover);
     color: var(--text-primary);
 }
 
@@ -1368,6 +1372,112 @@ body {
     background: var(--danger);
     border-color: var(--danger);
     color: #ffffff;
+}
+
+/* --- Seletor de Tema (Aparência) --- */
+.theme-selector-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.theme-option-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    text-align: left;
+    color: var(--text-secondary);
+    font-family: var(--font-body);
+    transition: var(--transition-smooth);
+}
+
+.theme-option-card:hover {
+    background: var(--bg-subtle-hover);
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+}
+
+.theme-option-card.active {
+    background: var(--brand-gold-glow);
+    border-color: var(--brand-gold);
+    color: var(--text-primary);
+    box-shadow: 0 0 0 1px var(--brand-gold), var(--shadow-sm);
+}
+
+.theme-option-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: var(--bg-subtle-hover);
+    border: 1px solid var(--border-color);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+    transition: var(--transition-smooth);
+}
+
+.theme-option-icon svg {
+    width: 19px;
+    height: 19px;
+    display: block;
+}
+
+.theme-option-card.active .theme-option-icon {
+    background: linear-gradient(135deg, var(--brand-gold) 0%, var(--brand-gold-dark) 100%);
+    border-color: var(--brand-gold);
+    color: var(--text-on-gold);
+}
+
+.theme-option-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+}
+
+.theme-option-text strong {
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.theme-option-card.active .theme-option-text strong {
+    color: var(--brand-gold-hover);
+}
+
+.theme-option-text small {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    line-height: 1.25;
+}
+
+.theme-option-check {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.68rem;
+    color: transparent;
+    flex-shrink: 0;
+    transition: var(--transition-smooth);
+}
+
+.theme-option-card.active .theme-option-check {
+    background: var(--brand-gold);
+    border-color: var(--brand-gold);
+    color: var(--text-on-gold);
 }
 
 /* --- Sistema de Notificações Toast --- */
@@ -1391,7 +1501,7 @@ body {
     background: var(--bg-surface-solid);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+    box-shadow: var(--shadow-md);
     color: var(--text-primary);
     font-size: 0.84rem;
     font-weight: 500;
@@ -1524,5 +1634,9 @@ body {
     .nova-politica-row {
         flex-direction: column;
         align-items: stretch;
+    }
+
+    .theme-selector-grid {
+        grid-template-columns: 1fr;
     }
 }

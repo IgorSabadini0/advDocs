@@ -1,5 +1,8 @@
 import { mascaraProcessoCNJ, escapeHtml, apiFetch } from '../../../utils/utils.js';
 import { carregarTiposSelect, abrirModalNovoTipo } from '../../../utils/tiposService.js';
+import { initThemeManager } from '../../../utils/themeManager.js';
+
+initThemeManager();
 
 // --- NOTIFICAÇÕES TOAST ---
 const mostrarToast = (mensagem, tipo = 'success') => {

@@ -5,6 +5,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Relação de Pastas | Palhares Ferreira Advocacia</title>
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem('advdocs-theme') || 'system';
+                var resolved = saved === 'system'
+                    ? (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+                    : saved;
+                document.documentElement.setAttribute('data-theme', resolved === 'dark' ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme-preference', saved);
+            } catch (e) {}
+        })();
+    </script>
     <link rel="stylesheet" href="css/pastas.css">
     <link rel="shortcut icon" href="/assets/logo.svg" type="image/svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">

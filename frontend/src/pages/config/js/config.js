@@ -1,5 +1,8 @@
 import { abrirModalNovoTipo } from '../../../utils/tiposService.js';
 import { escapeHtml, normalizeText, apiFetch } from '../../../utils/utils.js';
+import { initThemeManager, getSavedTheme, applyTheme, resolveTheme } from '../../../utils/themeManager.js';
+
+initThemeManager();
 
 let usuarioLogado = null;
 let gruposCache = [];
@@ -1510,9 +1513,59 @@ const abrirModalNovoUsuario = async () => {
     btnSave.addEventListener('click', salvar);
 };
 
+// --- APARÊNCIA E SELETOR DE TEMA ---
+
+const LABELS_TEMA = {
+    light: 'Modo Claro',
+    dark: 'Modo Escuro',
+    system: 'Conforme o Sistema'
+};
+
+const atualizarUIThemeSelector = () => {
+    const preferencia = getSavedTheme();
+    const resolvido = resolveTheme(preferencia);
+
+    document.querySelectorAll('.theme-option-card[data-theme-option]').forEach(btn => {
+        const ativo = btn.dataset.themeOption === preferencia;
+        btn.classList.toggle('active', ativo);
+        btn.setAttribute('aria-checked', ativo ? 'true' : 'false');
+    });
+
+    const statusLabel = document.getElementById('themeStatusLabel');
+    if (statusLabel) {
+        const nomeResolvido = resolvido === 'dark' ? 'Escuro' : 'Claro';
+        statusLabel.textContent = preferencia === 'system'
+            ? `Sistema (${nomeResolvido})`
+            : LABELS_TEMA[preferencia] || nomeResolvido;
+    }
+};
+
+const inicializarSeletorTema = () => {
+    atualizarUIThemeSelector();
+
+    document.querySelectorAll('.theme-option-card[data-theme-option]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const opcao = btn.dataset.themeOption;
+            if (!opcao || opcao === getSavedTheme()) return;
+
+            const { preference, resolved } = applyTheme(opcao, { persist: true });
+            atualizarUIThemeSelector();
+
+            const nomeResolvido = resolved === 'dark' ? 'Escuro' : 'Claro';
+            const msg = preference === 'system'
+                ? `Tema definido para Conforme o Sistema (${nomeResolvido}).`
+                : `Tema alterado para ${LABELS_TEMA[preference]}.`;
+            mostrarToast(msg, 'info');
+        });
+    });
+
+    window.addEventListener('advdocs:theme-change', atualizarUIThemeSelector);
+};
+
 // --- INICIALIZAÇÃO ---
 
 document.addEventListener('DOMContentLoaded', async () => {
+    inicializarSeletorTema();
     document.getElementById('logoutButton').addEventListener('click', sair);
     const token = localStorage.getItem('token');
 

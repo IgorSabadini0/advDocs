@@ -7,24 +7,115 @@
    1. DESIGN SYSTEM TOKENS (CSS VARIABLES)
    -------------------------------------------------------------------------- */
 :root {
-    /* Backgrounds */
-    --bg-main: #07090e;
-    --bg-surface: rgba(20, 24, 33, 0.7);
-    --bg-surface-solid: #121620;
+    color-scheme: light dark;
 
-    /* Brand Gold */
-    --brand-gold: #dab063;
-    --brand-gold-hover: #edd8ad;
-    --brand-gold-glow: rgba(218, 176, 99, 0.15);
-    --brand-gold-dark: #b88d3e;
+    /* Backgrounds (Light Mode padrão) */
+    --bg-primary: #f8fafc;
+    --bg-main: var(--bg-primary);
+    --bg-surface: rgba(255, 255, 255, 0.88);
+    --bg-surface-solid: #ffffff;
+    --bg-surface-elevated: #f1f5f9;
+    --bg-sidebar: rgba(241, 245, 249, 0.92);
+    --bg-navbar: rgba(255, 255, 255, 0.88);
+    --bg-input: #ffffff;
+    --bg-input-focus: #ffffff;
+    --bg-subtle: rgba(15, 23, 42, 0.035);
+    --bg-subtle-hover: rgba(15, 23, 42, 0.065);
+    --bg-code: rgba(15, 23, 42, 0.07);
+    --bg-overlay: rgba(15, 23, 42, 0.55);
+
+    /* Accent & Brand Gold */
+    --accent-primary: #b8862d;
+    --brand-gold: #c49238;
+    --brand-gold-hover: #9a6e1f;
+    --brand-gold-dark: #a37424;
+    --brand-gold-glow: rgba(196, 146, 56, 0.14);
 
     /* Text */
-    --text-primary: #f3f4f6;
-    --text-secondary: #9ca3af;
-    --text-muted: #6b7280;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    --text-on-gold: #0f172a;
+
+    /* Borders */
+    --border-color: rgba(15, 23, 42, 0.12);
+    --border-subtle: rgba(15, 23, 42, 0.08);
+    --border-hover: rgba(184, 134, 45, 0.45);
+    --border-gold-subtle: rgba(184, 134, 45, 0.35);
+
+    /* Feedback & Status */
+    --success: #059669;
+    --success-glow: rgba(5, 150, 105, 0.12);
+    --danger: #dc2626;
+    --danger-glow: rgba(220, 38, 38, 0.12);
+    --warning: #d97706;
+    --warning-glow: rgba(217, 119, 6, 0.12);
+    --info-blue: #2563eb;
+    --info-glow: rgba(37, 99, 235, 0.12);
+
+    /* Typography */
+    --font-title: 'Playfair Display', serif;
+    --font-body: 'Inter', 'Montserrat', sans-serif;
+    --font-sans: 'Inter', 'Montserrat', sans-serif;
+
+    /* Border Radius */
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 24px;
+
+    /* Shadows */
+    --shadow: 0 20px 40px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    --shadow-sm: 0 4px 12px rgba(15, 23, 42, 0.06);
+    --shadow-md: 0 12px 30px rgba(15, 23, 42, 0.1);
+    --shadow-lg: 0 24px 48px rgba(15, 23, 42, 0.18);
+
+    /* Mesh Background */
+    --mesh-grad-1: rgba(196, 146, 56, 0.08);
+    --mesh-grad-2: rgba(37, 99, 235, 0.05);
+    --mesh-base-start: #f8fafc;
+    --mesh-base-end: #eef2f6;
+
+    /* Transitions */
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Dark Mode Tokens (tons de ardósia/grafite com elevação progressiva, sem #000000/#ffffff puros) */
+[data-theme="dark"] {
+    color-scheme: dark;
+
+    /* Backgrounds */
+    --bg-primary: #0f172a;
+    --bg-main: var(--bg-primary);
+    --bg-surface: rgba(20, 27, 42, 0.78);
+    --bg-surface-solid: #161f30;
+    --bg-surface-elevated: #1e293b;
+    --bg-sidebar: rgba(11, 15, 25, 0.72);
+    --bg-navbar: rgba(15, 21, 35, 0.84);
+    --bg-input: rgba(9, 13, 22, 0.55);
+    --bg-input-focus: rgba(9, 13, 22, 0.8);
+    --bg-subtle: rgba(255, 255, 255, 0.03);
+    --bg-subtle-hover: rgba(255, 255, 255, 0.06);
+    --bg-code: rgba(0, 0, 0, 0.38);
+    --bg-overlay: rgba(6, 9, 15, 0.8);
+
+    /* Accent & Brand Gold */
+    --accent-primary: #dab063;
+    --brand-gold: #dab063;
+    --brand-gold-hover: #edd8ad;
+    --brand-gold-dark: #b88d3e;
+    --brand-gold-glow: rgba(218, 176, 99, 0.15);
+
+    /* Text */
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --text-on-gold: #0b0f19;
 
     /* Borders */
     --border-color: rgba(255, 255, 255, 0.08);
+    --border-subtle: rgba(255, 255, 255, 0.05);
     --border-hover: rgba(218, 176, 99, 0.35);
     --border-gold-subtle: rgba(218, 176, 99, 0.3);
 
@@ -38,26 +129,45 @@
     --info-blue: #3b82f6;
     --info-glow: rgba(59, 130, 246, 0.15);
 
-    /* Typography */
-    --font-title: 'Playfair Display', serif;
-    --font-body: 'Inter', 'Montserrat', sans-serif;
-    --font-sans: 'Inter', 'Montserrat', sans-serif;
-
-    /* Border Radius */
-    --radius-sm: 8px;
-    --radius-md: 14px;
-    --radius-lg: 24px;
-
     /* Shadows */
-    --shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.15);
-    --shadow-md: 0 12px 30px rgba(0, 0, 0, 0.3);
-    --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.5);
+    --shadow: 0 20px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 12px 30px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 24px 50px rgba(0, 0, 0, 0.55);
 
-    /* Transitions */
-    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-bounce: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    /* Mesh Background */
+    --mesh-grad-1: rgba(218, 176, 99, 0.05);
+    --mesh-grad-2: rgba(59, 130, 246, 0.05);
+    --mesh-base-start: #0f172a;
+    --mesh-base-end: #090d16;
+}
+
+/* Transição suave apenas após o carregamento inicial (evita flash ao carregar) */
+html.theme-transitions-ready,
+html.theme-transitions-ready body,
+html.theme-transitions-ready .bg-mesh,
+html.theme-transitions-ready .navbar,
+html.theme-transitions-ready .settings-layout,
+html.theme-transitions-ready .settings-sidebar,
+html.theme-transitions-ready .container,
+html.theme-transitions-ready .login-card,
+html.theme-transitions-ready .control-panel,
+html.theme-transitions-ready .consult-panel,
+html.theme-transitions-ready .stat-card,
+html.theme-transitions-ready .result-card,
+html.theme-transitions-ready .process-card,
+html.theme-transitions-ready .folder-banner,
+html.theme-transitions-ready .surface-box,
+html.theme-transitions-ready .profile-info,
+html.theme-transitions-ready .grupo-item,
+html.theme-transitions-ready .user-item,
+html.theme-transitions-ready .modal-content,
+html.theme-transitions-ready .modal-confirm-content,
+html.theme-transitions-ready input,
+html.theme-transitions-ready select,
+html.theme-transitions-ready textarea,
+html.theme-transitions-ready button {
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 /* --------------------------------------------------------------------------
@@ -88,11 +198,11 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--bg-subtle);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--border-color);
     border-radius: 4px;
 }
 
@@ -111,11 +221,18 @@ body {
     bottom: 0;
     z-index: -1;
     background:
-        radial-gradient(circle at 10% 10%, rgba(218, 176, 99, 0.04) 0%, transparent 40%),
-        radial-gradient(circle at 90% 90%, rgba(59, 130, 246, 0.04) 0%, transparent 50%),
-        radial-gradient(circle at 50% 50%, #07090e 0%, #030406 100%);
-    opacity: 0.95;
+        radial-gradient(circle at 10% 10%, var(--mesh-grad-1) 0%, transparent 40%),
+        radial-gradient(circle at 90% 90%, var(--mesh-grad-2) 0%, transparent 50%),
+        linear-gradient(160deg, var(--mesh-base-start) 0%, var(--mesh-base-end) 100%);
+    opacity: 0.98;
     pointer-events: none;
+}
+
+/* Ajuste do SVG da logo no Light Mode (o SVG original possui traços brancos) */
+html:not([data-theme="dark"]) .brand-logo img,
+html:not([data-theme="dark"]) .sidebar-brand img,
+html:not([data-theme="dark"]) .logo img {
+    filter: invert(0.86) hue-rotate(180deg) drop-shadow(0 2px 6px rgba(15, 23, 42, 0.12));
 }
 
 /* --------------------------------------------------------------------------
@@ -155,7 +272,7 @@ body {
     height: 52px;
     border: 1px solid var(--brand-gold);
     background: linear-gradient(135deg, var(--brand-gold) 0%, var(--brand-gold-dark) 100%);
-    color: #07090e;
+    color: var(--text-on-gold);
     font-weight: 700;
     font-size: 0.95rem;
     letter-spacing: 1px;
@@ -166,7 +283,7 @@ body {
     align-items: center;
     gap: 8px;
     transition: var(--transition);
-    box-shadow: 0 4px 15px rgba(218, 176, 99, 0.15);
+    box-shadow: 0 4px 15px var(--brand-gold-glow);
 }
 
 .btn-save {
@@ -177,8 +294,8 @@ body {
 .btn-save:hover,
 .btn-submit:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(218, 176, 99, 0.35);
-    background: linear-gradient(135deg, var(--brand-gold-hover) 0%, var(--brand-gold) 100%);
+    box-shadow: 0 8px 25px var(--brand-gold-glow);
+    filter: brightness(1.08);
 }
 
 .btn-save:active,
@@ -216,8 +333,8 @@ body {
 
 .btn-view:hover {
     background: var(--brand-gold);
-    color: #07090e;
-    box-shadow: 0 4px 10px rgba(218, 176, 99, 0.2);
+    color: var(--text-on-gold);
+    box-shadow: 0 4px 10px var(--brand-gold-glow);
 }
 
 .btn-view:hover i {
@@ -313,7 +430,7 @@ body {
     width: 100%;
     height: 50px;
     padding: 0 16px;
-    background-color: rgba(0, 0, 0, 0.2);
+    background-color: var(--bg-input);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     color: var(--text-primary);
@@ -330,7 +447,7 @@ body {
 .clientes-add input:focus,
 .clientes-add select:focus {
     border-color: var(--brand-gold);
-    background-color: rgba(0, 0, 0, 0.3);
+    background-color: var(--bg-input-focus);
     box-shadow: 0 0 0 4px var(--brand-gold-glow);
 }
 
@@ -372,7 +489,7 @@ body {
     padding: 0;
     border: 1px solid var(--border-color);
     border-radius: 4px;
-    background-color: rgba(0, 0, 0, 0.2);
+    background-color: var(--bg-input);
     cursor: pointer;
     appearance: none;
     -webkit-appearance: none;
@@ -386,7 +503,7 @@ body {
     content: "";
     width: 9px;
     height: 5px;
-    border: solid #07090e;
+    border: solid var(--text-on-gold);
     border-width: 0 0 2px 2px;
     transform: rotate(-45deg) scale(0);
     transition: transform 0.15s ease-in-out;
@@ -432,7 +549,7 @@ body {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-color: rgba(3, 4, 6, 0.8);
+    background-color: var(--bg-overlay);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     display: flex;
@@ -513,7 +630,7 @@ body {
 }
 
 .btn-cancel-modal:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--bg-subtle-hover);
     color: var(--text-primary);
 }
 
@@ -521,7 +638,7 @@ body {
     padding: 10px 20px;
     background: var(--brand-gold);
     border: none;
-    color: #07090e;
+    color: var(--text-on-gold);
     border-radius: var(--radius-sm);
     font-weight: 700;
     font-size: 0.85rem;
@@ -530,8 +647,10 @@ body {
 }
 
 .btn-confirm-edit-act:hover {
-    background: var(--brand-gold-hover);
-    box-shadow: 0 4px 15px rgba(218, 176, 99, 0.3);
+    background: var(--brand-gold);
+    color: var(--text-on-gold);
+    filter: brightness(1.08);
+    box-shadow: 0 4px 15px var(--brand-gold-glow);
 }
 
 .btn-confirm-delete-act {
@@ -587,7 +706,7 @@ body {
 .modal-title .badge {
     font-family: var(--font-body);
     font-size: 0.75rem;
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--bg-subtle);
     border: 1px solid var(--border-color);
     color: var(--text-secondary);
     padding: 4px 10px;
@@ -635,7 +754,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--bg-subtle);
     border: 1px solid var(--border-color);
     padding: 12px 16px;
     border-radius: var(--radius-sm);
@@ -671,7 +790,7 @@ body {
     font-size: 0.9rem;
     color: var(--text-secondary);
     line-height: 1.6;
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--bg-subtle);
     border: 1px solid var(--border-color);
     padding: 16px;
     border-radius: var(--radius-sm);
@@ -683,7 +802,7 @@ body {
     justify-content: flex-end;
     gap: 12px;
     padding: 20px 28px;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--bg-subtle);
     border-top: 1px solid var(--border-color);
 }
 
@@ -809,7 +928,7 @@ body {
     width: 100%;
     height: 48px;
     padding: 0 16px;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--bg-input);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     color: var(--text-primary);

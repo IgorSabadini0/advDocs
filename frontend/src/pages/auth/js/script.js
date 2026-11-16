@@ -1,4 +1,7 @@
+import { initThemeManager } from '../../../utils/themeManager.js';
+
 const API_URL = window.location.origin;
+initThemeManager();
 
 // Verifica se o usuário já possui sessão ativa e válida antes de qualquer interação
 const verificarSessaoAtiva = () => {
