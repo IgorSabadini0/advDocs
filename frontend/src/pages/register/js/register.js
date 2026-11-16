@@ -198,11 +198,66 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 });
 
-const showLoading = (show) => {
+let registerLoadingInterval = null;
+let registerLoadingStartTime = 0;
+let ultimoTempoRegistro = null;
+
+const showLoading = (show, comDatajud = false) => {
     const loading = document.getElementById('loading');
-    if (!loading) return;
-    if (show) loading.classList.add('show');
-    else loading.classList.remove('show');
+    const textEl = document.getElementById('loadingRegisterText');
+    const timerEl = document.getElementById('loadingRegisterTimer');
+    const saveButton = document.getElementById('saveButton');
+
+    if (show) {
+        if (registerLoadingInterval) {
+            clearInterval(registerLoadingInterval);
+            registerLoadingInterval = null;
+        }
+        registerLoadingStartTime = performance.now();
+        ultimoTempoRegistro = null;
+
+        if (textEl) {
+            textEl.textContent = comDatajud
+                ? 'Consultando DataJud (CNJ) e salvando pasta...'
+                : 'Salvando pasta no sistema...';
+        }
+        if (timerEl) {
+            timerEl.style.display = comDatajud ? 'inline-flex' : 'none';
+            timerEl.textContent = '0s';
+        }
+        if (saveButton) {
+            saveButton.disabled = true;
+            saveButton.innerHTML = comDatajud
+                ? '<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando DataJud... (0s)'
+                : '<i class="fa-solid fa-spinner fa-spin"></i> Salvando Registro... (0s)';
+        }
+        if (loading) loading.classList.add('show');
+
+        registerLoadingInterval = setInterval(() => {
+            const segundos = Math.floor((performance.now() - registerLoadingStartTime) / 1000);
+            if (timerEl && comDatajud) {
+                timerEl.textContent = `${segundos}s`;
+            }
+            if (saveButton) {
+                saveButton.innerHTML = comDatajud
+                    ? `<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando DataJud... (${segundos}s)`
+                    : `<i class="fa-solid fa-spinner fa-spin"></i> Salvando Registro... (${segundos}s)`;
+            }
+        }, 200);
+        return null;
+    } else {
+        if (registerLoadingInterval) {
+            clearInterval(registerLoadingInterval);
+            registerLoadingInterval = null;
+        }
+        if (registerLoadingStartTime > 0) {
+            ultimoTempoRegistro = ((performance.now() - registerLoadingStartTime) / 1000).toFixed(1);
+            registerLoadingStartTime = 0;
+        }
+        if (loading) loading.classList.remove('show');
+        if (timerEl) timerEl.style.display = 'none';
+        return ultimoTempoRegistro;
+    }
 };
 
 const salvarRegistro = async () => {
@@ -281,17 +336,15 @@ const salvarRegistro = async () => {
     };
 
     try {
-        if (saveButton) {
-            saveButton.disabled = true;
-            saveButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando Registro...';
-        }
-        showLoading(true);
+        showLoading(true, consultarProcesso);
         exibirMensagemStatus('');
 
         const data = await apiFetch('/clientes', {
             method: 'POST',
             body: JSON.stringify(registro)
         });
+
+        const tempoDecorrido = showLoading(false);
 
         inputAcao.value = '';
         inputNome.value = '';
@@ -306,9 +359,10 @@ const salvarRegistro = async () => {
         await carregarMenorPastaDisponivel();
 
         if (consultarProcesso && data.processo) {
-            const msg = `✅ Pasta cadastrada! Dados sincronizados com o DataJud (${data.processo.tribunal} - ${data.processo.classe}).`;
+            const sufixoTempo = tempoDecorrido ? ` em ${tempoDecorrido}s` : '';
+            const msg = `✅ Pasta cadastrada! Dados sincronizados com o DataJud${sufixoTempo} (${data.processo.tribunal} - ${data.processo.classe}).`;
             exibirMensagemStatus(msg, 'success');
-            mostrarToast('Pasta registrada e sincronizada com o DataJud!', 'success');
+            mostrarToast(`Pasta registrada e sincronizada com o DataJud${sufixoTempo}!`, 'success');
         } else {
             exibirMensagemStatus('✅ Pasta registrada com sucesso!', 'success');
             mostrarToast('Pasta registrada com sucesso!', 'success');

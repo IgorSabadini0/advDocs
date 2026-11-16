@@ -89,7 +89,14 @@
         <!-- Loader -->
         <div class="loading" id="loading">
             <div class="spinner"></div>
-            <p class="loading-text">Consultando base do CNJ (DataJud)...</p>
+            <div class="loading-info">
+                <p class="loading-text" id="loadingText">Consultando base pública do CNJ (DataJud)...</p>
+                <div class="loading-timer-badge">
+                    <i class="fa-regular fa-clock"></i>
+                    <span>Tempo decorrido: <strong id="loadingTimer">0s</strong></span>
+                </div>
+                <small class="loading-subhint" id="loadingSubhint">A resposta depende da disponibilidade do tribunal no CNJ.</small>
+            </div>
         </div>
 
         <!-- Mensagem de Erro / Vazio -->

@@ -2,16 +2,54 @@ import { escapeHtml, formatDate, formatDateTime, mascaraProcessoCNJ, normalizeTe
 
 let processoAtual = null;
 let instanciaSelecionadaIndex = 0;
+let loadingInterval = null;
+let loadingStartTime = 0;
+let ultimoTempoConsulta = null;
 
 const showLoading = (show) => {
     const loading = document.getElementById('loading');
     const btn = document.getElementById('btnConsultar');
+    const timerEl = document.getElementById('loadingTimer');
+    const subhintEl = document.getElementById('loadingSubhint');
+
     if (show) {
-        loading.classList.add('show');
-        btn.disabled = true;
+        if (loadingInterval) {
+            clearInterval(loadingInterval);
+            loadingInterval = null;
+        }
+        loadingStartTime = performance.now();
+        ultimoTempoConsulta = null;
+
+        if (timerEl) timerEl.textContent = '0s';
+        if (subhintEl) subhintEl.textContent = 'A resposta depende da disponibilidade do tribunal no CNJ.';
+        if (loading) loading.classList.add('show');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Consultando... (0s)';
+        }
+
+        loadingInterval = setInterval(() => {
+            const segundos = Math.floor((performance.now() - loadingStartTime) / 1000);
+            if (timerEl) timerEl.textContent = `${segundos}s`;
+            if (btn) btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Consultando... (${segundos}s)`;
+            if (subhintEl && segundos >= 10) {
+                subhintEl.textContent = 'O tribunal está demorando um pouco mais para responder. Aguardando retorno do CNJ...';
+            }
+        }, 200);
     } else {
-        loading.classList.remove('show');
-        btn.disabled = false;
+        if (loadingInterval) {
+            clearInterval(loadingInterval);
+            loadingInterval = null;
+        }
+        if (loadingStartTime > 0) {
+            ultimoTempoConsulta = ((performance.now() - loadingStartTime) / 1000).toFixed(1);
+            loadingStartTime = 0;
+        }
+        if (loading) loading.classList.remove('show');
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Consultar Processo';
+        }
     }
 };
 
@@ -184,6 +222,7 @@ const renderizarDadosProcesso = (processo, aviso) => {
                     <span class="proc-badge gold">${escapeHtml(dadosAtivos.tribunal)}</span>
                     <span class="proc-badge">Grau: ${escapeHtml(dadosAtivos.grau)}</span>
                     <span class="proc-badge">${escapeHtml(dadosAtivos.formato)}</span>
+                    ${ultimoTempoConsulta ? `<span class="proc-badge time-badge" title="Tempo de resposta da consulta"><i class="fa-solid fa-bolt"></i> ${escapeHtml(ultimoTempoConsulta)}s</span>` : ''}
                 </div>
             </div>
 
@@ -311,6 +350,8 @@ const consultarProcesso = async (event) => {
     try {
         const queryParams = selectTribunal.value ? `?tribunal=${encodeURIComponent(selectTribunal.value)}` : '';
         const data = await apiFetch(`/clientes/consulta/${encodeURIComponent(numeroLimpo)}${queryParams}`);
+
+        showLoading(false);
 
         processoAtual = data.processo;
         instanciaSelecionadaIndex = 0;
