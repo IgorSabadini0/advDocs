@@ -173,9 +173,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    const labelTipoIconEl = document.querySelector('label[for="tipo_processo_id"] i');
+
     document.getElementById('btnNovoTipo')?.addEventListener('click', () => {
         abrirModalNovoTipo((novoTipoNome, novoTipoId) => {
-            carregarTiposSelect(selectTipo, novoTipoId || novoTipoNome, { valueField: 'id' });
+            carregarTiposSelect(selectTipo, novoTipoId || novoTipoNome, {
+                valueField: 'id',
+                iconTargetElement: labelTipoIconEl
+            });
             selectTipo?.classList.remove('input-invalid');
             mostrarToast(`Categoria "${novoTipoNome}" criada e selecionada!`, 'success');
         });
@@ -220,7 +225,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     idEdicao = item.id;
 
     // Carrega os tipos de processo usando ID como value (e faz fallback pelo nome se tipo_processo_id for nulo)
-    await carregarTiposSelect(selectTipo, item.tipo_processo_id || item.tipo || '', { valueField: 'id' });
+    await carregarTiposSelect(selectTipo, item.tipo_processo_id || item.tipo || '', {
+        valueField: 'id',
+        iconTargetElement: labelTipoIconEl
+    });
 
     document.getElementById('nome').value = item.nome || '';
     document.getElementById('cpf_cnpj').value = item.cpf_cnpj ? mascaraCpfCnpj(item.cpf_cnpj) : '';

@@ -1,4 +1,9 @@
-import { abrirModalNovoTipo } from '../../../utils/tiposService.js';
+import {
+    abrirModalNovoTipo,
+    abrirModalEditarTipo,
+    sanitizarClasseIcone,
+    atualizarTiposCache
+} from '../../../utils/tiposService.js';
 import { escapeHtml, normalizeText, apiFetch, mostrarToast } from '../../../utils/utils.js';
 import { initThemeManager, getSavedTheme, applyTheme, resolveTheme } from '../../../utils/themeManager.js';
 import { initNotificationsWidget } from '../../../utils/notificationsWidget.js';
@@ -6,6 +11,7 @@ import { initNotificationsWidget } from '../../../utils/notificationsWidget.js';
 initThemeManager();
 
 let usuarioLogado = null;
+let tiposConfigCache = [];
 let gruposCache = [];
 let politicasCache = [];
 let usuariosCache = [];
@@ -44,7 +50,7 @@ const MAPA_PAINEL_HASH = {
     'panel-integracoes': '#integracoes'
 };
 
-const alternarPainel = (targetId, atualizarHash = true) => {
+const alternarPainel = (targetId, atualizarHash = true, scrollNoMobile = false) => {
     const adminOnlyPanels = ['panel-rbac', 'panel-usuarios', 'panel-integracoes'];
     if (adminOnlyPanels.includes(targetId) && !isUsuarioAdmin()) {
         targetId = 'panel-perfil';
@@ -60,6 +66,10 @@ const alternarPainel = (targetId, atualizarHash = true) => {
 
     if (atualizarHash && MAPA_PAINEL_HASH[targetId]) {
         history.replaceState(null, '', MAPA_PAINEL_HASH[targetId]);
+    }
+
+    if (scrollNoMobile && window.innerWidth <= 860) {
+        document.querySelector('.settings-content')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 };
 
@@ -384,40 +394,82 @@ const confirmarExclusaoTipo = (id, nome) => {
     });
 };
 
-const carregarTiposConfig = async () => {
+const renderizarTiposConfig = () => {
     const container = document.getElementById('tiposListContainer');
     const badgeCountTipos = document.getElementById('badgeCountTipos');
     const tiposTotalLabel = document.getElementById('tiposTotalLabel');
+    const filtro = normalizeText(document.getElementById('searchTiposInput')?.value || '');
+    if (!container) return;
+
+    const total = tiposConfigCache.length;
+    if (badgeCountTipos) badgeCountTipos.textContent = total;
+    if (tiposTotalLabel) tiposTotalLabel.textContent = `${total} ${total === 1 ? 'categoria' : 'categorias'}`;
+
+    if (total === 0) {
+        container.innerHTML = '<span style="color: var(--text-muted); font-size: 0.85rem;">Nenhum tipo cadastrado.</span>';
+        return;
+    }
+
+    const filtrados = filtro
+        ? tiposConfigCache.filter(t => normalizeText(t.nome).includes(filtro))
+        : tiposConfigCache;
+
+    if (filtrados.length === 0) {
+        container.innerHTML = '<span style="color: var(--text-muted); font-size: 0.85rem;">Nenhuma categoria encontrada para o filtro digitado.</span>';
+        return;
+    }
+
+    container.innerHTML = filtrados.map(t => `
+        <span class="tipo-badge" data-id="${t.id}" data-nome="${escapeHtml(t.nome)}" data-icone="${escapeHtml(sanitizarClasseIcone(t.icone))}" title="Clique para editar ${escapeHtml(t.nome)}">
+            <i class="${escapeHtml(sanitizarClasseIcone(t.icone))} tipo-badge-icon"></i>
+            <span>${escapeHtml(t.nome)}</span>
+            <button type="button" class="btn-edit-tipo" data-id="${t.id}" data-nome="${escapeHtml(t.nome)}" data-icone="${escapeHtml(sanitizarClasseIcone(t.icone))}" title="Editar categoria ${escapeHtml(t.nome)}">
+                <i class="fa-solid fa-pen"></i>
+            </button>
+            <button type="button" class="btn-delete-tipo" data-id="${t.id}" data-nome="${escapeHtml(t.nome)}" title="Remover categoria ${escapeHtml(t.nome)}">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </span>
+    `).join('');
+
+    const abrirEdicao = (el) => {
+        abrirModalEditarTipo(
+            {
+                id: el.dataset.id,
+                nome: el.dataset.nome,
+                icone: el.dataset.icone
+            },
+            (nomeAtualizado) => {
+                mostrarToast(`Categoria "${nomeAtualizado}" atualizada com sucesso!`);
+                carregarTiposConfig();
+            }
+        );
+    };
+
+    container.querySelectorAll('.tipo-badge').forEach(badge => {
+        badge.addEventListener('click', (e) => {
+            if (e.target.closest('.btn-delete-tipo')) return;
+            e.stopPropagation();
+            abrirEdicao(badge);
+        });
+    });
+
+    container.querySelectorAll('.btn-delete-tipo').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            confirmarExclusaoTipo(btn.dataset.id, btn.dataset.nome);
+        });
+    });
+};
+
+const carregarTiposConfig = async () => {
+    const container = document.getElementById('tiposListContainer');
     if (!container) return;
 
     try {
-        const tipos = await apiFetch('/clientes/tipos');
-        const total = Array.isArray(tipos) ? tipos.length : 0;
-
-        if (badgeCountTipos) badgeCountTipos.textContent = total;
-        if (tiposTotalLabel) tiposTotalLabel.textContent = `${total} ${total === 1 ? 'categoria' : 'categorias'}`;
-
-        if (total === 0) {
-            container.innerHTML = '<span style="color: var(--text-muted); font-size: 0.85rem;">Nenhum tipo cadastrado.</span>';
-            return;
-        }
-
-        container.innerHTML = tipos.map(t => `
-            <span class="tipo-badge">
-                <i class="fa-solid fa-tag tipo-badge-icon"></i>
-                <span>${escapeHtml(t.nome)}</span>
-                <button type="button" class="btn-delete-tipo" data-id="${t.id}" data-nome="${escapeHtml(t.nome)}" title="Remover categoria ${escapeHtml(t.nome)}">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </span>
-        `).join('');
-
-        container.querySelectorAll('.btn-delete-tipo').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                confirmarExclusaoTipo(btn.dataset.id, btn.dataset.nome);
-            });
-        });
+        const tiposRaw = await apiFetch('/clientes/tipos');
+        tiposConfigCache = atualizarTiposCache(Array.isArray(tiposRaw) ? tiposRaw : []);
+        renderizarTiposConfig();
     } catch (e) {
         console.error('Erro ao listar tipos de processos na config:', e);
     }
@@ -1819,16 +1871,42 @@ const inicializarPainelIntegracoes = () => {
         });
     });
 
-    fileInput?.addEventListener('change', () => {
-        const file = fileInput.files?.[0];
+    let droppedPfxFile = null;
+
+    const atualizarArquivoSelecionadoPfx = (file) => {
         if (!file) {
+            droppedPfxFile = null;
             fileTrigger?.classList.remove('has-file');
-            if (fileLabel) fileLabel.textContent = 'Clique para selecionar o arquivo .pfx / .p12';
+            if (fileLabel) fileLabel.textContent = 'Clique ou arraste o arquivo .pfx / .p12 aqui';
             return;
         }
         const sizeKb = Math.max(1, Math.round(file.size / 1024));
         fileTrigger?.classList.add('has-file');
         if (fileLabel) fileLabel.textContent = `${file.name} (${sizeKb} KB)`;
+    };
+
+    fileInput?.addEventListener('change', () => {
+        droppedPfxFile = null;
+        atualizarArquivoSelecionadoPfx(fileInput.files?.[0] || null);
+    });
+
+    fileTrigger?.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        fileTrigger.classList.add('is-dragover');
+    });
+
+    fileTrigger?.addEventListener('dragleave', () => {
+        fileTrigger.classList.remove('is-dragover');
+    });
+
+    fileTrigger?.addEventListener('drop', (e) => {
+        e.preventDefault();
+        fileTrigger.classList.remove('is-dragover');
+        const arquivo = e.dataTransfer?.files?.[0];
+        if (!arquivo) return;
+        droppedPfxFile = arquivo;
+        if (fileInput) fileInput.value = '';
+        atualizarArquivoSelecionadoPfx(arquivo);
     });
 
     formA1?.addEventListener('submit', async (e) => {
@@ -1838,7 +1916,7 @@ const inicializarPainelIntegracoes = () => {
             feedbackA1.textContent = '';
         }
 
-        const file = fileInput?.files?.[0];
+        const file = droppedPfxFile || fileInput?.files?.[0];
         const senhaInput = document.getElementById('inputPfxSenha');
         const titularInput = document.getElementById('inputPfxTitular');
         const tribunalSelect = document.getElementById('selectCertTribunal');
@@ -1897,8 +1975,7 @@ const inicializarPainelIntegracoes = () => {
             if (fileInput) fileInput.value = '';
             if (senhaInput) senhaInput.value = '';
             if (titularInput) titularInput.value = '';
-            fileTrigger?.classList.remove('has-file');
-            if (fileLabel) fileLabel.textContent = 'Clique para selecionar o arquivo .pfx / .p12';
+            atualizarArquivoSelecionadoPfx(null);
 
             if (feedbackA1) {
                 feedbackA1.className = 'credencial-form-feedback is-success';
@@ -2027,9 +2104,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll('.sidebar-nav-item').forEach(btn => {
         btn.addEventListener('click', () => {
             if (btn.dataset.target) {
-                alternarPainel(btn.dataset.target);
+                alternarPainel(btn.dataset.target, true, true);
             }
         });
+    });
+
+    document.getElementById('searchTiposInput')?.addEventListener('input', () => {
+        renderizarTiposConfig();
     });
 
     document.getElementById('searchUsuariosInput')?.addEventListener('input', () => {

@@ -7,6 +7,7 @@ import {
     abrirPdfDocumentoAutenticado,
     baixarDocumentoMniSobDemanda
 } from '../../../utils/utils.js';
+import { resolverIconeTipo } from '../../../utils/tiposService.js';
 
 const fecharModal = () => {
     const modal = document.getElementById('itemModal');
@@ -66,7 +67,7 @@ const viewItemModal = (item, { tipoLegivel, onDelete, onEdit, onResyncDatajud, o
                         ${item.telefone ? `<div class="modal-info-item"><strong>Telefone / WhatsApp</strong> <span>${escapeHtml(item.telefone)}</span></div>` : ''}
                         ${item.email ? `<div class="modal-info-item"><strong>E-mail</strong> <span>${escapeHtml(item.email)}</span></div>` : ''}
                         <div class="modal-info-item"><strong>Número da Pasta</strong> <span>${item.numeroPasta ? `Nº ${escapeHtml(item.numeroPasta)}` : 'N/A'}</span></div>
-                        <div class="modal-info-item"><strong>Categoria / Tipo</strong> <span>${escapeHtml(tipoLegivel || item.tipo)}</span></div>
+                        <div class="modal-info-item"><strong>Categoria / Tipo</strong> <span><i class="${escapeHtml(resolverIconeTipo(item.tipo, item.tipo_icone))}" style="color: var(--brand-gold); margin-right: 6px;"></i>${escapeHtml(tipoLegivel || item.tipo)}</span></div>
                         ${item.tribunal ? `<div class="modal-info-item"><strong>Tribunal</strong> <span>${escapeHtml(item.tribunal)}</span></div>` : ''}
                         ${item.comarca_vara ? `<div class="modal-info-item"><strong>Comarca / Vara</strong> <span>${escapeHtml(item.comarca_vara)}</span></div>` : ''}
                         ${item.parte_contraria ? `<div class="modal-info-item"><strong>Parte Contrária</strong> <span>${escapeHtml(item.parte_contraria)}</span></div>` : ''}

@@ -4,13 +4,15 @@
 body {
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    min-height: 100dvh;
     padding: 36px 20px;
 }
 
 .settings-wrapper {
     width: 100%;
-    max-width: 1020px;
+    max-width: 1160px;
     animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
@@ -574,6 +576,7 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 8px;
+    cursor: pointer;
     transition: var(--transition-smooth);
 }
 
@@ -587,20 +590,26 @@ body {
     background: var(--brand-gold-glow);
 }
 
+.btn-edit-tipo,
 .btn-delete-tipo {
     background: transparent;
     border: none;
     color: var(--text-muted);
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
     transition: var(--transition-smooth);
     padding: 0;
+}
+
+.btn-edit-tipo:hover {
+    color: var(--text-on-gold);
+    background: var(--brand-gold);
 }
 
 .btn-delete-tipo:hover {
@@ -1482,75 +1491,6 @@ body {
     color: var(--text-on-gold);
 }
 
-/* --- Sistema de Notificações Toast --- */
-.toast-container {
-    position: fixed;
-    top: 24px;
-    right: 24px;
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    pointer-events: none;
-    max-width: 360px;
-}
-
-.toast-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 16px;
-    background: var(--bg-surface-solid);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    box-shadow: var(--shadow-md);
-    color: var(--text-primary);
-    font-size: 0.84rem;
-    font-weight: 500;
-    opacity: 0;
-    transform: translateX(20px);
-    transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-    pointer-events: auto;
-}
-
-.toast-item.show {
-    opacity: 1;
-    transform: translateX(0);
-}
-
-.toast-item.toast-success {
-    border-left: 3px solid var(--success);
-}
-
-.toast-item.toast-success .toast-icon {
-    color: var(--success);
-}
-
-.toast-item.toast-error {
-    border-left: 3px solid var(--danger);
-}
-
-.toast-item.toast-error .toast-icon {
-    color: var(--danger);
-}
-
-.toast-item.toast-info {
-    border-left: 3px solid var(--brand-gold);
-}
-
-.toast-item.toast-info .toast-icon {
-    color: var(--brand-gold);
-}
-
-.toast-icon {
-    font-size: 1rem;
-    flex-shrink: 0;
-}
-
-    .toast-text {
-    line-height: 1.35;
-}
-
 /* ==========================================================================
    PAINEL: CERTIFICADO DIGITAL A1 & MOTOR PROCESSUAL
    ========================================================================== */
@@ -1659,19 +1599,37 @@ body {
 
 .credencial-input {
     width: 100%;
-    height: 36px;
-    padding: 0 10px;
-    border-radius: var(--radius-xs, 8px);
+    height: 42px;
+    padding: 0 12px;
+    border-radius: var(--radius-xs);
     border: 1px solid var(--border-color);
-    background: var(--bg-surface-solid);
+    background-color: var(--bg-input);
     color: var(--text-primary);
     font-family: var(--font-body);
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     outline: none;
     transition: var(--transition-smooth);
 }
 
+select.credencial-input {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    cursor: pointer;
+    padding-right: 36px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23dab063'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 14px;
+}
+
+select.credencial-input option {
+    background-color: var(--bg-surface-solid);
+    color: var(--text-primary);
+}
+
 .credencial-input:focus {
+    background-color: var(--bg-input-focus);
     border-color: var(--brand-gold);
     box-shadow: 0 0 0 2px var(--brand-gold-glow);
 }
@@ -1721,10 +1679,15 @@ body {
 }
 
 .file-drop-trigger:hover,
-.file-drop-trigger.has-file {
+.file-drop-trigger.has-file,
+.file-drop-trigger.is-dragover {
     border-color: var(--brand-gold);
     background: var(--brand-gold-glow);
     color: var(--text-primary);
+}
+
+.file-drop-trigger.is-dragover {
+    box-shadow: 0 0 0 3px var(--brand-gold-glow);
 }
 
 .file-drop-trigger i {
@@ -1931,15 +1894,18 @@ body {
     word-break: break-word;
 }
 
-/* Responsividade (Tablet e Mobile) */
+/* Responsividade (Notebook compacto, Tablet e Mobile) */
+@media (max-width: 1080px) {
+    .credenciais-forms-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 @media (max-width: 860px) {
     .motor-kpis-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .credenciais-forms-grid {
-        grid-template-columns: 1fr;
-    }
     .settings-layout {
         grid-template-columns: 1fr;
         min-height: auto;
@@ -1959,17 +1925,14 @@ body {
     }
 
     .sidebar-nav-group {
-        flex-direction: row;
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 8px;
         width: 100%;
     }
 
     .sidebar-group-label {
-        width: 100%;
-    }
-
-    .sidebar-nav-item {
-        flex: 1 1 200px;
+        grid-column: 1 / -1;
     }
 
     .sidebar-footer {
@@ -1994,8 +1957,17 @@ body {
     }
 
     .settings-sidebar {
-        padding: 18px 16px;
-        gap: 14px;
+        padding: 16px 14px;
+        gap: 12px;
+    }
+
+    .nav-item-text small {
+        display: none;
+    }
+
+    .sidebar-nav-item {
+        padding: 9px 10px;
+        gap: 9px;
     }
 
     .settings-content {
@@ -2031,9 +2003,24 @@ body {
         align-items: flex-start;
     }
 
-    .profile-actions {
+    .profile-actions,
+    .grupo-item-actions,
+    .user-item-actions,
+    .credencial-item-actions {
         width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
         justify-content: flex-start;
+    }
+
+    .profile-actions > *,
+    .grupo-item-actions > *,
+    .user-item-actions > *,
+    .credencial-item-actions > * {
+        flex: 1 1 auto;
+        justify-content: center;
+        min-height: 38px;
     }
 
     .grupo-item-top,
@@ -2041,12 +2028,6 @@ body {
         flex-direction: column;
         align-items: flex-start;
         gap: 10px;
-    }
-
-    .grupo-item-actions,
-    .user-item-actions {
-        width: 100%;
-        justify-content: flex-end;
     }
 
     .nova-politica-grid {
@@ -2068,11 +2049,6 @@ body {
         align-items: flex-start;
     }
 
-    .credencial-item-actions {
-        width: 100%;
-        justify-content: flex-end;
-    }
-
     .theme-selector-grid {
         grid-template-columns: 1fr;
     }
@@ -2088,7 +2064,7 @@ body {
     }
 
     .settings-sidebar {
-        padding: 16px 14px;
+        padding: 14px 12px;
     }
 
     .sidebar-brand {
@@ -2099,8 +2075,8 @@ body {
         height: 32px;
     }
 
-    .sidebar-nav-item {
-        flex: 1 1 100%;
+    .sidebar-nav-group {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .sidebar-back-btn,
@@ -2116,5 +2092,12 @@ body {
     .panel-header-actions > * {
         flex: 1 1 auto;
         justify-content: center;
+    }
+}
+
+@media (max-width: 380px) {
+    .sidebar-nav-group,
+    .motor-kpis-grid {
+        grid-template-columns: 1fr;
     }
 }

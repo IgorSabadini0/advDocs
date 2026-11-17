@@ -1,4 +1,5 @@
 import { escapeHtml, formatDate, resolverSeloSincronizacao } from '../../../utils/utils.js';
+import { resolverIconeTipo } from '../../../utils/tiposService.js';
 
 // --- RENDERIZAÇÃO DOS CARDS ---
 const createResultCard = (item, index, onViewClick) => {
@@ -9,20 +10,7 @@ const createResultCard = (item, index, onViewClick) => {
     card.setAttribute('aria-label', `Ver detalhes de ${item.nome || 'pasta'}`);
     card.style.animationDelay = `${Math.min(index * 0.04, 0.4)}s`;
 
-    // Mapeia os ícones conforme o tipo de processo
-    const iconMap = {
-        'Civil': 'fa-scale-balanced',
-        'Previdenciário': 'fa-person-cane',
-        'Trabalhista': 'fa-briefcase',
-        'Inventário': 'fa-scroll',
-        'Família': 'fa-people-roof',
-        'Consumidor': 'fa-cart-shopping',
-        'Criminal': 'fa-handcuffs',
-        'Santa Casa': 'fa-hospital',
-        'Justiça Gratuita': 'fa-hand-holding-usd',
-        'Arquivado': 'fa-box-archive',
-        'Outro': 'fa-file'
-    };
+    const iconeTipo = resolverIconeTipo(item.tipo, item.tipo_icone);
 
     const resolverStatusBadge = (status) => {
         switch (status) {
@@ -44,7 +32,7 @@ const createResultCard = (item, index, onViewClick) => {
 
     card.innerHTML = `
         <div class="card-header">
-            <div class="card-icon"><i class="fa-solid ${iconMap[item.tipo] || 'fa-folder-open'}"></i></div>
+            <div class="card-icon"><i class="${escapeHtml(iconeTipo)}"></i></div>
             <div class="card-title">
                 <div class="card-title-top">
                     <span class="card-type">${escapeHtml(item.tipo || 'Geral')}${item.tribunal ? ` &bull; ${escapeHtml(item.tribunal)}` : ''}</span>

@@ -266,6 +266,11 @@ body {
         gap: 16px;
     }
 
+    .form-topbar {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
     .label-with-action {
         flex-wrap: wrap;
         gap: 6px;

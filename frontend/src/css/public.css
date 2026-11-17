@@ -59,6 +59,7 @@
     --font-sans: 'Inter', 'Montserrat', sans-serif;
 
     /* Border Radius */
+    --radius-xs: 6px;
     --radius-sm: 8px;
     --radius-md: 14px;
     --radius-lg: 24px;
@@ -549,6 +550,9 @@ html:not([data-theme="dark"]) .logo img {
     left: 0;
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
+    padding: 12px;
+    overflow-y: auto;
     background-color: var(--bg-overlay);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
@@ -568,12 +572,18 @@ html:not([data-theme="dark"]) .logo img {
 
 /* Modal de Confirmação (Excluir / Editar) */
 .modal-confirm-content {
+    display: block;
     background-color: var(--bg-surface-solid);
     border: 1px solid var(--border-color);
     border-top: 3px solid var(--brand-gold);
     border-radius: var(--radius-md);
     width: 90%;
     max-width: 440px;
+    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    margin: auto;
     padding: 36px;
     text-align: center;
     box-shadow: var(--shadow-lg);
@@ -1698,20 +1708,297 @@ html:not([data-theme="dark"]) .logo img {
 }
 
 /* --------------------------------------------------------------------------
+   10.1. SELETOR DE ÍCONES (ICON PICKER) PARA TIPOS DE PROCESSO
+   -------------------------------------------------------------------------- */
+.modal-confirm-content.modal-tipo-picker {
+    max-width: 520px;
+    padding: 20px 24px;
+}
+
+#modalTipoHeaderIcon {
+    font-size: 1.75rem;
+    margin-bottom: 6px;
+}
+
+.modal-tipo-picker h3 {
+    margin-bottom: 6px;
+}
+
+.modal-tipo-picker p {
+    font-size: 0.84rem;
+    margin-bottom: 12px;
+}
+
+.modal-tipo-picker .modal-form-left {
+    text-align: left;
+    margin-bottom: 12px;
+}
+
+.modal-tipo-picker .modal-field-label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.modal-tipo-picker .modal-input-novo-tipo {
+    margin-bottom: 0;
+}
+
+.tipo-preview-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-color);
+    flex-wrap: wrap;
+}
+
+.tipo-preview-label {
+    font-size: 0.76rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.tipo-badge-preview {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 13px;
+    border-radius: 20px;
+    background: var(--brand-gold-glow);
+    border: 1px solid var(--border-gold-subtle);
+    color: var(--text-primary);
+    font-size: 0.84rem;
+    font-weight: 600;
+    max-width: 100%;
+}
+
+.tipo-badge-preview i {
+    color: var(--brand-gold);
+    font-size: 0.88rem;
+    flex-shrink: 0;
+}
+
+.tipo-badge-preview span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.icon-picker-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.icon-picker-header .modal-field-label {
+    margin-bottom: 0;
+}
+
+.icon-picker-selected-name {
+    font-size: 0.74rem;
+    color: var(--brand-gold);
+    font-weight: 600;
+}
+
+.icon-picker-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    gap: 6px;
+    margin-bottom: 10px;
+    padding-bottom: 2px;
+}
+
+.icon-picker-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.icon-picker-tab {
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 5px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-subtle);
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.icon-picker-tab:hover {
+    border-color: var(--border-gold-subtle);
+    color: var(--text-primary);
+}
+
+.icon-picker-tab.active {
+    background: var(--brand-gold-glow);
+    border-color: var(--brand-gold);
+    color: var(--brand-gold);
+}
+
+.icon-picker-search-wrap {
+    position: relative;
+    margin-bottom: 10px;
+}
+
+.icon-picker-search-wrap i {
+    position: absolute;
+    left: 11px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+.icon-picker-search {
+    width: 100%;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px 8px 32px;
+    font-size: 0.82rem;
+    color: var(--text-primary);
+    outline: none;
+    transition: var(--transition-smooth);
+}
+
+.icon-picker-search:focus {
+    background: var(--bg-input-focus);
+    border-color: var(--brand-gold);
+    box-shadow: 0 0 0 2px var(--brand-gold-glow);
+}
+
+.icon-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+    gap: 8px;
+    height: 188px;
+    min-height: 132px;
+    max-height: 28dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    flex-shrink: 0;
+    padding: 8px;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+}
+
+.icon-picker-item {
+    width: 100%;
+    height: 40px;
+    border-radius: var(--radius-xs, 8px);
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface-solid);
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.icon-picker-item:hover {
+    border-color: var(--brand-gold);
+    color: var(--brand-gold);
+    background: var(--bg-subtle-hover);
+    transform: translateY(-1px);
+}
+
+.icon-picker-item.active {
+    border-color: var(--brand-gold);
+    background: var(--brand-gold-glow);
+    color: var(--brand-gold);
+    box-shadow: 0 0 0 1px var(--brand-gold);
+}
+
+.icon-picker-item:focus-visible {
+    outline: 2px solid var(--brand-gold);
+    outline-offset: 2px;
+}
+
+.icon-picker-footer-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 6px;
+    min-height: 16px;
+}
+
+#iconPickerCountLabel {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.icon-picker-empty {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    text-align: center;
+    margin: 4px auto 0;
+}
+
+/* --------------------------------------------------------------------------
    11. RESPONSIVIDADE GLOBAL PARA MODAIS, TOASTS E MOBILE PEQUENO
    -------------------------------------------------------------------------- */
 @media (max-width: 640px) {
-    .modal-content,
-    .modal-confirm-content {
+    .modal-content {
         width: calc(100vw - 24px);
         max-height: calc(100vh - 28px);
+        max-height: calc(100dvh - 28px);
         display: flex;
         flex-direction: column;
     }
 
     .modal-confirm-content {
+        display: block;
+        width: calc(100vw - 24px);
+        max-height: calc(100vh - 28px);
+        max-height: calc(100dvh - 28px);
         padding: 26px 20px;
         overflow-y: auto;
+    }
+
+    .modal-confirm-content.modal-tipo-picker {
+        padding: 20px 16px;
+    }
+
+    .modal-hybrid-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .modal-hybrid-actions {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .btn-sync-now,
+    .btn-mark-read-movs,
+    .btn-download-pdf {
+        width: 100%;
+        min-height: 40px;
+        justify-content: center;
+    }
+
+    .modal-doc-row {
+        flex-direction: column;
+        align-items: stretch;
     }
 
     .modal-header {
@@ -1762,6 +2049,20 @@ html:not([data-theme="dark"]) .logo img {
         right: 12px;
         left: 12px;
         max-width: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .proc-mono {
+        word-break: break-all;
+    }
+
+    .proc-copy-row {
+        align-items: stretch;
+    }
+
+    .btn-copy-proc {
+        justify-content: center;
     }
 }
 

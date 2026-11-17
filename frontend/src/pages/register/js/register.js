@@ -178,13 +178,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         carregarMenorPastaDisponivel(true);
     });
 
+    const labelTipoIconEl = document.querySelector('label[for="tipo_processo_id"] i');
+
     // Carrega dinamicamente os tipos de processos cadastrados no banco usando tipo_processo_id como value
-    await carregarTiposSelect(selectTipo, null, { valueField: 'id' });
+    await carregarTiposSelect(selectTipo, null, {
+        valueField: 'id',
+        iconTargetElement: labelTipoIconEl
+    });
 
     // Modal para criar novo tipo de processo
     document.getElementById('btnNovoTipo')?.addEventListener('click', () => {
         abrirModalNovoTipo((novoTipoNome, novoTipoId) => {
-            carregarTiposSelect(selectTipo, novoTipoId || novoTipoNome, { valueField: 'id' });
+            carregarTiposSelect(selectTipo, novoTipoId || novoTipoNome, {
+                valueField: 'id',
+                iconTargetElement: labelTipoIconEl
+            });
             selectTipo?.classList.remove('input-invalid');
             mostrarToast(`Categoria "${novoTipoNome}" criada e selecionada!`, 'success');
         });

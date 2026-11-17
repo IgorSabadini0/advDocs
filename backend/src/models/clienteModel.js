@@ -22,6 +22,7 @@ const normalizarRegistroSaida = (row) => {
         numero_processo: row.numeroProc || null,
         status_pasta: row.status || 'Ativo',
         observacoes: row.descricao || null,
+        tipo_icone: row.tipo_icone || null,
         movimentacoes_nao_lidas: Number(row.movimentacoes_nao_lidas || 0)
     };
 };
@@ -94,6 +95,7 @@ const clienteModel = {
         const query = `
             SELECT c.id, c.acao, c.nome, c.cpf_cnpj, c.telefone, c.email,
                    c.numeroPasta, c.tipo, c.tipo_processo_id, tp.nome AS tipo_processo_nome,
+                   COALESCE(tp.icone, 'fa-solid fa-folder') AS tipo_icone,
                    c.numeroProc, c.tribunal, c.comarca_vara, c.parte_contraria,
                    c.status, c.descricao,
                    c.datajud_status, c.datajud_mensagem, c.classe_processual,
@@ -123,6 +125,7 @@ const clienteModel = {
     findById: async (id) => {
         const query = `
             SELECT c.*, tp.nome AS tipo_processo_nome,
+                   COALESCE(tp.icone, 'fa-solid fa-folder') AS tipo_icone,
                    p.id AS processo_sync_id,
                    p.status_sincronizacao,
                    p.ultima_sincronizacao_em,
@@ -172,7 +175,8 @@ const clienteModel = {
         ].filter(Boolean))];
 
         const query = `
-            SELECT c.*, tp.nome AS tipo_processo_nome
+            SELECT c.*, tp.nome AS tipo_processo_nome,
+                   COALESCE(tp.icone, 'fa-solid fa-folder') AS tipo_icone
             FROM clientes c
             LEFT JOIN tipos_processo tp ON tp.id = c.tipo_processo_id
             WHERE c.numeroProc IN (?)

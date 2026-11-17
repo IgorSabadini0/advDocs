@@ -196,7 +196,7 @@
 
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
     gap: 20px;
 }
 
@@ -602,7 +602,7 @@
 
 .results-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 310px), 1fr));
     gap: 24px;
 }
 
@@ -917,66 +917,6 @@
     color: var(--text-secondary);
 }
 
-/* --- Toast Notifications --- */
-.toast-container {
-    position: fixed;
-    top: 24px;
-    right: 24px;
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    pointer-events: none;
-    max-width: 360px;
-}
-
-.toast-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 16px;
-    background: var(--bg-surface-solid);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    box-shadow: var(--shadow-md);
-    color: var(--text-primary);
-    font-size: 0.84rem;
-    font-weight: 500;
-    opacity: 0;
-    transform: translateX(20px);
-    transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-    pointer-events: auto;
-}
-
-.toast-item.show {
-    opacity: 1;
-    transform: translateX(0);
-}
-
-.toast-item.toast-success {
-    border-left: 3px solid var(--success);
-}
-
-.toast-item.toast-success .toast-icon {
-    color: var(--success);
-}
-
-.toast-item.toast-error {
-    border-left: 3px solid var(--danger);
-}
-
-.toast-item.toast-error .toast-icon {
-    color: var(--danger);
-}
-
-.toast-item.toast-info {
-    border-left: 3px solid var(--brand-gold);
-}
-
-.toast-item.toast-info .toast-icon {
-    color: var(--brand-gold);
-}
-
 /* --- Responsive Adjustments --- */
 @media (max-width: 1024px) {
     .container {
@@ -1079,6 +1019,30 @@
     }
 }
 
+@media (max-width: 600px) {
+    .filter-buttons {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 4px;
+        gap: 8px;
+    }
+
+    .filter-buttons::-webkit-scrollbar {
+        display: none;
+    }
+
+    .filter-btn {
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+
+    .card-footer .btn-view {
+        min-height: 38px;
+    }
+}
+
 @media (max-width: 480px) {
     .container {
         padding: 18px 14px 32px;
@@ -1138,6 +1102,11 @@
     .card-footer {
         flex-wrap: wrap;
         gap: 10px;
+    }
+
+    .card-footer .btn-view {
+        width: 100%;
+        justify-content: center;
     }
 
     .filter-buttons {

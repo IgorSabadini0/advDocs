@@ -19,6 +19,7 @@ import { createResultCard } from '../components/cardComponent.js';
 import { viewItemModal, fecharModal } from '../components/modalComponent.js';
 import { confirmModal } from '../../../components/confirmModal.js';
 import { normalizeText, escapeHtml, apiFetch, mostrarToast } from '../../../utils/utils.js';
+import { atualizarTiposCache, resolverIconeTipo } from '../../../utils/tiposService.js';
 import { initThemeManager } from '../../../utils/themeManager.js';
 import { initNotificationsWidget, notificarConsultaPendente } from '../../../utils/notificationsWidget.js';
 
@@ -109,7 +110,8 @@ const carregarFiltrosDinamicos = async () => {
 
     try {
         const data = await apiFetch('/clientes/tipos');
-        listaTipos = data.map(t => t.nome);
+        const tiposNormalizados = atualizarTiposCache(Array.isArray(data) ? data : []);
+        listaTipos = tiposNormalizados.map(t => t.nome);
     } catch (e) {
         console.error('Erro ao carregar tipos de processo para os filtros:', e);
     }
@@ -129,13 +131,16 @@ const carregarFiltrosDinamicos = async () => {
 
     container.innerHTML = `
         <button class="filter-btn ${currentFilter === 'all' ? 'active' : ''}" data-filter="all">
+            <i class="fa-solid fa-layer-group"></i>
             <span>Todos</span>
             <span class="filter-count-pill">${clientes.length}</span>
         </button>
         ${listaTipos.map(nome => {
             const qtd = contarPorTipo(nome);
+            const icone = resolverIconeTipo(nome);
             return `
                 <button class="filter-btn ${normalizeText(currentFilter) === normalizeText(nome) ? 'active' : ''}" data-filter="${escapeHtml(nome)}">
+                    <i class="${escapeHtml(icone)}"></i>
                     <span>${escapeHtml(nome)}</span>
                     <span class="filter-count-pill">${qtd}</span>
                 </button>

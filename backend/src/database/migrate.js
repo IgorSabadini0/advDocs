@@ -20,9 +20,32 @@ const extrairStatementsSQL = (sqlContent) => {
 };
 
 /**
+ * Garante a coluna `icone` em `tipos_processo` de forma idempotente em qualquer versão do schema.
+ */
+const garantirColunaIconeTiposProcesso = async (connPool) => {
+    const [cols] = await connPool.query(`
+        SELECT COLUMN_NAME
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'tipos_processo'
+          AND COLUMN_NAME = 'icone'
+        LIMIT 1
+    `);
+
+    if (cols.length === 0) {
+        await connPool.query(`
+            ALTER TABLE tipos_processo
+            ADD COLUMN icone VARCHAR(100) NOT NULL DEFAULT 'fa-solid fa-folder'
+        `);
+    }
+};
+
+/**
  * Executa todas as migrations SQL ordenadas em `backend/src/database/migrations`.
  */
 export const runMigrations = async (connPool = db) => {
+    await garantirColunaIconeTiposProcesso(connPool);
+
     const arquivos = (await fs.readdir(MIGRATIONS_DIR))
         .filter(f => f.endsWith('.sql'))
         .sort();
@@ -35,7 +58,15 @@ export const runMigrations = async (connPool = db) => {
         const statements = extrairStatementsSQL(sql);
 
         for (const stmt of statements) {
-            await connPool.query(stmt);
+            try {
+                await connPool.query(stmt);
+            } catch (err) {
+                // Ignora coluna duplicada em execuções repetidas de migrations legadas
+                if (err?.code === 'ER_DUP_FIELDNAME' || err?.errno === 1060) {
+                    continue;
+                }
+                throw err;
+            }
         }
 
         executadas.push({ arquivo, statements: statements.length });

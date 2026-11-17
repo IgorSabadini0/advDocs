@@ -11,6 +11,7 @@ router.get('/', clienteController.listClientes);
 router.get('/proxima-pasta', clienteController.obterProximaPasta);
 router.get('/tipos', clienteController.listTiposProcesso);
 router.post('/tipos', requirePolicy('create_records'), clienteController.createTipoProcesso);
+router.put('/tipos/:id', requirePolicy('edit_records'), clienteController.updateTipoProcesso);
 router.delete('/tipos/:id', requirePolicy('delete_records'), clienteController.deleteTipoProcesso);
 router.get('/vinculo/:numeroProc', clienteController.obterVinculoProcesso);
 router.get('/consulta/:numeroProc', clienteController.consultarProcessoCliente);

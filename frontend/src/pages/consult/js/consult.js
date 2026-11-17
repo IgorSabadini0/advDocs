@@ -12,6 +12,7 @@ import {
 } from '../../../utils/utils.js';
 import { initThemeManager } from '../../../utils/themeManager.js';
 import { initNotificationsWidget } from '../../../utils/notificationsWidget.js';
+import { resolverIconeTipo, buscarTiposProcesso } from '../../../utils/tiposService.js';
 
 initThemeManager();
 
@@ -86,17 +87,18 @@ const renderizarPastaVinculada = (pastaVinculada, numeroFormatado, classeProcess
     const container = document.getElementById('pastaVinculadaContainer');
 
     if (pastaVinculada) {
+        const iconeTipo = resolverIconeTipo(pastaVinculada.tipo, pastaVinculada.tipo_icone);
         container.innerHTML = `
             <div class="folder-banner linked">
                 <div class="folder-banner-info">
                     <div class="folder-banner-icon">
-                        <i class="fa-solid fa-folder-open"></i>
+                        <i class="${escapeHtml(iconeTipo)}"></i>
                     </div>
                     <div class="folder-banner-text">
                         <h3>Pasta Vinculada no Escritório: Nº ${escapeHtml(pastaVinculada.numeroPasta)} — ${escapeHtml(pastaVinculada.nome)}</h3>
                         <p>
                             <strong>Ação:</strong> ${escapeHtml(pastaVinculada.acao || 'N/A')} &bull;
-                            <strong>Categoria:</strong> ${escapeHtml(pastaVinculada.tipo || 'N/A')} &bull;
+                            <strong>Categoria:</strong> <i class="${escapeHtml(iconeTipo)}" style="color: var(--brand-gold); margin: 0 3px;"></i> ${escapeHtml(pastaVinculada.tipo || 'N/A')} &bull;
                             <strong>Status:</strong> ${escapeHtml(pastaVinculada.status)}
                         </p>
                     </div>
@@ -553,6 +555,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     initNotificationsWidget();
+    buscarTiposProcesso().catch(() => {});
 
     const inputProc = document.getElementById('numeroProcesso');
     const form = document.getElementById('consultForm');

@@ -1,5 +1,5 @@
 import { clienteModel } from '../models/clienteModel.js';
-import { tipoProcessoModel } from '../models/tipoProcessoModel.js';
+import { tipoProcessoModel, validarENormalizarIconeTipo } from '../models/tipoProcessoModel.js';
 import { validateCliente } from '../validator/clientValidator.js';
 import { buscarProcesso } from '../services/datajudServices.js';
 import { agendarConsultaDatajud, estaSincronizandoCliente } from '../services/datajudBackgroundWorker.js';
@@ -77,9 +77,14 @@ const listTiposProcesso = async (req, res) => {
 
 const createTipoProcesso = async (req, res) => {
     try {
-        const { nome } = req.body;
+        const { nome, icone } = req.body || {};
         if (!nome || typeof nome !== 'string' || nome.trim().length === 0 || nome.trim().length > 64) {
             return res.status(400).json({ mensagem: "Nome do tipo de processo inválido (máximo 64 caracteres)." });
+        }
+
+        const validacaoIcone = validarENormalizarIconeTipo(icone);
+        if (!validacaoIcone.valido) {
+            return res.status(400).json({ mensagem: "Ícone inválido. Selecione um ícone válido do catálogo." });
         }
 
         const nomeFormatado = nome.trim();
@@ -88,14 +93,56 @@ const createTipoProcesso = async (req, res) => {
             return res.status(409).json({ mensagem: "Já existe um tipo de processo cadastrado com este nome." });
         }
 
-        const resultado = await tipoProcessoModel.create(nomeFormatado);
+        const resultado = await tipoProcessoModel.create(nomeFormatado, validacaoIcone.icone);
         return res.status(201).json({
             mensagem: "Tipo de processo cadastrado com sucesso!",
             id: resultado.insertId,
-            nome: nomeFormatado
+            nome: nomeFormatado,
+            icone: validacaoIcone.icone
         });
     } catch (error) {
         console.error(`Erro ao criar tipo de processo: ${error}`);
+        return res.status(500).json({ mensagem: "Erro interno no servidor" });
+    }
+};
+
+const updateTipoProcesso = async (req, res) => {
+    try {
+        const parsedId = Number(req.params.id);
+        if (isNaN(parsedId) || !Number.isInteger(parsedId) || parsedId <= 0) {
+            return res.status(400).json({ mensagem: "ID do tipo de processo inválido." });
+        }
+
+        const tipoExistente = await tipoProcessoModel.findById(parsedId);
+        if (!tipoExistente) {
+            return res.status(404).json({ mensagem: "Tipo de processo não encontrado." });
+        }
+
+        const { nome, icone } = req.body || {};
+        if (!nome || typeof nome !== 'string' || nome.trim().length === 0 || nome.trim().length > 64) {
+            return res.status(400).json({ mensagem: "Nome do tipo de processo inválido (máximo 64 caracteres)." });
+        }
+
+        const validacaoIcone = validarENormalizarIconeTipo(icone !== undefined ? icone : tipoExistente.icone);
+        if (!validacaoIcone.valido) {
+            return res.status(400).json({ mensagem: "Ícone inválido. Selecione um ícone válido do catálogo." });
+        }
+
+        const nomeFormatado = nome.trim();
+        const duplicado = await tipoProcessoModel.findByName(nomeFormatado);
+        if (duplicado && duplicado.id !== parsedId) {
+            return res.status(409).json({ mensagem: "Já existe um tipo de processo cadastrado com este nome." });
+        }
+
+        await tipoProcessoModel.update(parsedId, { nome: nomeFormatado, icone: validacaoIcone.icone });
+        return res.status(200).json({
+            mensagem: "Tipo de processo atualizado com sucesso!",
+            id: parsedId,
+            nome: nomeFormatado,
+            icone: validacaoIcone.icone
+        });
+    } catch (error) {
+        console.error(`Erro ao atualizar tipo de processo: ${error}`);
         return res.status(500).json({ mensagem: "Erro interno no servidor" });
     }
 };
@@ -425,6 +472,7 @@ const clienteController = {
     obterVinculoProcesso,
     listTiposProcesso,
     createTipoProcesso,
+    updateTipoProcesso,
     deleteTipoProcesso,
     createCliente,
     consultarProcessoCliente,
