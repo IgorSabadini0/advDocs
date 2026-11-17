@@ -1,16 +1,105 @@
 import { db } from '../config/db.js';
+import { detectarTribunalCNJ } from '../utils/cnjParser.js';
+
+const STATUS_VALIDOS = new Set(['Ativo', 'Aguardando Documentos', 'Suspenso', 'Arquivado', 'Parado']);
+
+const limparTextoOpcional = (valor) => {
+    if (valor === undefined || valor === null) return null;
+    const texto = String(valor).trim();
+    return texto !== '' ? texto : null;
+};
+
+const normalizarRegistroSaida = (row) => {
+    if (!row) return null;
+    return {
+        ...row,
+        numero_processo: row.numeroProc || null,
+        status_pasta: row.status || 'Ativo',
+        observacoes: row.descricao || null
+    };
+};
+
+const resolverDadosCliente = async (dados, conn = db) => {
+    const acaoLimpa = String(dados.acao || '').trim();
+    const nomeLimpo = String(dados.nome || '').trim();
+    const cpfCnpjLimpo = limparTextoOpcional(dados.cpf_cnpj);
+    const telefoneLimpo = limparTextoOpcional(dados.telefone);
+    const emailRaw = limparTextoOpcional(dados.email);
+    const emailLimpo = emailRaw ? emailRaw.toLowerCase() : null;
+
+    let tipoLimpo = limparTextoOpcional(dados.tipo) || '';
+    let tipoProcessoId = (dados.tipo_processo_id !== undefined && dados.tipo_processo_id !== null && String(dados.tipo_processo_id).trim() !== '')
+        ? Number(dados.tipo_processo_id)
+        : null;
+
+    if (tipoProcessoId && Number.isInteger(tipoProcessoId) && tipoProcessoId > 0) {
+        const [rows] = await conn.query("SELECT id, nome FROM tipos_processo WHERE id = ? LIMIT 1", [tipoProcessoId]);
+        if (rows[0]) {
+            if (!tipoLimpo) tipoLimpo = rows[0].nome;
+        } else {
+            tipoProcessoId = null;
+        }
+    } else if (tipoLimpo) {
+        const [rows] = await conn.query("SELECT id, nome FROM tipos_processo WHERE LOWER(TRIM(nome)) = LOWER(TRIM(?)) LIMIT 1", [tipoLimpo]);
+        if (rows[0]) {
+            tipoProcessoId = rows[0].id;
+        }
+    }
+
+    const procLimpo = limparTextoOpcional(dados.numero_processo ?? dados.numeroProc);
+    let tribunalLimpo = limparTextoOpcional(dados.tribunal);
+    if (tribunalLimpo) {
+        tribunalLimpo = tribunalLimpo.toUpperCase();
+    } else if (procLimpo) {
+        tribunalLimpo = detectarTribunalCNJ(procLimpo);
+    }
+
+    const comarcaVaraLimpa = limparTextoOpcional(dados.comarca_vara);
+    const parteContrariaLimpa = limparTextoOpcional(dados.parte_contraria);
+    const statusCandidate = String(dados.status_pasta ?? dados.status ?? 'Ativo').trim();
+    const statusLimpo = STATUS_VALIDOS.has(statusCandidate) ? statusCandidate : 'Ativo';
+    const descLimpa = limparTextoOpcional(dados.observacoes ?? dados.descricao);
+
+    return {
+        acaoLimpa,
+        nomeLimpo,
+        cpfCnpjLimpo,
+        telefoneLimpo,
+        emailLimpo,
+        numeroPasta: Number(dados.numeroPasta),
+        tipoLimpo,
+        tipoProcessoId,
+        procLimpo,
+        tribunalLimpo,
+        comarcaVaraLimpa,
+        parteContrariaLimpa,
+        statusLimpo,
+        descLimpa
+    };
+};
 
 const clienteModel = {
     list: async () => {
-        const query = "SELECT * FROM clientes ORDER BY numeroPasta ASC";
+        const query = `
+            SELECT c.*, tp.nome AS tipo_processo_nome
+            FROM clientes c
+            LEFT JOIN tipos_processo tp ON tp.id = c.tipo_processo_id
+            ORDER BY c.numeroPasta ASC
+        `;
         const [dados] = await db.query(query);
-        return dados;
+        return dados.map(normalizarRegistroSaida);
     },
 
     findById: async (id) => {
-        const query = "SELECT * FROM clientes WHERE id = ? LIMIT 1";
+        const query = `
+            SELECT c.*, tp.nome AS tipo_processo_nome
+            FROM clientes c
+            LEFT JOIN tipos_processo tp ON tp.id = c.tipo_processo_id
+            WHERE c.id = ?
+            LIMIT 1
+        `;
         const [registro] = await db.query(query, [id]);
-        return registro[0] || null;
+        return normalizarRegistroSaida(registro[0] || null);
     },
 
     getMenorPastaDisponivel: async () => {
@@ -34,13 +123,15 @@ const clienteModel = {
         if (!numeroLimpo) return null;
 
         const query = `
-            SELECT * FROM clientes 
-            WHERE numeroProc = ? 
-               OR REPLACE(REPLACE(REPLACE(numeroProc, '-', ''), '.', ''), ' ', '') = ?
+            SELECT c.*, tp.nome AS tipo_processo_nome
+            FROM clientes c
+            LEFT JOIN tipos_processo tp ON tp.id = c.tipo_processo_id
+            WHERE c.numeroProc = ? 
+               OR REPLACE(REPLACE(REPLACE(c.numeroProc, '-', ''), '.', ''), ' ', '') = ?
             LIMIT 1
         `;
         const [registro] = await db.query(query, [numeroProc, numeroLimpo]);
-        return registro[0] || null;
+        return normalizarRegistroSaida(registro[0] || null);
     },
 
     verificarExistencia: async (numeroProc, numeroPasta, idIgnorar = null, conn = db, lockForUpdate = false) => {
@@ -67,16 +158,32 @@ const clienteModel = {
     },
 
     create: async (dados, conn = db) => {
-        const { acao, nome, numeroPasta, tipo, numeroProc, status, descricao } = dados;
-        const acaoLimpa = String(acao || '').trim();
-        const nomeLimpo = String(nome || '').trim();
-        const tipoLimpo = String(tipo || '').trim();
-        const procLimpo = (numeroProc && String(numeroProc).trim() !== '') ? String(numeroProc).trim() : null;
-        const statusLimpo = status === 'Parado' ? 'Parado' : 'Ativo';
-        const descLimpa = (descricao && String(descricao).trim() !== '') ? String(descricao).trim() : null;
+        const parsed = await resolverDadosCliente(dados, conn);
 
-        const query = "INSERT INTO clientes (acao, nome, numeroPasta, tipo, numeroProc, status, descricao) VALUES (?, ?, ?, ?, ?, ?, ?)";
-        const [resultado] = await conn.query(query, [acaoLimpa, nomeLimpo, Number(numeroPasta), tipoLimpo, procLimpo, statusLimpo, descLimpa]);
+        const query = `
+            INSERT INTO clientes (
+                acao, nome, cpf_cnpj, telefone, email,
+                numeroPasta, tipo, tipo_processo_id,
+                numeroProc, tribunal, comarca_vara, parte_contraria,
+                status, descricao
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+        const [resultado] = await conn.query(query, [
+            parsed.acaoLimpa,
+            parsed.nomeLimpo,
+            parsed.cpfCnpjLimpo,
+            parsed.telefoneLimpo,
+            parsed.emailLimpo,
+            parsed.numeroPasta,
+            parsed.tipoLimpo,
+            parsed.tipoProcessoId,
+            parsed.procLimpo,
+            parsed.tribunalLimpo,
+            parsed.comarcaVaraLimpa,
+            parsed.parteContrariaLimpa,
+            parsed.statusLimpo,
+            parsed.descLimpa
+        ]);
         return resultado;
     },
 
@@ -85,10 +192,11 @@ const clienteModel = {
         try {
             await conn.beginTransaction();
 
-            const conflito = await clienteModel.verificarExistencia(dados.numeroProc, dados.numeroPasta, null, conn, true);
+            const numeroProc = dados.numero_processo ?? dados.numeroProc;
+            const conflito = await clienteModel.verificarExistencia(numeroProc, dados.numeroPasta, null, conn, true);
             if (conflito) {
                 await conn.rollback();
-                const procLimpoReq = String(dados.numeroProc || '').replace(/\D/g, '');
+                const procLimpoReq = String(numeroProc || '').replace(/\D/g, '');
                 const procLimpoDb = String(conflito.numeroProc || '').replace(/\D/g, '');
                 const campoConflito = (procLimpoReq && procLimpoDb === procLimpoReq) ? 'numeroProc' : 'numeroPasta';
                 return { conflito: true, campoConflito };
@@ -109,20 +217,33 @@ const clienteModel = {
     },
 
     update: async (id, dados, conn = db) => {
-        const { acao, nome, numeroPasta, tipo, numeroProc, status, descricao } = dados;
-        const acaoLimpa = String(acao || '').trim();
-        const nomeLimpo = String(nome || '').trim();
-        const tipoLimpo = String(tipo || '').trim();
-        const procLimpo = (numeroProc && String(numeroProc).trim() !== '') ? String(numeroProc).trim() : null;
-        const statusLimpo = status === 'Parado' ? 'Parado' : 'Ativo';
-        const descLimpa = (descricao && String(descricao).trim() !== '') ? String(descricao).trim() : null;
+        const parsed = await resolverDadosCliente(dados, conn);
 
         const query = `
             UPDATE clientes 
-            SET acao = ?, nome = ?, numeroPasta = ?, tipo = ?, numeroProc = ?, status = ?, descricao = ? 
+            SET acao = ?, nome = ?, cpf_cnpj = ?, telefone = ?, email = ?,
+                numeroPasta = ?, tipo = ?, tipo_processo_id = ?,
+                numeroProc = ?, tribunal = ?, comarca_vara = ?, parte_contraria = ?,
+                status = ?, descricao = ?
             WHERE id = ?
         `;
-        const [resultado] = await conn.query(query, [acaoLimpa, nomeLimpo, Number(numeroPasta), tipoLimpo, procLimpo, statusLimpo, descLimpa, Number(id)]);
+        const [resultado] = await conn.query(query, [
+            parsed.acaoLimpa,
+            parsed.nomeLimpo,
+            parsed.cpfCnpjLimpo,
+            parsed.telefoneLimpo,
+            parsed.emailLimpo,
+            parsed.numeroPasta,
+            parsed.tipoLimpo,
+            parsed.tipoProcessoId,
+            parsed.procLimpo,
+            parsed.tribunalLimpo,
+            parsed.comarcaVaraLimpa,
+            parsed.parteContrariaLimpa,
+            parsed.statusLimpo,
+            parsed.descLimpa,
+            Number(id)
+        ]);
         return resultado;
     },
 
@@ -131,22 +252,35 @@ const clienteModel = {
         try {
             await conn.beginTransaction();
 
-            const [rows] = await conn.query("SELECT id FROM clientes WHERE id = ? LIMIT 1 FOR UPDATE", [id]);
+            const [rows] = await conn.query("SELECT * FROM clientes WHERE id = ? LIMIT 1 FOR UPDATE", [id]);
             if (rows.length === 0) {
                 await conn.rollback();
                 return { naoEncontrado: true };
             }
 
-            const conflito = await clienteModel.verificarExistencia(dados.numeroProc, dados.numeroPasta, id, conn, true);
+            const registroAtual = rows[0];
+            const numeroProc = dados.numero_processo ?? dados.numeroProc;
+            const conflito = await clienteModel.verificarExistencia(numeroProc, dados.numeroPasta, id, conn, true);
             if (conflito) {
                 await conn.rollback();
-                const procLimpoReq = String(dados.numeroProc || '').replace(/\D/g, '');
+                const procLimpoReq = String(numeroProc || '').replace(/\D/g, '');
                 const procLimpoDb = String(conflito.numeroProc || '').replace(/\D/g, '');
                 const campoConflito = (procLimpoReq && procLimpoDb === procLimpoReq) ? 'numeroProc' : 'numeroPasta';
                 return { conflito: true, campoConflito };
             }
 
-            await clienteModel.update(id, dados, conn);
+            const procMudou = String(numeroProc || '').replace(/\D/g, '') !== String(registroAtual.numeroProc || '').replace(/\D/g, '');
+            const dadosMesclados = {
+                ...dados,
+                cpf_cnpj: dados.cpf_cnpj !== undefined ? dados.cpf_cnpj : registroAtual.cpf_cnpj,
+                telefone: dados.telefone !== undefined ? dados.telefone : registroAtual.telefone,
+                email: dados.email !== undefined ? dados.email : registroAtual.email,
+                tribunal: dados.tribunal !== undefined ? dados.tribunal : (procMudou ? null : registroAtual.tribunal),
+                comarca_vara: dados.comarca_vara !== undefined ? dados.comarca_vara : registroAtual.comarca_vara,
+                parte_contraria: dados.parte_contraria !== undefined ? dados.parte_contraria : registroAtual.parte_contraria
+            };
+
+            await clienteModel.update(id, dadosMesclados, conn);
             await conn.commit();
             return { conflito: false, naoEncontrado: false };
         } catch (error) {

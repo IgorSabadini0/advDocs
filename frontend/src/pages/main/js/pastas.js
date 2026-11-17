@@ -100,7 +100,7 @@ const atualizarEstatisticas = () => {
     if (totalEl && ativosEl && paradosEl) {
         const total = clientes.length;
         const ativos = clientes.filter(c => c.status === 'Ativo').length;
-        const parados = clientes.filter(c => c.status === 'Parado').length;
+        const parados = clientes.filter(c => c.status && c.status !== 'Ativo').length;
 
         animateCounter(totalEl, total);
         animateCounter(ativosEl, ativos);
@@ -222,9 +222,11 @@ const executarBuscaEFiltro = () => {
             const matchTipo = (currentFilter === 'all') ||
                 (item.tipo && normalizeText(item.tipo) === normalizeText(currentFilter));
 
-            // Filtro por status (Ativo / Parado)
+            // Filtro por status (Ativo / Demais status de pausa/arquivamento)
             const matchStatus = (currentStatusFilter === 'all') ||
-                (item.status && normalizeText(item.status) === normalizeText(currentStatusFilter));
+                (currentStatusFilter === 'Parado'
+                    ? (item.status && item.status !== 'Ativo')
+                    : (item.status && normalizeText(item.status) === normalizeText(currentStatusFilter)));
 
             if (!matchTipo || !matchStatus) return false;
             if (query === '') return true;
@@ -232,6 +234,7 @@ const executarBuscaEFiltro = () => {
             const numPastaStr = String(item.numeroPasta ?? '');
             const numProcStr = String(item.numeroProc ?? '');
             const numProcDigits = numProcStr.replace(/\D/g, '');
+            const docDigits = String(item.cpf_cnpj ?? '').replace(/\D/g, '');
 
             // Se digitou apenas 1 caractere numérico (ex: "1"), prioriza número da pasta exato ou que comece com ele
             if (query.length === 1 && isNumericQuery) {
@@ -241,9 +244,12 @@ const executarBuscaEFiltro = () => {
             return (
                 normalizeText(item.acao).includes(query) ||
                 normalizeText(item.nome).includes(query) ||
+                normalizeText(item.tribunal).includes(query) ||
+                normalizeText(item.comarca_vara).includes(query) ||
+                normalizeText(item.parte_contraria).includes(query) ||
                 numPastaStr.includes(query) ||
                 numProcStr.includes(query) ||
-                (queryDigits !== '' && numProcDigits.includes(queryDigits)) ||
+                (queryDigits !== '' && (numProcDigits.includes(queryDigits) || docDigits.includes(queryDigits))) ||
                 normalizeText(item.descricao).includes(query)
             );
         });

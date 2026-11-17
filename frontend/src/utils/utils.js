@@ -50,7 +50,7 @@ const normalizeText = (str) => {
 };
 
 const mascaraProcessoCNJ = (valor) => {
-    let v = String(valor || '').replace(/\D/g, '');
+    let v = String(valor || '').replace(/\D/g, '').slice(0, 20);
 
     v = v.replace(/(\d{7})(\d)/, '$1-$2');
     v = v.replace(/(\d{7}-\d{2})(\d)/, '$1.$2');
@@ -59,6 +59,33 @@ const mascaraProcessoCNJ = (valor) => {
     v = v.replace(/(\d{7}-\d{2}\.\d{4}\.\d{1}\.\d{2})(\d)/, '$1.$2');
 
     return v.substring(0, 25);
+};
+
+const mascaraCpfCnpj = (valor) => {
+    const digits = String(valor || '').replace(/\D/g, '').slice(0, 14);
+    if (digits.length <= 11) {
+        return digits
+            .replace(/^(\d{3})(\d)/, '$1.$2')
+            .replace(/^(\d{3}\.\d{3})(\d)/, '$1.$2')
+            .replace(/^(\d{3}\.\d{3}\.\d{3})(\d)/, '$1-$2');
+    }
+    return digits
+        .replace(/^(\d{2})(\d)/, '$1.$2')
+        .replace(/^(\d{2}\.\d{3})(\d)/, '$1.$2')
+        .replace(/^(\d{2}\.\d{3}\.\d{3})(\d)/, '$1/$2')
+        .replace(/^(\d{2}\.\d{3}\.\d{3}\/\d{4})(\d)/, '$1-$2');
+};
+
+const mascaraTelefone = (valor) => {
+    const digits = String(valor || '').replace(/\D/g, '').slice(0, 11);
+    if (digits.length <= 10) {
+        return digits
+            .replace(/^(\d{2})(\d)/, '($1) $2')
+            .replace(/^(\(\d{2}\)\s\d{4})(\d)/, '$1-$2');
+    }
+    return digits
+        .replace(/^(\d{2})(\d)/, '($1) $2')
+        .replace(/^(\(\d{2}\)\s\d{5})(\d)/, '$1-$2');
 };
 
 /**
@@ -107,4 +134,4 @@ const apiFetch = async (endpoint, options = {}) => {
     return data;
 };
 
-export { escapeHtml, formatDate, formatDateTime, normalizeText, mascaraProcessoCNJ, apiFetch };
+export { escapeHtml, formatDate, formatDateTime, normalizeText, mascaraProcessoCNJ, mascaraCpfCnpj, mascaraTelefone, apiFetch };

@@ -40,76 +40,154 @@
         </div>
 
         <form id="registerForm" class="clientes-add" novalidate>
-            <div class="form-group">
-                <label for="acao"><i class="fa-solid fa-gavel"></i> Ação <span class="obrigatorio">*</span></label>
-                <input type="text" id="acao" required maxlength="128" placeholder="Ex: Ação Revisional, Inventário, Divórcio Consensual...">
-            </div>
-
-            <div class="form-group">
-                <label for="nome"><i class="fa-solid fa-user-tie"></i> Nome do Cliente <span
-                        class="obrigatorio">*</span></label>
-                <input type="text" id="nome" required maxlength="128" placeholder="Nome completo do cliente">
-            </div>
-
-            <div class="form-grid">
-                <div class="form-group">
-                    <div class="label-with-action">
-                        <label for="numeroPasta"><i class="fa-solid fa-folder-open"></i> Número da Pasta <span
-                                class="obrigatorio">*</span></label>
-                        <button type="button" class="btn-novo-tipo" id="btnSugerirPasta" title="Buscar menor número de pasta livre">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i> Sugerir livre
-                        </button>
-                    </div>
-                    <input type="number" id="numeroPasta" min="1" required placeholder="Ex: 1">
-                </div>
+            <!-- Seção 1: Dados do Cliente -->
+            <div class="form-section-block">
+                <h2 class="form-section-title">
+                    <i class="fa-solid fa-user-tie"></i> Dados do Cliente
+                </h2>
 
                 <div class="form-group">
-                    <div class="label-with-action">
-                        <label for="tipo"><i class="fa-solid fa-tags"></i> Tipo de Registro <span
-                                class="obrigatorio">*</span></label>
-                        <button type="button" class="btn-novo-tipo" id="btnNovoTipo" title="Cadastrar novo tipo de processo">
-                            <i class="fa-solid fa-plus"></i> Novo Tipo
-                        </button>
-                    </div>
-                    <select name="tipo" id="tipo" required>
-                        <option value="" disabled selected hidden>Carregando tipos...</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="form-grid">
-                <div class="form-group">
-                    <div class="label-with-action">
-                        <label for="numeroProc"><i class="fa-solid fa-scale-balanced"></i> Número do Processo</label>
-                        <span class="cnj-counter-badge" id="cnjCounterBadge">Opcional</span>
-                    </div>
-                    <input type="text" id="numeroProc" placeholder="0000000-00.0000.0.00.0000" maxlength="25">
-                </div>
-
-                <div class="form-group">
-                    <label for="status"><i class="fa-solid fa-circle-info"></i> Status Atual <span
+                    <label for="nome"><i class="fa-solid fa-id-card"></i> Nome Completo / Razão Social <span
                             class="obrigatorio">*</span></label>
-                    <select name="status" id="status" required>
-                        <option value="Ativo" selected>Ativo</option>
-                        <option value="Parado">Parado</option>
-                    </select>
+                    <input type="text" id="nome" required maxlength="128" placeholder="Nome completo do cliente ou razão social">
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="cpf_cnpj"><i class="fa-solid fa-address-card"></i> CPF / CNPJ</label>
+                        <input type="text" id="cpf_cnpj" maxlength="20" placeholder="000.000.000-00 ou 00.000.000/0000-00">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="telefone"><i class="fa-brands fa-whatsapp"></i> Telefone / WhatsApp</label>
+                        <input type="text" id="telefone" maxlength="25" placeholder="(00) 00000-0000">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email"><i class="fa-solid fa-envelope"></i> E-mail</label>
+                    <input type="email" id="email" maxlength="128" placeholder="cliente@exemplo.com.br">
                 </div>
             </div>
 
-            <div class="form-group">
-                <label for="descricao"><i class="fa-solid fa-align-left"></i> Descrição / Observações</label>
-                <textarea id="descricao" rows="3" placeholder="Breve resumo sobre o caso, vara, pendências ou observações relevantes..."></textarea>
+            <!-- Seção 2: Dados Processuais -->
+            <div class="form-section-block">
+                <h2 class="form-section-title">
+                    <i class="fa-solid fa-scale-balanced"></i> Dados Processuais
+                </h2>
+
+                <div class="form-group">
+                    <label for="acao"><i class="fa-solid fa-gavel"></i> Ação <span class="obrigatorio">*</span></label>
+                    <input type="text" id="acao" required maxlength="128" placeholder="Ex: Ação Revisional, Inventário, Divórcio Consensual...">
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <div class="label-with-action">
+                            <label for="numero_processo"><i class="fa-solid fa-hashtag"></i> Número do Processo (CNJ)</label>
+                            <span class="cnj-counter-badge" id="cnjCounterBadge">Opcional</span>
+                        </div>
+                        <input type="text" id="numero_processo" placeholder="0000000-00.0000.0.00.0000" maxlength="25">
+                    </div>
+
+                    <div class="form-group">
+                        <div class="label-with-action">
+                            <label for="tribunal"><i class="fa-solid fa-building-columns"></i> Tribunal</label>
+                            <span class="tribunal-auto-badge" id="tribunalAutoBadge" style="display: none;">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> Detectado via CNJ
+                            </span>
+                        </div>
+                        <input type="text" id="tribunal" list="tribunaisSugeridos" maxlength="20" placeholder="Ex: TJSP, TRT-15, TRF-3">
+                        <datalist id="tribunaisSugeridos">
+                            <option value="TJSP"></option>
+                            <option value="TJRJ"></option>
+                            <option value="TJMG"></option>
+                            <option value="TJPR"></option>
+                            <option value="TJRS"></option>
+                            <option value="TJSC"></option>
+                            <option value="TJDFT"></option>
+                            <option value="TRT-02"></option>
+                            <option value="TRT-15"></option>
+                            <option value="TRF-1"></option>
+                            <option value="TRF-3"></option>
+                            <option value="STJ"></option>
+                            <option value="STF"></option>
+                            <option value="TST"></option>
+                        </datalist>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <div class="label-with-action">
+                            <label for="tipo_processo_id"><i class="fa-solid fa-tags"></i> Tipo de Processo <span
+                                    class="obrigatorio">*</span></label>
+                            <button type="button" class="btn-novo-tipo" id="btnNovoTipo" title="Cadastrar novo tipo de processo">
+                                <i class="fa-solid fa-plus"></i> Novo Tipo
+                            </button>
+                        </div>
+                        <select name="tipo_processo_id" id="tipo_processo_id" required>
+                            <option value="" disabled selected hidden>Carregando tipos...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="comarca_vara"><i class="fa-solid fa-landmark"></i> Comarca / Vara</label>
+                        <input type="text" id="comarca_vara" maxlength="100" placeholder="Ex: 2ª Vara Cível da Comarca">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="parte_contraria"><i class="fa-solid fa-user-shield"></i> Parte Contrária</label>
+                    <input type="text" id="parte_contraria" maxlength="150" placeholder="Nome do réu, reclamada ou parte adversa">
+                </div>
             </div>
 
-            <label class="datajud-toggle-card" for="consultarProcesso">
-                <div class="checkbox-group">
-                    <input type="checkbox" id="consultarProcesso">
+            <!-- Seção 3: Controle Interno e Sincronização -->
+            <div class="form-section-block">
+                <h2 class="form-section-title">
+                    <i class="fa-solid fa-folder-closed"></i> Controle Interno
+                </h2>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <div class="label-with-action">
+                            <label for="numeroPasta"><i class="fa-solid fa-folder-open"></i> Número da Pasta <span
+                                    class="obrigatorio">*</span></label>
+                            <button type="button" class="btn-novo-tipo" id="btnSugerirPasta" title="Buscar menor número de pasta livre">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> Sugerir livre
+                            </button>
+                        </div>
+                        <input type="number" id="numeroPasta" min="1" required placeholder="Ex: 1">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="status_pasta"><i class="fa-solid fa-circle-info"></i> Status da Pasta <span
+                                class="obrigatorio">*</span></label>
+                        <select name="status_pasta" id="status_pasta" required>
+                            <option value="Ativo" selected>Ativo</option>
+                            <option value="Aguardando Documentos">Aguardando Documentos</option>
+                            <option value="Suspenso">Suspenso</option>
+                            <option value="Arquivado">Arquivado</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="datajud-toggle-info">
-                    <strong><i class="fa-solid fa-magnifying-glass"></i> Sincronizar com a API Pública do DataJud (CNJ)</strong>
-                    <span>Preenche automaticamente a descrição com Tribunal, Classe, Órgão Julgador e última movimentação caso a descrição esteja em branco.</span>
+
+                <div class="form-group">
+                    <label for="observacoes"><i class="fa-solid fa-align-left"></i> Observações / Descrição</label>
+                    <textarea id="observacoes" rows="3" placeholder="Breve resumo sobre o caso, pendências documentais ou observações relevantes..."></textarea>
                 </div>
-            </label>
+
+                <label class="datajud-toggle-card" for="consultarProcesso">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="consultarProcesso">
+                    </div>
+                    <div class="datajud-toggle-info">
+                        <strong><i class="fa-solid fa-magnifying-glass"></i> Sincronizar com a API Pública do DataJud (CNJ)</strong>
+                        <span>Preenche automaticamente Comarca/Vara e Observações com Tribunal, Classe, Órgão Julgador e última movimentação caso estejam em branco.</span>
+                    </div>
+                </label>
+            </div>
 
             <div class="status-message" id="responseBox" style="display: none;">
                 <p id="response"></p>

@@ -10,7 +10,7 @@ body {
 
 .container {
     width: 100%;
-    max-width: 620px;
+    max-width: 700px;
     padding: 38px 40px;
     background: var(--bg-surface);
     backdrop-filter: blur(20px);
@@ -36,6 +36,46 @@ body {
     color: var(--text-secondary);
     text-align: center;
     margin-top: -4px;
+}
+
+/* Blocos de seções jurídicas do formulário */
+.form-section-block {
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.form-section-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--brand-gold);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+    margin: 0;
+}
+
+/* Badge de detecção automática do Tribunal via CNJ */
+.tribunal-auto-badge {
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: var(--success-glow);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    color: var(--success);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    animation: fadeInUp 0.25s ease forwards;
 }
 
 /* Textarea estilizado mantendo consistência com inputs */

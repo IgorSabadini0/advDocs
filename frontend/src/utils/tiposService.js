@@ -3,25 +3,43 @@ import { escapeHtml, apiFetch } from './utils.js';
 /**
  * Carrega a lista de tipos de processos da API e preenche um elemento <select>.
  */
-export const carregarTiposSelect = async (selectElement, valorSelecionado = null) => {
+export const carregarTiposSelect = async (selectElement, valorSelecionado = null, options = {}) => {
     if (!selectElement) return [];
     const token = localStorage.getItem('token');
     if (!token) return [];
 
+    const valueField = options.valueField === 'id' ? 'id' : 'nome';
+
     try {
         const tipos = await apiFetch('/clientes/tipos');
 
-        selectElement.innerHTML = `
-            <option value="" disabled ${!valorSelecionado ? 'selected' : ''} hidden>Selecione o tipo...</option>
-            ${tipos.map(t => `
-                <option value="${escapeHtml(t.nome)}" ${valorSelecionado === t.nome ? 'selected' : ''}>
+        const valorStr = valorSelecionado !== null && valorSelecionado !== undefined
+            ? String(valorSelecionado)
+            : '';
+
+        let matchedValue = '';
+        const optionsHtml = tipos.map(t => {
+            const optionVal = valueField === 'id' ? String(t.id) : t.nome;
+            const isSelected = valorStr !== '' && (
+                valorStr === String(t.id) ||
+                valorStr.toLowerCase() === String(t.nome).toLowerCase()
+            );
+            if (isSelected) matchedValue = optionVal;
+
+            return `
+                <option value="${escapeHtml(optionVal)}" data-id="${escapeHtml(t.id)}" data-nome="${escapeHtml(t.nome)}" ${isSelected ? 'selected' : ''}>
                     ${escapeHtml(t.nome)}
                 </option>
-            `).join('')}
+            `;
+        }).join('');
+
+        selectElement.innerHTML = `
+            <option value="" disabled ${matchedValue === '' ? 'selected' : ''} hidden>Selecione o tipo...</option>
+            ${optionsHtml}
         `;
 
-        if (valorSelecionado) {
-            selectElement.value = valorSelecionado;
+        if (matchedValue !== '') {
+            selectElement.value = matchedValue;
         }
 
         return tipos;
@@ -95,7 +113,7 @@ export const abrirModalNovoTipo = (onSuccess) => {
 
             fechar();
             if (typeof onSuccess === 'function') {
-                onSuccess(data.nome);
+                onSuccess(data.nome, data.id);
             }
         } catch (err) {
             console.error('Erro ao criar tipo de processo:', err);

@@ -24,9 +24,20 @@ const createResultCard = (item, index, onViewClick) => {
         'Outro': 'fa-file'
     };
 
-    const isAtivo = item.status === 'Ativo';
-    const statusIcon = isAtivo ? 'fa-circle-check' : 'fa-circle-pause';
-    const statusClass = isAtivo ? 'ativo' : 'parado';
+    const resolverStatusBadge = (status) => {
+        switch (status) {
+            case 'Ativo':
+                return { cls: 'ativo', icon: 'fa-circle-check' };
+            case 'Aguardando Documentos':
+                return { cls: 'aguardando', icon: 'fa-file-circle-question' };
+            case 'Arquivado':
+                return { cls: 'arquivado', icon: 'fa-box-archive' };
+            default:
+                return { cls: 'parado', icon: 'fa-circle-pause' };
+        }
+    };
+
+    const { cls: statusClass, icon: statusIcon } = resolverStatusBadge(item.status);
     const dataRegistro = item.data || item.created_at;
 
     card.innerHTML = `
@@ -34,7 +45,7 @@ const createResultCard = (item, index, onViewClick) => {
             <div class="card-icon"><i class="fa-solid ${iconMap[item.tipo] || 'fa-folder-open'}"></i></div>
             <div class="card-title">
                 <div class="card-title-top">
-                    <span class="card-type">${escapeHtml(item.tipo || 'Geral')}</span>
+                    <span class="card-type">${escapeHtml(item.tipo || 'Geral')}${item.tribunal ? ` &bull; ${escapeHtml(item.tribunal)}` : ''}</span>
                     ${item.status ? `
                         <span class="card-status-pill ${statusClass}">
                             <i class="fa-solid ${statusIcon}"></i> ${escapeHtml(item.status)}
@@ -48,7 +59,7 @@ const createResultCard = (item, index, onViewClick) => {
             <div class="card-info">
                 ${item.acao ? `<div class="info-item"><i class="fa-solid fa-gavel"></i><span><strong>Ação:</strong> ${escapeHtml(item.acao)}</span></div>` : ''}
                 ${item.numeroPasta ? `<div class="info-item"><i class="fa-solid fa-folder-open"></i><span><strong>Pasta:</strong> Nº ${escapeHtml(item.numeroPasta)}</span></div>` : ''}
-                ${item.numeroProc ? `<div class="info-item"><i class="fa-solid fa-scale-balanced"></i><span class="proc-mono">${escapeHtml(item.numeroProc)}</span></div>` : `<div class="info-item muted"><i class="fa-solid fa-scale-balanced"></i><span>Sem processo vinculado</span></div>`}
+                ${item.numeroProc ? `<div class="info-item"><i class="fa-solid fa-scale-balanced"></i><span class="proc-mono">${escapeHtml(item.numeroProc)}</span></div>` : `<div class="info-item muted"><i class="fa-solid fa-scale-balanced"></i><span>Caso extrajudicial / sem processo</span></div>`}
             </div>
             ${item.descricao ? `<p class="card-desc">${escapeHtml(item.descricao)}</p>` : ''}
         </div>

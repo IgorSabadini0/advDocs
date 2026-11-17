@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { paraAliasDatajud } from '../utils/cnjParser.js';
 
 const MAPA_JUSTICA_ESTADUAL = {
     '01': 'tjac', '02': 'tjal', '03': 'tjap', '04': 'tjam', '05': 'tjba',
@@ -163,7 +164,10 @@ export async function buscarProcesso(numeroProcesso, tribunalOverride = null) {
         throw erro;
     }
 
-    const tribunalAlias = String(tribunalOverride || identificarTribunalCNJ(numeroLimpo)).trim().toLowerCase();
+    const tribunalOverrideLimpo = tribunalOverride && String(tribunalOverride).trim() !== ''
+        ? paraAliasDatajud(tribunalOverride)
+        : null;
+    const tribunalAlias = tribunalOverrideLimpo || identificarTribunalCNJ(numeroLimpo);
     if (!TRIBUNAIS_PERMITIDOS.has(tribunalAlias)) {
         const erro = new Error('Tribunal informado é inválido ou não permitido.');
         erro.code = 'INVALID_COURT';

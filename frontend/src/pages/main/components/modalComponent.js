@@ -20,9 +20,19 @@ const viewItemModal = (item, { tipoLegivel, onDelete, onEdit, canEdit = true, ca
 
     const dataCriacao = item.created_at || item.data;
     const dataAtualizacao = item.updated_at;
-    const isAtivo = item.status === 'Ativo';
-    const statusClass = isAtivo ? 'ativo' : 'parado';
-    const statusIcon = isAtivo ? 'fa-circle-check' : 'fa-circle-pause';
+    const resolverStatusBadge = (status) => {
+        switch (status) {
+            case 'Ativo':
+                return { cls: 'ativo', icon: 'fa-circle-check' };
+            case 'Aguardando Documentos':
+                return { cls: 'aguardando', icon: 'fa-file-circle-question' };
+            case 'Arquivado':
+                return { cls: 'arquivado', icon: 'fa-box-archive' };
+            default:
+                return { cls: 'parado', icon: 'fa-circle-pause' };
+        }
+    };
+    const { cls: statusClass, icon: statusIcon } = resolverStatusBadge(item.status);
 
     modal.innerHTML = `
         <div class="modal-content">
@@ -40,12 +50,18 @@ const viewItemModal = (item, { tipoLegivel, onDelete, onEdit, canEdit = true, ca
                     <div class="modal-info-grid">
                         <div class="modal-info-item"><strong>Ação</strong> <span>${escapeHtml(item.acao || 'N/A')}</span></div>
                         <div class="modal-info-item"><strong>Cliente</strong> <span>${escapeHtml(item.nome || 'N/A')}</span></div>
+                        ${item.cpf_cnpj ? `<div class="modal-info-item"><strong>CPF / CNPJ</strong> <span>${escapeHtml(item.cpf_cnpj)}</span></div>` : ''}
+                        ${item.telefone ? `<div class="modal-info-item"><strong>Telefone / WhatsApp</strong> <span>${escapeHtml(item.telefone)}</span></div>` : ''}
+                        ${item.email ? `<div class="modal-info-item"><strong>E-mail</strong> <span>${escapeHtml(item.email)}</span></div>` : ''}
                         <div class="modal-info-item"><strong>Número da Pasta</strong> <span>${item.numeroPasta ? `Nº ${escapeHtml(item.numeroPasta)}` : 'N/A'}</span></div>
                         <div class="modal-info-item"><strong>Categoria / Tipo</strong> <span>${escapeHtml(tipoLegivel || item.tipo)}</span></div>
+                        ${item.tribunal ? `<div class="modal-info-item"><strong>Tribunal</strong> <span>${escapeHtml(item.tribunal)}</span></div>` : ''}
+                        ${item.comarca_vara ? `<div class="modal-info-item"><strong>Comarca / Vara</strong> <span>${escapeHtml(item.comarca_vara)}</span></div>` : ''}
+                        ${item.parte_contraria ? `<div class="modal-info-item"><strong>Parte Contrária</strong> <span>${escapeHtml(item.parte_contraria)}</span></div>` : ''}
                         <div class="modal-info-item modal-info-proc">
                             <strong>Número do Processo</strong>
                             <div class="proc-copy-row">
-                                <span class="proc-mono">${escapeHtml(item.numeroProc || 'Não informado')}</span>
+                                <span class="proc-mono">${escapeHtml(item.numeroProc || 'Não informado (extrajudicial)')}</span>
                                 ${item.numeroProc ? `
                                     <button type="button" class="btn-copy-proc" data-action="copy-proc" title="Copiar número do processo">
                                         <i class="fa-regular fa-copy"></i> Copiar

@@ -1,8 +1,11 @@
-import { mascaraProcessoCNJ, escapeHtml, apiFetch } from '../../../utils/utils.js';
+import { mascaraProcessoCNJ, mascaraCpfCnpj, mascaraTelefone, escapeHtml, apiFetch } from '../../../utils/utils.js';
+import { extrairSegmentosCNJ } from '../../../utils/cnjParser.js';
 import { carregarTiposSelect, abrirModalNovoTipo } from '../../../utils/tiposService.js';
 import { initThemeManager } from '../../../utils/themeManager.js';
 
 initThemeManager();
+
+let tribunalPreenchidoAutomaticamente = false;
 
 // --- NOTIFICAÇÕES TOAST ---
 const mostrarToast = (mensagem, tipo = 'success') => {
@@ -54,22 +57,56 @@ const exibirMensagemStatus = (texto, tipo = 'info') => {
     statusMessage.textContent = texto;
 };
 
-const atualizarContadorCNJ = () => {
-    const inputProcesso = document.getElementById('numeroProc');
-    const badge = document.getElementById('cnjCounterBadge');
-    if (!inputProcesso || !badge) return;
+const atualizarBadgeTribunal = (exibir, codigoJTR = null) => {
+    const badge = document.getElementById('tribunalAutoBadge');
+    if (!badge) return;
 
-    const digitos = (inputProcesso.value || '').replace(/\D/g, '').length;
-    badge.classList.remove('is-valid', 'is-incomplete');
-
-    if (digitos === 0) {
-        badge.textContent = 'Opcional';
-    } else if (digitos === 20) {
-        badge.textContent = 'CNJ válido (20/20)';
-        badge.classList.add('is-valid');
+    if (exibir) {
+        badge.innerHTML = codigoJTR
+            ? `<i class="fa-solid fa-wand-magic-sparkles"></i> Detectado via CNJ (${escapeHtml(codigoJTR)})`
+            : `<i class="fa-solid fa-wand-magic-sparkles"></i> Detectado via CNJ`;
+        badge.style.display = 'inline-flex';
     } else {
-        badge.textContent = `${digitos}/20 dígitos`;
-        badge.classList.add('is-incomplete');
+        badge.style.display = 'none';
+    }
+};
+
+const processarDeteccaoTribunalCNJ = () => {
+    const inputProcesso = document.getElementById('numero_processo');
+    const inputTribunal = document.getElementById('tribunal');
+    const badge = document.getElementById('cnjCounterBadge');
+    if (!inputProcesso) return;
+
+    const infoCNJ = extrairSegmentosCNJ(inputProcesso.value);
+
+    if (badge) {
+        badge.classList.remove('is-valid', 'is-incomplete');
+        const digitos = infoCNJ.digitos.length;
+
+        if (digitos === 0) {
+            badge.textContent = 'Opcional';
+        } else if (digitos === 20) {
+            badge.textContent = 'CNJ válido (20/20)';
+            badge.classList.add('is-valid');
+        } else {
+            badge.textContent = `${digitos}/20 dígitos`;
+            badge.classList.add('is-incomplete');
+        }
+    }
+
+    if (!inputTribunal) return;
+
+    if (infoCNJ.tribunal) {
+        if (inputTribunal.value.trim() === '' || tribunalPreenchidoAutomaticamente) {
+            inputTribunal.value = infoCNJ.tribunal;
+            inputTribunal.classList.remove('input-invalid');
+            tribunalPreenchidoAutomaticamente = true;
+            atualizarBadgeTribunal(true, infoCNJ.codigoJTR);
+        }
+    } else if (infoCNJ.digitos.length < 16 && tribunalPreenchidoAutomaticamente) {
+        inputTribunal.value = '';
+        tribunalPreenchidoAutomaticamente = false;
+        atualizarBadgeTribunal(false);
     }
 };
 
@@ -100,9 +137,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     const form = document.getElementById('registerForm');
-    const inputProcesso = document.getElementById('numeroProc');
+    const inputProcesso = document.getElementById('numero_processo');
+    const inputTribunal = document.getElementById('tribunal');
+    const inputCpfCnpj = document.getElementById('cpf_cnpj');
+    const inputTelefone = document.getElementById('telefone');
     const inputPasta = document.getElementById('numeroPasta');
-    const selectTipo = document.getElementById('tipo');
+    const selectTipo = document.getElementById('tipo_processo_id');
     const checkConsulta = document.getElementById('consultarProcesso');
     const datajudCard = document.querySelector('.datajud-toggle-card');
 
@@ -112,10 +152,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         el.addEventListener('change', () => el.classList.remove('input-invalid'));
     });
 
+    if (inputCpfCnpj) {
+        inputCpfCnpj.addEventListener('input', (e) => {
+            e.target.value = mascaraCpfCnpj(e.target.value);
+        });
+    }
+
+    if (inputTelefone) {
+        inputTelefone.addEventListener('input', (e) => {
+            e.target.value = mascaraTelefone(e.target.value);
+        });
+    }
+
     if (inputProcesso) {
-        inputProcesso.addEventListener('input', (e) => {
+        const handleProcessoChange = (e) => {
             e.target.value = mascaraProcessoCNJ(e.target.value);
-            atualizarContadorCNJ();
+            processarDeteccaoTribunalCNJ();
+        };
+        inputProcesso.addEventListener('input', handleProcessoChange);
+        inputProcesso.addEventListener('blur', handleProcessoChange);
+    }
+
+    if (inputTribunal) {
+        inputTribunal.addEventListener('input', () => {
+            tribunalPreenchidoAutomaticamente = false;
+            atualizarBadgeTribunal(false);
         });
     }
 
@@ -142,13 +203,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         carregarMenorPastaDisponivel(true);
     });
 
-    // Carrega dinamicamente os tipos de processos cadastrados no banco
-    await carregarTiposSelect(selectTipo);
+    // Carrega dinamicamente os tipos de processos cadastrados no banco usando tipo_processo_id como value
+    await carregarTiposSelect(selectTipo, null, { valueField: 'id' });
 
     // Modal para criar novo tipo de processo
     document.getElementById('btnNovoTipo')?.addEventListener('click', () => {
-        abrirModalNovoTipo((novoTipoNome) => {
-            carregarTiposSelect(selectTipo, novoTipoNome);
+        abrirModalNovoTipo((novoTipoNome, novoTipoId) => {
+            carregarTiposSelect(selectTipo, novoTipoId || novoTipoNome, { valueField: 'id' });
             selectTipo?.classList.remove('input-invalid');
             mostrarToast(`Categoria "${novoTipoNome}" criada e selecionada!`, 'success');
         });
@@ -170,10 +231,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const procFormatado = mascaraProcessoCNJ(procParam);
         if (inputProcesso) {
             inputProcesso.value = procFormatado;
-            atualizarContadorCNJ();
+            processarDeteccaoTribunalCNJ();
         }
 
-        // Exibe o botão para voltar diretamente ao resultado da consulta deste processo
         const backToConsultLink = document.getElementById('backToConsultLink');
         const backToConsultText = document.getElementById('backToConsultText');
         if (backToConsultLink && backToConsultText) {
@@ -188,7 +248,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (inputAcao) inputAcao.value = acaoParam;
     }
 
-    // Preserva a pasta sugerida via query string; caso contrário, busca a menor pasta disponível no banco
     if (pastaParam && Number(pastaParam) > 0 && inputPasta) {
         inputPasta.value = Number(pastaParam);
     } else {
@@ -264,26 +323,77 @@ const showLoading = (show, comDatajud = false) => {
 };
 
 const salvarRegistro = async () => {
-    const inputAcao = document.getElementById('acao');
     const inputNome = document.getElementById('nome');
+    const inputCpfCnpj = document.getElementById('cpf_cnpj');
+    const inputTelefone = document.getElementById('telefone');
+    const inputEmail = document.getElementById('email');
+
+    const inputAcao = document.getElementById('acao');
+    const inputProc = document.getElementById('numero_processo');
+    const inputTribunal = document.getElementById('tribunal');
+    const selectTipo = document.getElementById('tipo_processo_id');
+    const inputComarcaVara = document.getElementById('comarca_vara');
+    const inputParteContraria = document.getElementById('parte_contraria');
+
     const inputPasta = document.getElementById('numeroPasta');
-    const selectTipo = document.getElementById('tipo');
-    const inputProc = document.getElementById('numeroProc');
-    const selectStatus = document.getElementById('status');
-    const inputDescricao = document.getElementById('descricao');
+    const selectStatus = document.getElementById('status_pasta');
+    const inputObservacoes = document.getElementById('observacoes');
     const checkConsulta = document.getElementById('consultarProcesso');
     const saveButton = document.getElementById('saveButton');
 
-    const acao = inputAcao.value.trim();
     const nome = inputNome.value.trim();
+    const cpf_cnpj = inputCpfCnpj.value.trim();
+    const telefone = inputTelefone.value.trim();
+    const email = inputEmail.value.trim();
+
+    const acao = inputAcao.value.trim();
+    const numero_processo = inputProc.value.trim();
+    const tribunal = inputTribunal.value.trim().toUpperCase();
+    const tipo_processo_id = selectTipo.value ? Number(selectTipo.value) : null;
+    const selectedOpt = selectTipo.options[selectTipo.selectedIndex];
+    const tipo = selectedOpt?.dataset?.nome || '';
+    const comarca_vara = inputComarcaVara.value.trim();
+    const parte_contraria = inputParteContraria.value.trim();
+
     const numeroPasta = inputPasta.value.trim();
-    const tipo = selectTipo.value;
-    const numeroProc = inputProc.value.trim();
-    const status = selectStatus.value;
-    const descricao = inputDescricao.value.trim();
+    const status_pasta = selectStatus.value;
+    const observacoes = inputObservacoes.value.trim();
     const consultarProcesso = checkConsulta.checked;
 
-    // Validação amigável no cliente antes do envio
+    if (!nome) {
+        inputNome.classList.add('input-invalid');
+        inputNome.focus();
+        exibirMensagemStatus('❌ Informe o Nome Completo ou Razão Social do cliente.', 'error');
+        return;
+    }
+
+    if (cpf_cnpj) {
+        const docDigits = cpf_cnpj.replace(/\D/g, '');
+        if (docDigits.length !== 11 && docDigits.length !== 14) {
+            inputCpfCnpj.classList.add('input-invalid');
+            inputCpfCnpj.focus();
+            exibirMensagemStatus('❌ CPF/CNPJ incompleto. Informe 11 dígitos (CPF) ou 14 dígitos (CNPJ).', 'error');
+            return;
+        }
+    }
+
+    if (telefone) {
+        const telDigits = telefone.replace(/\D/g, '');
+        if (telDigits.length !== 10 && telDigits.length !== 11) {
+            inputTelefone.classList.add('input-invalid');
+            inputTelefone.focus();
+            exibirMensagemStatus('❌ Telefone/WhatsApp inválido. Informe DDD + 8 ou 9 dígitos.', 'error');
+            return;
+        }
+    }
+
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        inputEmail.classList.add('input-invalid');
+        inputEmail.focus();
+        exibirMensagemStatus('❌ Informe um endereço de e-mail válido.', 'error');
+        return;
+    }
+
     if (!acao) {
         inputAcao.classList.add('input-invalid');
         inputAcao.focus();
@@ -291,10 +401,18 @@ const salvarRegistro = async () => {
         return;
     }
 
-    if (!nome) {
-        inputNome.classList.add('input-invalid');
-        inputNome.focus();
-        exibirMensagemStatus('❌ Informe o Nome completo do cliente.', 'error');
+    const procLimpo = numero_processo.replace(/\D/g, '');
+    if (numero_processo && procLimpo.length !== 20) {
+        inputProc.classList.add('input-invalid');
+        inputProc.focus();
+        exibirMensagemStatus('❌ O Número do Processo informado está incompleto (são necessários os 20 dígitos do padrão CNJ).', 'error');
+        return;
+    }
+
+    if (!tipo_processo_id || !tipo) {
+        selectTipo.classList.add('input-invalid');
+        selectTipo.focus();
+        exibirMensagemStatus('❌ Selecione o Tipo de Processo.', 'error');
         return;
     }
 
@@ -305,37 +423,32 @@ const salvarRegistro = async () => {
         return;
     }
 
-    if (!tipo) {
-        selectTipo.classList.add('input-invalid');
-        selectTipo.focus();
-        exibirMensagemStatus('❌ Selecione o Tipo de Registro (categoria do processo).', 'error');
-        return;
-    }
-
-    const procLimpo = (numeroProc || '').replace(/\D/g, '');
-    if (numeroProc && procLimpo.length !== 20) {
-        inputProc.classList.add('input-invalid');
-        inputProc.focus();
-        exibirMensagemStatus('❌ O Número do Processo informado está incompleto (são necessários os 20 dígitos do padrão CNJ).', 'error');
-        return;
-    }
-
     if (consultarProcesso && procLimpo.length !== 20) {
         inputProc.classList.add('input-invalid');
         inputProc.focus();
-        exibirMensagemStatus('❌ Para sincronizar com o DataJud, informe o número completo do processo (20 dígitos). Caso a pasta ainda não possua processo, desmarque a opção.', 'error');
+        exibirMensagemStatus('❌ Para sincronizar com o DataJud, informe o número completo do processo (20 dígitos). Caso seja extrajudicial, desmarque a opção.', 'error');
         return;
     }
 
     const registro = {
-        acao,
         nome,
-        numeroPasta,
+        cpf_cnpj: cpf_cnpj || null,
+        telefone: telefone || null,
+        email: email || null,
+        acao,
+        numero_processo: numero_processo || null,
+        numeroProc: numero_processo || null,
+        tribunal: tribunal || null,
+        tipo_processo_id,
         tipo,
-        numeroProc,
-        status,
-        consultarProcesso,
-        descricao
+        comarca_vara: comarca_vara || null,
+        parte_contraria: parte_contraria || null,
+        numeroPasta,
+        status_pasta,
+        status: status_pasta,
+        observacoes: observacoes || null,
+        descricao: observacoes || null,
+        consultarProcesso
     };
 
     try {
@@ -349,15 +462,23 @@ const salvarRegistro = async () => {
 
         const tempoDecorrido = showLoading(false);
 
-        inputAcao.value = '';
         inputNome.value = '';
-        selectTipo.value = '';
+        inputCpfCnpj.value = '';
+        inputTelefone.value = '';
+        inputEmail.value = '';
+        inputAcao.value = '';
         inputProc.value = '';
+        inputTribunal.value = '';
+        tribunalPreenchidoAutomaticamente = false;
+        atualizarBadgeTribunal(false);
+        selectTipo.value = '';
+        inputComarcaVara.value = '';
+        inputParteContraria.value = '';
         selectStatus.value = 'Ativo';
         checkConsulta.checked = false;
         document.querySelector('.datajud-toggle-card')?.classList.remove('checked');
-        inputDescricao.value = '';
-        atualizarContadorCNJ();
+        inputObservacoes.value = '';
+        processarDeteccaoTribunalCNJ();
 
         await carregarMenorPastaDisponivel();
 

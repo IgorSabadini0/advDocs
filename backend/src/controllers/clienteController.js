@@ -135,18 +135,43 @@ const createCliente = async (req, res) => {
             return res.status(400).json({ mensagem: validacao.mensagem });
         }
 
-        let { acao, nome, numeroPasta, tipo, numeroProc, status, consultarProcesso, descricao } = req.body;
+        const {
+            acao,
+            nome,
+            cpf_cnpj,
+            telefone,
+            email,
+            numeroPasta,
+            tipo,
+            tipo_processo_id,
+            consultarProcesso
+        } = req.body;
+
+        const numeroProc = req.body.numero_processo ?? req.body.numeroProc;
+        let tribunal = req.body.tribunal;
+        let comarca_vara = req.body.comarca_vara;
+        const parte_contraria = req.body.parte_contraria;
+        const status = req.body.status_pasta ?? req.body.status ?? 'Ativo';
+        let descricao = req.body.observacoes ?? req.body.descricao;
 
         // Consulta DataJud ANTES de abrir transação no banco de dados para evitar lock prolongado e race conditions
         let dadosProcesso = null;
         if (consultarProcesso && numeroProc) {
             try {
-                dadosProcesso = await buscarProcesso(numeroProc);
-                if (dadosProcesso && (!descricao || descricao.trim() === '')) {
-                    const ultimoMov = dadosProcesso.ultimaMovimentacao
-                        ? ` | Última mov.: ${dadosProcesso.ultimaMovimentacao.nome}`
-                        : '';
-                    descricao = `[DataJud ${dadosProcesso.tribunal}] Classe: ${dadosProcesso.classe} | Órgão: ${dadosProcesso.orgaoJulgador}${ultimoMov}`;
+                dadosProcesso = await buscarProcesso(numeroProc, tribunal || null);
+                if (dadosProcesso) {
+                    if ((!tribunal || String(tribunal).trim() === '') && dadosProcesso.tribunal) {
+                        tribunal = String(dadosProcesso.tribunal).trim().toUpperCase().slice(0, 20);
+                    }
+                    if ((!comarca_vara || String(comarca_vara).trim() === '') && dadosProcesso.orgaoJulgador && dadosProcesso.orgaoJulgador !== 'Não informado') {
+                        comarca_vara = String(dadosProcesso.orgaoJulgador).trim().slice(0, 100);
+                    }
+                    if (!descricao || String(descricao).trim() === '') {
+                        const ultimoMov = dadosProcesso.ultimaMovimentacao
+                            ? ` | Última mov.: ${dadosProcesso.ultimaMovimentacao.nome}`
+                            : '';
+                        descricao = `[DataJud ${dadosProcesso.tribunal}] Classe: ${dadosProcesso.classe} | Órgão: ${dadosProcesso.orgaoJulgador}${ultimoMov}`;
+                    }
                 }
             } catch (errDatajud) {
                 console.warn(`Aviso na consulta DataJud durante cadastro: ${errDatajud.message}`);
@@ -156,9 +181,16 @@ const createCliente = async (req, res) => {
         const resultado = await clienteModel.createWithCheck({
             acao,
             nome,
+            cpf_cnpj,
+            telefone,
+            email,
             numeroPasta,
             tipo,
+            tipo_processo_id,
             numeroProc,
+            tribunal,
+            comarca_vara,
+            parte_contraria,
             status,
             descricao
         });
@@ -251,14 +283,36 @@ const updateCliente = async (req, res) => {
             return res.status(400).json({ mensagem: validacao.mensagem });
         }
 
-        const { acao, nome, numeroPasta, tipo, numeroProc, status, descricao } = req.body;
+        const {
+            acao,
+            nome,
+            cpf_cnpj,
+            telefone,
+            email,
+            numeroPasta,
+            tipo,
+            tipo_processo_id,
+            tribunal,
+            comarca_vara,
+            parte_contraria
+        } = req.body;
+        const numeroProc = req.body.numero_processo ?? req.body.numeroProc;
+        const status = req.body.status_pasta ?? req.body.status ?? 'Ativo';
+        const descricao = req.body.observacoes ?? req.body.descricao;
 
         const resultado = await clienteModel.updateWithCheck(parsedId, {
             acao,
             nome,
+            cpf_cnpj,
+            telefone,
+            email,
             numeroPasta,
             tipo,
+            tipo_processo_id,
             numeroProc,
+            tribunal,
+            comarca_vara,
+            parte_contraria,
             status,
             descricao
         });
