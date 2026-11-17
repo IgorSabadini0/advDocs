@@ -21,6 +21,7 @@ import {
 } from '../src/services/processSyncQueueWorker.js';
 import credenciaisRouter from '../src/routes/credenciais.js';
 import processosRouter from '../src/routes/processos.js';
+import { clienteModel } from '../src/models/clienteModel.js';
 
 const ESCRITORIO_TESTE_F6 = 999006;
 const SENHA_PFX_F6 = 'Fase6Pass#2026';
@@ -333,5 +334,16 @@ describe('FASE 6 — Agendador Diário (Cron Noturno) e Fluxo Completo Ponta a P
         const afterReadResp = await fetch(`${apiBaseUrl}/api/processos/cnj/${cnjE2E}/status-sincronizacao?escritorio_id=${ESCRITORIO_TESTE_F6}`);
         const afterReadBody = await afterReadResp.json();
         assert.equal(afterReadBody.nao_lidos, 0);
+    });
+
+    it('clienteModel.list e findById executam LEFT JOIN com processos sem conflito de collation', async () => {
+        const lista = await clienteModel.list();
+        assert.equal(Array.isArray(lista), true);
+        if (lista[0]) {
+            assert.equal(typeof lista[0].movimentacoes_nao_lidas, 'number');
+            const detalhe = await clienteModel.findById(lista[0].id);
+            assert.equal(detalhe?.id, lista[0].id);
+            assert.equal(typeof detalhe.movimentacoes_nao_lidas, 'number');
+        }
     });
 });

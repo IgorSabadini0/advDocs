@@ -110,7 +110,10 @@ const clienteModel = {
             FROM clientes c
             LEFT JOIN tipos_processo tp ON tp.id = c.tipo_processo_id
             LEFT JOIN processos p ON p.escritorio_id = 1
-                AND (p.numero_cnj_formatado = c.numeroProc OR p.numero_cnj = c.numeroProc)
+                AND (
+                    p.numero_cnj_formatado = c.numeroProc COLLATE utf8mb4_unicode_ci
+                    OR p.numero_cnj = c.numeroProc COLLATE utf8mb4_unicode_ci
+                )
             ORDER BY c.numeroPasta ASC
         `;
         const [dados] = await db.query(query);
@@ -131,7 +134,10 @@ const clienteModel = {
             FROM clientes c
             LEFT JOIN tipos_processo tp ON tp.id = c.tipo_processo_id
             LEFT JOIN processos p ON p.escritorio_id = 1
-                AND (p.numero_cnj_formatado = c.numeroProc OR p.numero_cnj = c.numeroProc)
+                AND (
+                    p.numero_cnj_formatado = c.numeroProc COLLATE utf8mb4_unicode_ci
+                    OR p.numero_cnj = c.numeroProc COLLATE utf8mb4_unicode_ci
+                )
             WHERE c.id = ?
             LIMIT 1
         `;
