@@ -1431,6 +1431,241 @@ html:not([data-theme="dark"]) .logo img {
     cursor: wait;
 }
 
+/* Selos Híbridos (Fase 6: Monitoramento, Movimentações Não Lidas e Peças MNI) */
+.sync-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    width: fit-content;
+    text-transform: uppercase;
+}
+
+.sync-status-badge.atualizado {
+    background: var(--success-glow);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    color: var(--success);
+}
+
+.sync-status-badge.sincronizando,
+.sync-status-badge.pendente {
+    background: var(--brand-gold-glow);
+    border: 1px solid var(--border-gold-subtle);
+    color: var(--brand-gold-hover);
+}
+
+.sync-status-badge.erro {
+    background: var(--danger-glow);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    color: var(--danger);
+}
+
+.card-badges-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.unread-movs-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 12px;
+    background: rgba(245, 158, 11, 0.14);
+    border: 1px solid rgba(245, 158, 11, 0.38);
+    color: #f59e0b;
+    width: fit-content;
+}
+
+.modal-hybrid-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.modal-hybrid-badges {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.modal-hybrid-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.btn-sync-now,
+.btn-mark-read-movs,
+.btn-download-pdf {
+    padding: 7px 12px;
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: var(--transition-smooth);
+}
+
+.btn-sync-now {
+    background: var(--brand-gold-glow);
+    border: 1px solid var(--border-gold-subtle);
+    color: var(--brand-gold-hover);
+}
+
+.btn-sync-now:hover:not(:disabled) {
+    background: var(--brand-gold);
+    border-color: var(--brand-gold);
+    color: var(--text-on-gold);
+}
+
+.btn-mark-read-movs {
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+.btn-mark-read-movs:hover:not(:disabled) {
+    border-color: var(--success);
+    color: var(--success);
+}
+
+.btn-download-pdf {
+    background: var(--bg-surface-solid);
+    border: 1px solid var(--border-gold-subtle);
+    color: var(--brand-gold-hover);
+    flex-shrink: 0;
+}
+
+.btn-download-pdf:hover:not(:disabled) {
+    background: var(--brand-gold);
+    color: var(--text-on-gold);
+}
+
+.btn-sync-now:disabled,
+.btn-mark-read-movs:disabled,
+.btn-download-pdf:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.modal-movs-list,
+.modal-docs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.modal-mov-item {
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.modal-mov-item.unread {
+    border-left: 3px solid var(--brand-gold);
+    background: var(--brand-gold-glow);
+}
+
+.modal-mov-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.modal-mov-title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.modal-mov-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.modal-mov-badge-new {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 10px;
+    background: var(--brand-gold);
+    color: var(--text-on-gold);
+    text-transform: uppercase;
+}
+
+.modal-mov-teor {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    line-height: 1.45;
+    margin: 0;
+}
+
+.modal-doc-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-color);
+    flex-wrap: wrap;
+}
+
+.modal-doc-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+}
+
+.modal-doc-info strong {
+    font-size: 0.8rem;
+    color: var(--text-primary);
+}
+
+.modal-doc-info small {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.consult-hybrid-panel {
+    margin-top: 20px;
+    padding: 16px;
+    border-radius: var(--radius-md);
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-color);
+}
+
 /* Barra superior compartilhada nas páginas de formulário (register / edit) */
 .form-topbar {
     display: flex;

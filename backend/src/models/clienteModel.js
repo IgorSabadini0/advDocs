@@ -21,7 +21,8 @@ const normalizarRegistroSaida = (row) => {
         ...row,
         numero_processo: row.numeroProc || null,
         status_pasta: row.status || 'Ativo',
-        observacoes: row.descricao || null
+        observacoes: row.descricao || null,
+        movimentacoes_nao_lidas: Number(row.movimentacoes_nao_lidas || 0)
     };
 };
 
@@ -97,9 +98,19 @@ const clienteModel = {
                    c.status, c.descricao,
                    c.datajud_status, c.datajud_mensagem, c.classe_processual,
                    c.assunto_principal, c.orgao_julgador, c.data_ajuizamento,
-                   c.datajud_atualizado_em
+                   c.datajud_atualizado_em,
+                   p.id AS processo_sync_id,
+                   p.status_sincronizacao,
+                   p.ultima_sincronizacao_em,
+                   COALESCE((
+                       SELECT COUNT(*)
+                       FROM processo_movimentacoes pm
+                       WHERE pm.processo_id = p.id AND pm.lido_pelo_advogado = FALSE
+                   ), 0) AS movimentacoes_nao_lidas
             FROM clientes c
             LEFT JOIN tipos_processo tp ON tp.id = c.tipo_processo_id
+            LEFT JOIN processos p ON p.escritorio_id = 1
+                AND (p.numero_cnj_formatado = c.numeroProc OR p.numero_cnj = c.numeroProc)
             ORDER BY c.numeroPasta ASC
         `;
         const [dados] = await db.query(query);
@@ -108,9 +119,19 @@ const clienteModel = {
 
     findById: async (id) => {
         const query = `
-            SELECT c.*, tp.nome AS tipo_processo_nome
+            SELECT c.*, tp.nome AS tipo_processo_nome,
+                   p.id AS processo_sync_id,
+                   p.status_sincronizacao,
+                   p.ultima_sincronizacao_em,
+                   COALESCE((
+                       SELECT COUNT(*)
+                       FROM processo_movimentacoes pm
+                       WHERE pm.processo_id = p.id AND pm.lido_pelo_advogado = FALSE
+                   ), 0) AS movimentacoes_nao_lidas
             FROM clientes c
             LEFT JOIN tipos_processo tp ON tp.id = c.tipo_processo_id
+            LEFT JOIN processos p ON p.escritorio_id = 1
+                AND (p.numero_cnj_formatado = c.numeroProc OR p.numero_cnj = c.numeroProc)
             WHERE c.id = ?
             LIMIT 1
         `;

@@ -1,7 +1,7 @@
 {
   "scripts": {
     "dev": "docker compose up -d && npx wait-on tcp:3306 && node --watch backend/src/server.js",
-    "test": "node --test backend/tests/*.test.js"
+    "test": "node --test --test-concurrency=1 backend/tests/*.test.js"
   },
   "dependencies": {
     "axios": "^1.20.0",

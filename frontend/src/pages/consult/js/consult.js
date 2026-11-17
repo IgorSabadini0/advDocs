@@ -1,4 +1,15 @@
-import { escapeHtml, formatDate, formatDateTime, mascaraProcessoCNJ, normalizeText, apiFetch } from '../../../utils/utils.js';
+import {
+    escapeHtml,
+    formatDate,
+    formatDateTime,
+    mascaraProcessoCNJ,
+    normalizeText,
+    apiFetch,
+    mostrarToast,
+    resolverSeloSincronizacao,
+    abrirPdfDocumentoAutenticado,
+    baixarDocumentoMniSobDemanda
+} from '../../../utils/utils.js';
 import { initThemeManager } from '../../../utils/themeManager.js';
 import { initNotificationsWidget } from '../../../utils/notificationsWidget.js';
 
@@ -265,6 +276,26 @@ const renderizarDadosProcesso = (processo, aviso) => {
                 </div>
             </div>
 
+            <div class="consult-hybrid-panel" id="consultHybridPanel">
+                <div class="modal-hybrid-toolbar">
+                    <div class="modal-hybrid-badges">
+                        <span id="consultSyncBadge" class="sync-status-badge pendente">
+                            <i class="fa-solid fa-clock"></i> MONITORAMENTO
+                        </span>
+                        <span id="consultUnreadBadge" class="unread-movs-pill" style="display: none;"></span>
+                    </div>
+                    <div class="modal-hybrid-actions">
+                        <button type="button" class="btn-sync-now" id="consultSyncNowBtn">
+                            <i class="fa-solid fa-arrows-rotate"></i> Atualizar Agora
+                        </button>
+                        <button type="button" class="btn-mark-read-movs" id="consultMarkReadBtn" style="display: none;">
+                            <i class="fa-solid fa-check-double"></i> Marcar movimentações como lidas
+                        </button>
+                    </div>
+                </div>
+                <div id="consultDocsListContainer"></div>
+            </div>
+
             <div class="timeline-section">
                 <div class="timeline-header">
                     <h3>
@@ -293,6 +324,131 @@ const renderizarDadosProcesso = (processo, aviso) => {
             renderizarDadosProcesso(processo, aviso);
         });
     });
+
+    // Painel de monitoramento híbrido e download de peças MNI na tela de Consulta
+    const procDigitos = String(dadosAtivos.numeroProcesso || '').replace(/\D/g, '');
+    const syncBadge = document.getElementById('consultSyncBadge');
+    const unreadBadge = document.getElementById('consultUnreadBadge');
+    const docsContainer = document.getElementById('consultDocsListContainer');
+    const syncNowBtn = document.getElementById('consultSyncNowBtn');
+    const markReadBtn = document.getElementById('consultMarkReadBtn');
+    let procSyncId = null;
+
+    const carregarPainelHibridoConsulta = async () => {
+        if (procDigitos.length !== 20) return;
+        try {
+            const dados = await apiFetch(`/api/processos/cnj/${encodeURIComponent(procDigitos)}/status-sincronizacao`);
+            if (!dados?.processo) return;
+            procSyncId = dados.processo.id;
+
+            const badgeInfo = resolverSeloSincronizacao(dados.processo.status_sincronizacao);
+            if (syncBadge && badgeInfo) {
+                syncBadge.className = `sync-status-badge ${badgeInfo.cls}`;
+                syncBadge.innerHTML = `<i class="fa-solid ${badgeInfo.icon}"></i> ${badgeInfo.label}`;
+            }
+
+            const naoLidos = Number(dados.nao_lidos || 0);
+            if (unreadBadge) {
+                unreadBadge.style.display = naoLidos > 0 ? 'inline-flex' : 'none';
+                unreadBadge.innerHTML = `<i class="fa-solid fa-bell"></i> ${naoLidos} nova(s) movimentação(ões)`;
+            }
+            if (markReadBtn) {
+                markReadBtn.style.display = naoLidos > 0 ? 'inline-flex' : 'none';
+            }
+
+            const docs = Array.isArray(dados.documentos) ? dados.documentos : [];
+            if (docsContainer) {
+                docsContainer.innerHTML = docs.length > 0 ? `
+                    <div class="modal-docs-list">
+                        ${docs.map(doc => `
+                            <div class="modal-doc-row">
+                                <div class="modal-doc-info">
+                                    <strong>${escapeHtml(doc.tipo_documento || 'Documento MNI')}${doc.descricao ? ` — ${escapeHtml(doc.descricao)}` : ''}</strong>
+                                    <small>ID: ${escapeHtml(doc.id_documento_tribunal)} &bull; ${escapeHtml(doc.instancia || '1G')}</small>
+                                </div>
+                                <button type="button"
+                                    class="btn-download-pdf"
+                                    data-consult-download-doc="${escapeHtml(doc.id)}"
+                                    data-instancia="${escapeHtml(doc.instancia || '1G')}"
+                                    data-baixado="${doc.baixado ? '1' : '0'}">
+                                    <i class="fa-solid ${doc.baixado ? 'fa-file-pdf' : 'fa-download'}"></i>
+                                    ${doc.baixado ? 'Abrir PDF' : 'Baixar PDF'}
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : '';
+
+                docsContainer.querySelectorAll('[data-consult-download-doc]').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        if (!procSyncId) return;
+                        const docId = btn.dataset.consultDownloadDoc;
+                        const inst = btn.dataset.instancia || '1G';
+                        const baixado = btn.dataset.baixado === '1';
+                        const orig = btn.innerHTML;
+                        btn.disabled = true;
+
+                        try {
+                            if (baixado) {
+                                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Abrindo...';
+                                await abrirPdfDocumentoAutenticado(procSyncId, docId, mostrarToast);
+                            } else {
+                                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Baixando...';
+                                const resDl = await baixarDocumentoMniSobDemanda({ processoId: procSyncId, docId, instancia: inst });
+                                if (resDl.concluido) {
+                                    btn.dataset.baixado = '1';
+                                    btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> Abrir PDF';
+                                    await abrirPdfDocumentoAutenticado(procSyncId, docId, mostrarToast);
+                                } else {
+                                    mostrarToast('Download enfileirado via MNI. Tente abrir em instantes.', 'info');
+                                }
+                            }
+                        } catch (err) {
+                            mostrarToast(err.message || 'Falha ao baixar PDF.', 'error');
+                        } finally {
+                            btn.disabled = false;
+                            if (btn.dataset.baixado !== '1') btn.innerHTML = orig;
+                        }
+                    });
+                });
+            }
+        } catch {
+            // Silencioso caso ainda não sincronizado
+        }
+    };
+
+    carregarPainelHibridoConsulta();
+
+    if (syncNowBtn && procDigitos.length === 20) {
+        syncNowBtn.addEventListener('click', async () => {
+            const orig = syncNowBtn.innerHTML;
+            syncNowBtn.disabled = true;
+            syncNowBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enfileirando...';
+            try {
+                const resp = await apiFetch('/api/processos/sincronizar', {
+                    method: 'POST',
+                    body: JSON.stringify({ numero_cnj: procDigitos })
+                });
+                procSyncId = resp.processo_id;
+                mostrarToast('Atualização enfileirada no motor híbrido!', 'info');
+                setTimeout(carregarPainelHibridoConsulta, 800);
+            } catch (err) {
+                mostrarToast(err.data?.mensagem || 'Erro ao enfileirar atualização.', 'error');
+            } finally {
+                syncNowBtn.disabled = false;
+                syncNowBtn.innerHTML = orig;
+            }
+        });
+    }
+
+    if (markReadBtn) {
+        markReadBtn.addEventListener('click', async () => {
+            if (!procSyncId) return;
+            await apiFetch(`/api/processos/${encodeURIComponent(procSyncId)}/movimentacoes/ler`, { method: 'PATCH' });
+            await carregarPainelHibridoConsulta();
+            mostrarToast('Movimentações marcadas como lidas!', 'success');
+        });
+    }
 };
 
 const restaurarConsultaEmCache = async (numeroFormatado) => {

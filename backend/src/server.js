@@ -14,6 +14,10 @@ import authRouter from './routes/auth.js';
 import usersRouter from './routes/users.js';
 import rbacRouter from './routes/rbac.js';
 import notificacoesRouter from './routes/notificacoes.js';
+import processosRouter from './routes/processos.js';
+import credenciaisRouter from './routes/credenciais.js';
+import webhooksRouter from './routes/webhooks.js';
+import { iniciarAgendadorMonitoramentoDiario } from './services/processMonitorScheduler.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -46,8 +50,6 @@ app.use(helmet({
     },
 }));
 
-app.use(express.json({ limit: '16kb' }));
-
 // 2. Política CORS
 const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
@@ -64,6 +66,10 @@ app.use(cors({
     credentials: true
 }));
 
+app.use('/api/credenciais', verifyToken, express.json({ limit: '5mb' }), credenciaisRouter);
+app.use('/api/webhooks', webhooksRouter);
+app.use(express.json({ limit: '16kb' }));
+
 // 3. Servir arquivos estáticos do frontend
 const staticPath = path.join(__dirname, '../../frontend/src');
 app.use(express.static(staticPath));
@@ -79,6 +85,7 @@ app.use('/clientes', verifyToken, clientesRouter);
 app.use('/users', verifyToken, usersRouter);
 app.use('/rbac', verifyToken, rbacRouter);
 app.use('/notificacoes', verifyToken, notificacoesRouter);
+app.use('/api/processos', verifyToken, processosRouter);
 
 // 6. Middleware Centralizado de Tratamento de Erros
 app.use((err, req, res, next) => {
@@ -104,4 +111,5 @@ const host = process.env.HOST_SERVER || '0.0.0.0';
 app.listen(port, host, () => {
     console.log(process.env.MESSAGE_SERVER || ".ENV carregado");
     console.log(`Servidor rodando em http://localhost:${port}`);
+    iniciarAgendadorMonitoramentoDiario();
 });

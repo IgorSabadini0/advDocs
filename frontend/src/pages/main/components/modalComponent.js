@@ -1,4 +1,12 @@
-import { escapeHtml, formatDate } from '../../../utils/utils.js';
+import {
+    escapeHtml,
+    formatDate,
+    formatDateTime,
+    apiFetch,
+    resolverSeloSincronizacao,
+    abrirPdfDocumentoAutenticado,
+    baixarDocumentoMniSobDemanda
+} from '../../../utils/utils.js';
 
 const fecharModal = () => {
     const modal = document.getElementById('itemModal');
@@ -8,7 +16,7 @@ const fecharModal = () => {
     }
 };
 
-const viewItemModal = (item, { tipoLegivel, onDelete, onEdit, onResyncDatajud, canEdit = true, canDelete = true, onToast } = {}) => {
+const viewItemModal = (item, { tipoLegivel, onDelete, onEdit, onResyncDatajud, onSyncUpdated, canEdit = true, canDelete = true, onToast } = {}) => {
     const modalExistente = document.getElementById('itemModal');
     if (modalExistente) {
         modalExistente.remove();
@@ -34,6 +42,9 @@ const viewItemModal = (item, { tipoLegivel, onDelete, onEdit, onResyncDatajud, c
         }
     };
     const { cls: statusClass, icon: statusIcon } = resolverStatusBadge(item.status);
+    const syncBadgeInicial = resolverSeloSincronizacao(item.status_sincronizacao, item.datajud_status);
+    const naoLidasInicial = Number(item.movimentacoes_nao_lidas || 0);
+    const procDigitos = String(item.numeroProc || '').replace(/\D/g, '');
 
     modal.innerHTML = `
         <div class="modal-content">
@@ -83,15 +94,28 @@ const viewItemModal = (item, { tipoLegivel, onDelete, onEdit, onResyncDatajud, c
 
                 ${(item.numeroProc || item.datajud_status || item.classe_processual || item.orgao_julgador) ? `
                 <div class="modal-section" style="margin-top: 20px;">
-                    <h3>Sincronização DataJud (CNJ)</h3>
-                    <div class="modal-info-grid">
-                        <div class="modal-info-item">
-                            <strong>Status da Consulta</strong>
-                            <span id="modalDatajudStatusBadge" class="datajud-pill ${escapeHtml(item.datajud_status || 'nao-sincronizado')}">
-                                <i class="fa-solid ${item.datajud_status === 'concluido' ? 'fa-circle-check' : item.datajud_status === 'erro' ? 'fa-triangle-exclamation' : item.datajud_status === 'pendente' ? 'fa-spinner fa-spin' : 'fa-circle-minus'}"></i>
-                                ${item.datajud_status === 'concluido' ? 'Sincronizado' : item.datajud_status === 'erro' ? 'Erro na Consulta' : item.datajud_status === 'pendente' ? 'Em andamento' : 'Não sincronizado'}
+                    <h3>Sincronização e Monitoramento Processual</h3>
+                    <div class="modal-hybrid-toolbar">
+                        <div class="modal-hybrid-badges">
+                            <span id="modalDatajudStatusBadge" class="sync-status-badge ${syncBadgeInicial ? syncBadgeInicial.cls : 'pendente'}">
+                                <i class="fa-solid ${syncBadgeInicial ? syncBadgeInicial.icon : 'fa-circle-minus'}"></i>
+                                ${syncBadgeInicial ? syncBadgeInicial.label : 'NÃO SINCRONIZADO'}
+                            </span>
+                            <span id="modalUnreadMovsBadge" class="unread-movs-pill" style="display: ${naoLidasInicial > 0 ? 'inline-flex' : 'none'};">
+                                <i class="fa-solid fa-bell"></i> ${naoLidasInicial} nova(s) movimentação(ões)
                             </span>
                         </div>
+                        <div class="modal-hybrid-actions">
+                            ${(procDigitos.length === 20 && canEdit) ? `
+                            <button type="button" class="btn-sync-now" data-action="sync-now">
+                                <i class="fa-solid fa-arrows-rotate"></i> Atualizar Agora
+                            </button>` : ''}
+                            <button type="button" class="btn-mark-read-movs" data-action="mark-movs-read" style="display: ${naoLidasInicial > 0 ? 'inline-flex' : 'none'};">
+                                <i class="fa-solid fa-check-double"></i> Marcar movimentações como lidas
+                            </button>
+                        </div>
+                    </div>
+                    <div class="modal-info-grid">
                         ${item.classe_processual ? `<div class="modal-info-item"><strong>Classe Processual</strong> <span>${escapeHtml(item.classe_processual)}</span></div>` : ''}
                         ${item.orgao_julgador ? `<div class="modal-info-item"><strong>Órgão Julgador</strong> <span>${escapeHtml(item.orgao_julgador)}</span></div>` : ''}
                         ${item.assunto_principal ? `<div class="modal-info-item"><strong>Assunto(s)</strong> <span>${escapeHtml(item.assunto_principal)}</span></div>` : ''}
@@ -101,10 +125,11 @@ const viewItemModal = (item, { tipoLegivel, onDelete, onEdit, onResyncDatajud, c
                     ${(item.numeroProc && item.datajud_status !== 'pendente' && canEdit && typeof onResyncDatajud === 'function') ? `
                     <div class="datajud-modal-actions">
                         <button type="button" class="btn-resync-datajud" data-action="resync-datajud">
-                            <i class="fa-solid fa-arrows-rotate"></i>
-                            ${item.datajud_status === 'erro' ? 'Tentar sincronizar novamente' : item.datajud_status === 'concluido' ? 'Atualizar dados no DataJud' : 'Sincronizar agora com DataJud'}
+                            <i class="fa-solid fa-cloud-arrow-down"></i>
+                            ${item.datajud_status === 'erro' ? 'Tentar DataJud novamente' : 'Reconsultar DataJud na pasta'}
                         </button>
                     </div>` : ''}
+                    <div id="modalHybridDetails" style="margin-top: 14px;"></div>
                 </div>` : ''}
 
                 ${item.descricao ? `
@@ -181,13 +206,221 @@ const viewItemModal = (item, { tipoLegivel, onDelete, onEdit, onResyncDatajud, c
             if (ok) {
                 const badge = modal.querySelector('#modalDatajudStatusBadge');
                 if (badge) {
-                    badge.className = 'datajud-pill pendente';
-                    badge.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Em andamento';
+                    badge.className = 'sync-status-badge sincronizando';
+                    badge.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> SINCRONIZANDO';
                 }
                 resyncBtn.remove();
             } else {
                 resyncBtn.disabled = false;
                 resyncBtn.innerHTML = textoOriginal;
+            }
+        });
+    }
+
+    // Carregamento assíncrono dos dados híbridos (movimentações não lidas + peças MNI)
+    const hybridDetailsEl = modal.querySelector('#modalHybridDetails');
+    const syncBadgeEl = modal.querySelector('#modalDatajudStatusBadge');
+    const unreadBadgeEl = modal.querySelector('#modalUnreadMovsBadge');
+    const markReadBtn = modal.querySelector('[data-action="mark-movs-read"]');
+    const syncNowBtn = modal.querySelector('[data-action="sync-now"]');
+    let processoSyncAtualId = item.processo_sync_id || null;
+
+    const renderizarDetalhesHibridos = (dados) => {
+        if (!hybridDetailsEl || !dados || !dados.processo) return;
+        processoSyncAtualId = dados.processo.id;
+
+        const badgeInfo = resolverSeloSincronizacao(dados.processo.status_sincronizacao, item.datajud_status);
+        if (syncBadgeEl && badgeInfo) {
+            syncBadgeEl.className = `sync-status-badge ${badgeInfo.cls}`;
+            syncBadgeEl.innerHTML = `<i class="fa-solid ${badgeInfo.icon}"></i> ${badgeInfo.label}`;
+        }
+
+        const naoLidasCount = Number(dados.nao_lidos || 0);
+        if (unreadBadgeEl) {
+            unreadBadgeEl.style.display = naoLidasCount > 0 ? 'inline-flex' : 'none';
+            unreadBadgeEl.innerHTML = `<i class="fa-solid fa-bell"></i> ${naoLidasCount} nova(s) movimentação(ões)`;
+        }
+        if (markReadBtn) {
+            markReadBtn.style.display = naoLidasCount > 0 ? 'inline-flex' : 'none';
+        }
+
+        const docs = Array.isArray(dados.documentos) ? dados.documentos : [];
+        const movs = Array.isArray(dados.movimentacoes) ? dados.movimentacoes.slice(0, 6) : [];
+
+        const docsHtml = docs.length > 0 ? `
+            <div style="margin-bottom: 14px;">
+                <strong style="font-size: 0.82rem; color: var(--text-primary);"><i class="fa-solid fa-file-pdf"></i> Peças e Documentos Processuais (${docs.length})</strong>
+                <div class="modal-docs-list">
+                    ${docs.map(doc => `
+                        <div class="modal-doc-row">
+                            <div class="modal-doc-info">
+                                <strong>${escapeHtml(doc.tipo_documento || 'Documento Processual')}${doc.descricao ? ` — ${escapeHtml(doc.descricao)}` : ''}</strong>
+                                <small>ID Tribunal: ${escapeHtml(doc.id_documento_tribunal)} &bull; ${escapeHtml(doc.instancia || '1G')}${doc.data_juntada ? ` &bull; ${escapeHtml(formatDateTime(doc.data_juntada))}` : ''}</small>
+                            </div>
+                            <button type="button"
+                                class="btn-download-pdf"
+                                data-action="download-doc-pdf"
+                                data-doc-id="${escapeHtml(doc.id)}"
+                                data-doc-tribunal="${escapeHtml(doc.id_documento_tribunal)}"
+                                data-instancia="${escapeHtml(doc.instancia || '1G')}"
+                                data-baixado="${doc.baixado ? '1' : '0'}">
+                                <i class="fa-solid ${doc.baixado ? 'fa-file-pdf' : 'fa-download'}"></i>
+                                ${doc.baixado ? 'Abrir PDF' : 'Baixar PDF'}
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : '';
+
+        const movsHtml = movs.length > 0 ? `
+            <div>
+                <strong style="font-size: 0.82rem; color: var(--text-primary);"><i class="fa-solid fa-timeline"></i> Últimas Movimentações Monitoradas (${dados.total_movimentacoes || movs.length})</strong>
+                <div class="modal-movs-list">
+                    ${movs.map(mov => `
+                        <div class="modal-mov-item ${mov.lido_pelo_advogado ? '' : 'unread'}">
+                            <div class="modal-mov-top">
+                                <span class="modal-mov-title">${escapeHtml(mov.titulo)}</span>
+                                <span class="modal-mov-meta">
+                                    ${mov.lido_pelo_advogado ? '' : '<span class="modal-mov-badge-new">Nova</span>'}
+                                    <span>${escapeHtml(mov.fonte_captura)}</span>
+                                    <span>${escapeHtml(formatDateTime(mov.data_movimentacao) || '')}</span>
+                                </span>
+                            </div>
+                            ${mov.teor_completo ? `<p class="modal-mov-teor">${escapeHtml(mov.teor_completo)}</p>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : '';
+
+        hybridDetailsEl.innerHTML = `${docsHtml}${movsHtml}`;
+
+        hybridDetailsEl.querySelectorAll('[data-action="download-doc-pdf"]').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                if (!processoSyncAtualId) return;
+                const docId = btn.dataset.docId;
+                const inst = btn.dataset.instancia || '1G';
+                const jaBaixado = btn.dataset.baixado === '1';
+
+                const originalHtml = btn.innerHTML;
+                btn.disabled = true;
+
+                try {
+                    if (jaBaixado) {
+                        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Abrindo...';
+                        await abrirPdfDocumentoAutenticado(processoSyncAtualId, docId, onToast);
+                    } else {
+                        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Baixando MNI...';
+                        const resDownload = await baixarDocumentoMniSobDemanda({
+                            processoId: processoSyncAtualId,
+                            docId,
+                            instancia: inst
+                        });
+
+                        if (resDownload.concluido) {
+                            btn.dataset.baixado = '1';
+                            btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> Abrir PDF';
+                            await abrirPdfDocumentoAutenticado(processoSyncAtualId, docId, onToast);
+                        } else if (typeof onToast === 'function') {
+                            onToast('Download enfileirado via MNI. Tente abrir em instantes.', 'info');
+                        }
+                    }
+                } catch (err) {
+                    if (typeof onToast === 'function') {
+                        onToast(err.message || 'Falha ao baixar documento PDF.', 'error');
+                    }
+                } finally {
+                    btn.disabled = false;
+                    if (btn.dataset.baixado !== '1') {
+                        btn.innerHTML = originalHtml;
+                    } else {
+                        btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> Abrir PDF';
+                    }
+                }
+            });
+        });
+    };
+
+    const carregarStatusHibrido = async () => {
+        if (procDigitos.length !== 20 || !document.body.contains(modal)) return;
+        try {
+            const dados = await apiFetch(`/api/processos/cnj/${encodeURIComponent(procDigitos)}/status-sincronizacao`);
+            renderizarDetalhesHibridos(dados);
+        } catch {
+            // Processo pode ainda não estar no motor de monitoramento
+        }
+    };
+
+    if (procDigitos.length === 20) {
+        carregarStatusHibrido();
+    }
+
+    if (syncNowBtn && procDigitos.length === 20) {
+        syncNowBtn.addEventListener('click', async () => {
+            const orig = syncNowBtn.innerHTML;
+            syncNowBtn.disabled = true;
+            syncNowBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando...';
+            if (syncBadgeEl) {
+                syncBadgeEl.className = 'sync-status-badge sincronizando';
+                syncBadgeEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> SINCRONIZANDO';
+            }
+
+            try {
+                const resp = await apiFetch('/api/processos/sincronizar', {
+                    method: 'POST',
+                    body: JSON.stringify({ numero_cnj: procDigitos })
+                });
+                processoSyncAtualId = resp.processo_id;
+                if (typeof onToast === 'function') {
+                    onToast('Sincronização em segundo plano iniciada!', 'info');
+                }
+
+                for (let i = 0; i < 12; i++) {
+                    await new Promise(r => setTimeout(r, 400));
+                    if (!document.body.contains(modal)) break;
+                    const dados = await apiFetch(`/api/processos/${encodeURIComponent(processoSyncAtualId)}/status-sincronizacao`);
+                    renderizarDetalhesHibridos(dados);
+                    if (dados.processo) {
+                        item.status_sincronizacao = dados.processo.status_sincronizacao;
+                        item.movimentacoes_nao_lidas = Number(dados.nao_lidos || 0);
+                        if (typeof onSyncUpdated === 'function') onSyncUpdated(item);
+                    }
+                    if (dados.processo?.status_sincronizacao === 'ATUALIZADO' || dados.processo?.status_sincronizacao === 'ERRO') {
+                        break;
+                    }
+                }
+            } catch (err) {
+                if (typeof onToast === 'function') {
+                    onToast(err.data?.mensagem || err.message || 'Erro ao iniciar atualização.', 'error');
+                }
+            } finally {
+                syncNowBtn.disabled = false;
+                syncNowBtn.innerHTML = orig;
+            }
+        });
+    }
+
+    if (markReadBtn) {
+        markReadBtn.addEventListener('click', async () => {
+            if (!processoSyncAtualId) return;
+            markReadBtn.disabled = true;
+            try {
+                await apiFetch(`/api/processos/${encodeURIComponent(processoSyncAtualId)}/movimentacoes/ler`, {
+                    method: 'PATCH'
+                });
+                item.movimentacoes_nao_lidas = 0;
+                if (typeof onSyncUpdated === 'function') onSyncUpdated(item);
+                await carregarStatusHibrido();
+                if (typeof onToast === 'function') {
+                    onToast('Movimentações marcadas como lidas.', 'success');
+                }
+            } catch (err) {
+                if (typeof onToast === 'function') {
+                    onToast(err.data?.mensagem || 'Erro ao marcar movimentações como lidas.', 'error');
+                }
+            } finally {
+                markReadBtn.disabled = false;
             }
         });
     }

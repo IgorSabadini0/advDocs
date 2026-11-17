@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate } from '../../../utils/utils.js';
+import { escapeHtml, formatDate, resolverSeloSincronizacao } from '../../../utils/utils.js';
 
 // --- RENDERIZAÇÃO DOS CARDS ---
 const createResultCard = (item, index, onViewClick) => {
@@ -39,6 +39,8 @@ const createResultCard = (item, index, onViewClick) => {
 
     const { cls: statusClass, icon: statusIcon } = resolverStatusBadge(item.status);
     const dataRegistro = item.data || item.created_at;
+    const syncBadge = resolverSeloSincronizacao(item.status_sincronizacao, item.datajud_status);
+    const naoLidas = Number(item.movimentacoes_nao_lidas || 0);
 
     card.innerHTML = `
         <div class="card-header">
@@ -60,8 +62,11 @@ const createResultCard = (item, index, onViewClick) => {
                 ${item.acao ? `<div class="info-item"><i class="fa-solid fa-gavel"></i><span><strong>Ação:</strong> ${escapeHtml(item.acao)}</span></div>` : ''}
                 ${item.numeroPasta ? `<div class="info-item"><i class="fa-solid fa-folder-open"></i><span><strong>Pasta:</strong> Nº ${escapeHtml(item.numeroPasta)}</span></div>` : ''}
                 ${item.numeroProc ? `<div class="info-item"><i class="fa-solid fa-scale-balanced"></i><span class="proc-mono">${escapeHtml(item.numeroProc)}</span></div>` : `<div class="info-item muted"><i class="fa-solid fa-scale-balanced"></i><span>Caso extrajudicial / sem processo</span></div>`}
-                ${item.datajud_status === 'pendente' ? `<div class="datajud-pill pendente"><i class="fa-solid fa-spinner fa-spin"></i> Consultando DataJud...</div>` : ''}
-                ${item.datajud_status === 'erro' ? `<div class="datajud-pill erro" title="${escapeHtml(item.datajud_mensagem || '')}"><i class="fa-solid fa-triangle-exclamation"></i> DataJud: falha na sincronização</div>` : ''}
+                ${(syncBadge || naoLidas > 0) ? `
+                <div class="card-badges-row">
+                    ${syncBadge ? `<span class="sync-status-badge ${syncBadge.cls}" title="${escapeHtml(item.datajud_mensagem || '')}"><i class="fa-solid ${syncBadge.icon}"></i> ${syncBadge.label}</span>` : ''}
+                    ${naoLidas > 0 ? `<span class="unread-movs-pill" title="Novas movimentações processuais não lidas"><i class="fa-solid fa-bell"></i> ${naoLidas} nova(s)</span>` : ''}
+                </div>` : ''}
             </div>
             ${item.descricao ? `<p class="card-desc">${escapeHtml(item.descricao)}</p>` : ''}
         </div>

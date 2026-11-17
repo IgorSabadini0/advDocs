@@ -204,4 +204,111 @@ const apiFetch = async (endpoint, options = {}) => {
     return data;
 };
 
-export { escapeHtml, formatDate, formatDateTime, normalizeText, mascaraProcessoCNJ, mascaraCpfCnpj, mascaraTelefone, mostrarToast, apiFetch };
+/**
+ * Resolve o selo visual unificado de sincronização (ATUALIZADO, SINCRONIZANDO, PENDENTE, ERRO).
+ */
+const resolverSeloSincronizacao = (statusSync, datajudStatus = null) => {
+    const norm = statusSync ? String(statusSync).trim().toUpperCase() : '';
+    switch (norm) {
+        case 'ATUALIZADO':
+            return { cls: 'atualizado', icon: 'fa-circle-check', label: 'ATUALIZADO' };
+        case 'SINCRONIZANDO':
+            return { cls: 'sincronizando', icon: 'fa-spinner fa-spin', label: 'SINCRONIZANDO' };
+        case 'PENDENTE':
+            return { cls: 'pendente', icon: 'fa-clock', label: 'PENDENTE' };
+        case 'AGUARDANDO_CREDENCIAL':
+            return { cls: 'erro', icon: 'fa-key', label: 'AGUARDANDO_CREDENCIAL' };
+        case 'ERRO':
+            return { cls: 'erro', icon: 'fa-triangle-exclamation', label: 'ERRO' };
+        default: {
+            if (datajudStatus === 'concluido') return { cls: 'atualizado', icon: 'fa-circle-check', label: 'ATUALIZADO' };
+            if (datajudStatus === 'pendente') return { cls: 'sincronizando', icon: 'fa-spinner fa-spin', label: 'SINCRONIZANDO' };
+            if (datajudStatus === 'erro') return { cls: 'erro', icon: 'fa-triangle-exclamation', label: 'ERRO' };
+            return null;
+        }
+    }
+};
+
+/**
+ * Abre/baixa arquivo PDF autenticado via header Bearer evitando exposição de JWT em URL.
+ */
+const abrirPdfDocumentoAutenticado = async (processoId, docId, onToast = mostrarToast) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = '/pages/auth/';
+        return;
+    }
+
+    const authHeader = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+    const url = `${window.location.origin}/api/processos/${encodeURIComponent(processoId)}/documentos/${encodeURIComponent(docId)}/arquivo`;
+
+    const response = await fetch(url, {
+        headers: { 'Authorization': authHeader }
+    });
+
+    if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.mensagem || 'Não foi possível abrir o PDF do documento.');
+    }
+
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const novaAba = window.open(blobUrl, '_blank', 'noopener,noreferrer');
+    if (!novaAba) {
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = `documento_${docId}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+    }
+
+    if (typeof onToast === 'function') {
+        onToast('PDF carregado com sucesso!', 'success');
+    }
+
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+};
+
+/**
+ * Solicita download sob demanda de documento via MNI (`POST /api/processos/:id/documentos/:docId/baixar`)
+ * e acompanha o término do job até estar pronto para abertura.
+ */
+const baixarDocumentoMniSobDemanda = async ({ processoId, docId, instancia = '1G' }) => {
+    const resp = await apiFetch(`/api/processos/${encodeURIComponent(processoId)}/documentos/${encodeURIComponent(docId)}/baixar`, {
+        method: 'POST',
+        body: JSON.stringify({ instancia })
+    });
+
+    let statusFinal = null;
+    for (let i = 0; i < 30; i++) {
+        await new Promise(r => setTimeout(r, 400));
+        statusFinal = await apiFetch(`/api/processos/${encodeURIComponent(processoId)}/status-sincronizacao`);
+        const docAtual = (statusFinal.documentos || []).find(
+            d => String(d.id) === String(docId) || String(d.id_documento_tribunal) === String(docId)
+        );
+        if (docAtual?.baixado) {
+            return { concluido: true, documento: docAtual, statusDados: statusFinal };
+        }
+        if (statusFinal.ultimo_job?.id === resp.job_id && statusFinal.ultimo_job?.status === 'FALHA_PERMANENTE') {
+            throw new Error(statusFinal.ultimo_job.mensagem_erro || 'Falha ao baixar documento via MNI.');
+        }
+    }
+
+    return { concluido: false, documento: null, statusDados: statusFinal, job_id: resp.job_id };
+};
+
+export {
+    escapeHtml,
+    formatDate,
+    formatDateTime,
+    normalizeText,
+    mascaraProcessoCNJ,
+    mascaraCpfCnpj,
+    mascaraTelefone,
+    mostrarToast,
+    resolverSeloSincronizacao,
+    abrirPdfDocumentoAutenticado,
+    baixarDocumentoMniSobDemanda,
+    apiFetch
+};

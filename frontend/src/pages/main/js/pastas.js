@@ -458,6 +458,7 @@ const viewItem = (id, tipo) => {
         canDelete: temPolitica('delete_records'),
         onToast: mostrarToast,
         onResyncDatajud: resincronizarDatajudItem,
+        onSyncUpdated: () => executarBuscaEFiltro(),
         onDelete: () => deletarItem(id),
         onEdit: () => editarItem(id)
     });
