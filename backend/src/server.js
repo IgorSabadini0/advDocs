@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 import helmet from 'helmet';
 
 // Middlewares
-import { verifyToken } from './middleware/authMiddleware.js';
+import { verifyToken, requireAdmin } from './middleware/authMiddleware.js';
 
 // Routers (Padrão MVC)
 import clientesRouter from './routes/clientes.js';
@@ -66,7 +66,7 @@ app.use(cors({
     credentials: true
 }));
 
-app.use('/api/credenciais', verifyToken, express.json({ limit: '5mb' }), credenciaisRouter);
+app.use('/api/credenciais', verifyToken, requireAdmin, express.json({ limit: '5mb' }), credenciaisRouter);
 app.use('/api/webhooks', webhooksRouter);
 app.use(express.json({ limit: '16kb' }));
 

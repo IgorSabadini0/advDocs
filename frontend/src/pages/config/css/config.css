@@ -1547,12 +1547,399 @@ body {
     flex-shrink: 0;
 }
 
-.toast-text {
+    .toast-text {
     line-height: 1.35;
+}
+
+/* ==========================================================================
+   PAINEL: CERTIFICADO DIGITAL A1 & MOTOR PROCESSUAL
+   ========================================================================== */
+.motor-kpis-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.motor-kpi-card {
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.motor-kpi-card.is-success {
+    border-left: 3px solid var(--success);
+}
+
+.motor-kpi-card.is-warning {
+    border-left: 3px solid var(--brand-gold);
+}
+
+.motor-kpi-card.is-danger {
+    border-left: 3px solid var(--danger);
+}
+
+.motor-kpi-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.motor-kpi-label i {
+    color: var(--brand-gold);
+}
+
+.motor-kpi-value {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.motor-kpi-sub {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+.credenciais-forms-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.credencial-form-card {
+    gap: 12px;
+}
+
+.credencial-form-header h4 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 3px;
+}
+
+.credencial-form-header h4 i {
+    color: var(--brand-gold);
+}
+
+.credencial-form-header small {
+    font-size: 0.74rem;
+    color: var(--text-secondary);
+    line-height: 1.35;
+    display: block;
+}
+
+.credencial-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.credencial-field label {
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.credencial-field-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.credencial-input {
+    width: 100%;
+    height: 36px;
+    padding: 0 10px;
+    border-radius: var(--radius-xs, 8px);
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface-solid);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    outline: none;
+    transition: var(--transition-smooth);
+}
+
+.credencial-input:focus {
+    border-color: var(--brand-gold);
+    box-shadow: 0 0 0 2px var(--brand-gold-glow);
+}
+
+.password-toggle-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-toggle-wrap .credencial-input {
+    padding-right: 34px;
+}
+
+.btn-toggle-pwd {
+    position: absolute;
+    right: 6px;
+    width: 26px;
+    height: 26px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+}
+
+.btn-toggle-pwd:hover {
+    color: var(--brand-gold);
+}
+
+.file-drop-trigger {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: var(--radius-xs, 8px);
+    border: 1px dashed var(--border-gold-subtle);
+    background: var(--bg-surface-solid);
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    min-height: 42px;
+}
+
+.file-drop-trigger:hover,
+.file-drop-trigger.has-file {
+    border-color: var(--brand-gold);
+    background: var(--brand-gold-glow);
+    color: var(--text-primary);
+}
+
+.file-drop-trigger i {
+    color: var(--brand-gold);
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.file-drop-trigger span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.credencial-form-feedback {
+    font-size: 0.76rem;
+    min-height: 16px;
+    margin: 0;
+}
+
+.credencial-form-feedback.is-error {
+    color: var(--danger);
+}
+
+.credencial-form-feedback.is-success {
+    color: var(--success);
+}
+
+.credencial-submit-btn {
+    width: 100%;
+    justify-content: center;
+    margin-top: auto;
+}
+
+.credenciais-list,
+.motor-jobs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.credencial-item,
+.motor-job-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    flex-wrap: wrap;
+}
+
+.credencial-item.is-inactive {
+    opacity: 0.65;
+}
+
+.credencial-item-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    flex: 1;
+}
+
+.credencial-item-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: var(--brand-gold-glow);
+    border: 1px solid var(--border-gold-subtle);
+    color: var(--brand-gold);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1rem;
+}
+
+.credencial-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.credencial-item-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.credencial-item-title-row strong {
+    font-size: 0.86rem;
+    color: var(--text-primary);
+}
+
+.credencial-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 0.74rem;
+    color: var(--text-secondary);
+}
+
+.credencial-status-pill {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.credencial-status-pill.is-valid {
+    background: rgba(34, 197, 94, 0.14);
+    color: var(--success);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.credencial-status-pill.is-expired,
+.credencial-status-pill.is-error {
+    background: rgba(239, 68, 68, 0.14);
+    color: var(--danger);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.credencial-status-pill.is-inactive {
+    background: var(--bg-subtle-hover);
+    color: var(--text-muted);
+    border: 1px solid var(--border-color);
+}
+
+.credencial-tribunal-badge {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: var(--brand-gold-glow);
+    color: var(--brand-gold-hover);
+    border: 1px solid var(--border-gold-subtle);
+}
+
+.credencial-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.btn-cred-action {
+    height: 32px;
+    padding: 0 11px;
+    border-radius: var(--radius-xs, 8px);
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface-solid);
+    color: var(--text-secondary);
+    font-size: 0.76rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: var(--transition-smooth);
+}
+
+.btn-cred-action:hover {
+    border-color: var(--brand-gold);
+    color: var(--text-primary);
+}
+
+.btn-cred-action.is-danger:hover {
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+.motor-job-left {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    flex: 1;
+}
+
+.motor-job-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.motor-job-top code {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.motor-job-meta {
+    font-size: 0.73rem;
+    color: var(--text-secondary);
+    word-break: break-word;
 }
 
 /* Responsividade (Tablet e Mobile) */
 @media (max-width: 860px) {
+    .motor-kpis-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .credenciais-forms-grid {
+        grid-template-columns: 1fr;
+    }
     .settings-layout {
         grid-template-columns: 1fr;
         min-height: auto;
@@ -1669,6 +2056,21 @@ body {
     .nova-politica-row {
         flex-direction: column;
         align-items: stretch;
+    }
+
+    .credencial-field-row {
+        grid-template-columns: 1fr;
+    }
+
+    .credencial-item,
+    .motor-job-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .credencial-item-actions {
+        width: 100%;
+        justify-content: flex-end;
     }
 
     .theme-selector-grid {

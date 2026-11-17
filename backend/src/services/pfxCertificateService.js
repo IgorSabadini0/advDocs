@@ -231,11 +231,178 @@ export const obterCertificadoA1DescriptografadoEmMemoria = async ({
     };
 };
 
+export const mascararDocumentoTitular = (doc) => {
+    const digitos = String(doc || '').replace(/\D/g, '');
+    if (digitos.length === 11) {
+        return `***.${digitos.slice(3, 6)}.${digitos.slice(6, 9)}-**`;
+    }
+    if (digitos.length === 14) {
+        return `**.***.${digitos.slice(5, 8)}/${digitos.slice(8, 12)}-**`;
+    }
+    if (!doc) return null;
+    const str = String(doc).trim();
+    if (str.length <= 4) return '****';
+    return `${str.slice(0, 2)}***${str.slice(-2)}`;
+};
+
+export const listarCredenciaisCofre = async ({ escritorio_id = 1 } = {}) => {
+    const escId = Number(escritorio_id) > 0 ? Number(escritorio_id) : 1;
+    const [rows] = await db.query(`
+        SELECT id, escritorio_id, tribunal_sigla, tipo_autenticacao,
+               titular_cpf_cnpj, validade_certificado, ativo,
+               ultimo_uso_em, status_credencial, criado_em, atualizado_em
+        FROM credenciais_tribunal
+        WHERE escritorio_id = ?
+        ORDER BY ativo DESC, id DESC
+    `, [escId]);
+
+    const agora = Date.now();
+    return rows.map((row) => {
+        const expirouPorData = row.validade_certificado
+            ? new Date(row.validade_certificado).getTime() < agora
+            : false;
+        const statusEfetivo = (expirouPorData && row.status_credencial === 'VALIDA')
+            ? 'EXPIRADA'
+            : row.status_credencial;
+
+        return {
+            id: row.id,
+            escritorio_id: row.escritorio_id,
+            tribunal_sigla: row.tribunal_sigla,
+            tipo_autenticacao: row.tipo_autenticacao,
+            titular_mascarado: mascararDocumentoTitular(row.titular_cpf_cnpj),
+            validade_certificado: row.validade_certificado,
+            ativo: Boolean(row.ativo),
+            ultimo_uso_em: row.ultimo_uso_em,
+            status_credencial: statusEfetivo,
+            criado_em: row.criado_em,
+            atualizado_em: row.atualizado_em
+        };
+    });
+};
+
+export const salvarCredencialLoginPortal = async ({
+    escritorio_id = 1,
+    tribunal_sigla = 'TJSP',
+    usuario,
+    senha,
+    totp_seed = null
+}) => {
+    const usuarioLimpo = String(usuario || '').trim();
+    const senhaStr = senha === undefined || senha === null ? '' : String(senha);
+    const seedLimpa = totp_seed ? String(totp_seed).replace(/[\s-]+/g, '').toUpperCase() : null;
+
+    if (!usuarioLimpo) {
+        const err = new Error('O usuário/CPF de acesso ao portal é obrigatório.');
+        err.code = 'MISSING_PORTAL_USER';
+        throw err;
+    }
+    if (!senhaStr) {
+        const err = new Error('A senha de acesso ao portal é obrigatória.');
+        err.code = 'MISSING_PORTAL_PASSWORD';
+        throw err;
+    }
+    if (seedLimpa && !/^[A-Z2-7=]+$/.test(seedLimpa)) {
+        const err = new Error('A seed TOTP (2FA) deve estar em formato Base32 válido (A-Z, 2-7).');
+        err.code = 'INVALID_TOTP_SEED';
+        throw err;
+    }
+
+    const escId = Number(escritorio_id) > 0 ? Number(escritorio_id) : 1;
+    const tribunalNorm = String(tribunal_sigla || 'TJSP').trim().toUpperCase().slice(0, 15);
+    const tipoAuth = seedLimpa ? 'CPF_SENHA_TOTP' : 'CPF_SENHA';
+
+    const payloadCifrado = CredentialVaultService.encryptCredentialsJson({
+        usuario: usuarioLimpo,
+        senha: senhaStr,
+        ...(seedLimpa ? { totp_seed: seedLimpa } : {})
+    });
+
+    const titularSalvo = usuarioLimpo.slice(0, 20);
+    const conn = await db.getConnection();
+    try {
+        await conn.beginTransaction();
+
+        await conn.query(`
+            UPDATE credenciais_tribunal
+            SET ativo = FALSE
+            WHERE escritorio_id = ?
+              AND tribunal_sigla = ?
+              AND tipo_autenticacao IN ('CPF_SENHA', 'CPF_SENHA_TOTP')
+              AND ativo = TRUE
+        `, [escId, tribunalNorm]);
+
+        const [resInsert] = await conn.query(`
+            INSERT INTO credenciais_tribunal (
+                escritorio_id, tribunal_sigla, tipo_autenticacao, titular_cpf_cnpj,
+                payload_criptografado, iv_hex, auth_tag_hex, validade_certificado,
+                ativo, status_credencial
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, TRUE, 'VALIDA')
+        `, [
+            escId,
+            tribunalNorm,
+            tipoAuth,
+            titularSalvo,
+            payloadCifrado.payload_criptografado,
+            payloadCifrado.iv_hex,
+            payloadCifrado.auth_tag_hex
+        ]);
+
+        await conn.commit();
+
+        return {
+            id: resInsert.insertId,
+            escritorio_id: escId,
+            tribunal_sigla: tribunalNorm,
+            tipo_autenticacao: tipoAuth,
+            titular_mascarado: mascararDocumentoTitular(titularSalvo),
+            ativo: true,
+            status_credencial: 'VALIDA'
+        };
+    } catch (error) {
+        await conn.rollback();
+        throw error;
+    } finally {
+        conn.release();
+    }
+};
+
+export const alterarStatusAtivoCredencial = async ({ id, escritorio_id = 1, ativo }) => {
+    const credId = Number(id);
+    const escId = Number(escritorio_id) > 0 ? Number(escritorio_id) : 1;
+    if (!Number.isInteger(credId) || credId <= 0) return null;
+
+    const [resUpdate] = await db.query(
+        'UPDATE credenciais_tribunal SET ativo = ? WHERE id = ? AND escritorio_id = ?',
+        [Boolean(ativo), credId, escId]
+    );
+    if (resUpdate.affectedRows === 0) return null;
+
+    return { id: credId, ativo: Boolean(ativo) };
+};
+
+export const removerCredencialCofre = async ({ id, escritorio_id = 1 }) => {
+    const credId = Number(id);
+    const escId = Number(escritorio_id) > 0 ? Number(escritorio_id) : 1;
+    if (!Number.isInteger(credId) || credId <= 0) return false;
+
+    const [resDelete] = await db.query(
+        'DELETE FROM credenciais_tribunal WHERE id = ? AND escritorio_id = ?',
+        [credId, escId]
+    );
+    return resDelete.affectedRows > 0;
+};
+
 export const PfxCertificateService = {
     extrairDocumentoIcpBrasil,
+    mascararDocumentoTitular,
     validarEExtrairMetadadosPfx,
     salvarCertificadoA1NoCofre,
-    obterCertificadoA1DescriptografadoEmMemoria
+    obterCertificadoA1DescriptografadoEmMemoria,
+    listarCredenciaisCofre,
+    salvarCredencialLoginPortal,
+    alterarStatusAtivoCredencial,
+    removerCredencialCofre
 };
 
 export default PfxCertificateService;

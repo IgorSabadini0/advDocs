@@ -346,4 +346,79 @@ describe('FASE 6 — Agendador Diário (Cron Noturno) e Fluxo Completo Ponta a P
             assert.equal(typeof detalhe.movimentacoes_nao_lidas, 'number');
         }
     });
+
+    it('API de gestão do Cofre e Painel do Motor (/api/credenciais) lista sem expor segredos, salva portal 2FA, alterna ativo e remove', async () => {
+        // 1) Salva credencial de portal com TOTP 2FA
+        const portalResp = await fetch(`${apiBaseUrl}/api/credenciais/login-portal`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                escritorio_id: ESCRITORIO_TESTE_F6,
+                tribunal_sigla: 'TJSP',
+                usuario: '12345678909',
+                senha: 'SenhaPortalSuperSecreta',
+                totp_seed: 'JBSWY3DPEHPK3PXP'
+            })
+        });
+        assert.equal(portalResp.status, 201);
+        const portalBody = await portalResp.json();
+        assert.equal(portalBody.credencial.tipo_autenticacao, 'CPF_SENHA_TOTP');
+        assert.equal(portalBody.credencial.titular_mascarado, '***.456.789-**');
+
+        // Seed TOTP inválida deve retornar 400
+        const badTotpResp = await fetch(`${apiBaseUrl}/api/credenciais/login-portal`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                escritorio_id: ESCRITORIO_TESTE_F6,
+                tribunal_sigla: 'TJSP',
+                usuario: '12345678909',
+                senha: '123',
+                totp_seed: 'INVALIDA*01!'
+            })
+        });
+        assert.equal(badTotpResp.status, 400);
+
+        // 2) Lista credenciais e garante zero vazamento de payload/iv/auth_tag/senha
+        const listResp = await fetch(`${apiBaseUrl}/api/credenciais?escritorio_id=${ESCRITORIO_TESTE_F6}`);
+        assert.equal(listResp.status, 200);
+        const listBody = await listResp.json();
+        assert.equal(listBody.credenciais.length >= 2, true);
+        for (const cred of listBody.credenciais) {
+            assert.equal('payload_criptografado' in cred, false);
+            assert.equal('iv_hex' in cred, false);
+            assert.equal('auth_tag_hex' in cred, false);
+            assert.equal('senha' in cred, false);
+            assert.equal('pfx_base64' in cred, false);
+        }
+
+        // 3) Consulta resumo do motor (KPIs + jobs recentes) e dispara varredura manual
+        const resumoResp = await fetch(`${apiBaseUrl}/api/credenciais/resumo-motor?escritorio_id=${ESCRITORIO_TESTE_F6}`);
+        assert.equal(resumoResp.status, 200);
+        const resumoBody = await resumoResp.json();
+        assert.equal(typeof resumoBody.estatisticas.monitorados, 'number');
+        assert.equal(Array.isArray(resumoBody.ultimos_jobs), true);
+
+        const sweepResp = await fetch(`${apiBaseUrl}/api/credenciais/varredura-manual`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ escritorio_id: ESCRITORIO_TESTE_F6 })
+        });
+        assert.equal(sweepResp.status, 202);
+
+        // 4) Desativa e exclui a credencial de portal criada
+        const credId = portalBody.credencial.id;
+        const toggleResp = await fetch(`${apiBaseUrl}/api/credenciais/${credId}/ativo?escritorio_id=${ESCRITORIO_TESTE_F6}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ativo: false, escritorio_id: ESCRITORIO_TESTE_F6 })
+        });
+        assert.equal(toggleResp.status, 200);
+        assert.equal((await toggleResp.json()).credencial.ativo, false);
+
+        const delResp = await fetch(`${apiBaseUrl}/api/credenciais/${credId}?escritorio_id=${ESCRITORIO_TESTE_F6}`, {
+            method: 'DELETE'
+        });
+        assert.equal(delResp.status, 200);
+    });
 });

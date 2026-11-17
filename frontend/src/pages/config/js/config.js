@@ -32,18 +32,20 @@ const MAPA_HASH_PAINEL = {
     '#perfil': 'panel-perfil',
     '#tipos': 'panel-tipos',
     '#rbac': 'panel-rbac',
-    '#usuarios': 'panel-usuarios'
+    '#usuarios': 'panel-usuarios',
+    '#integracoes': 'panel-integracoes'
 };
 
 const MAPA_PAINEL_HASH = {
     'panel-perfil': '#perfil',
     'panel-tipos': '#tipos',
     'panel-rbac': '#rbac',
-    'panel-usuarios': '#usuarios'
+    'panel-usuarios': '#usuarios',
+    'panel-integracoes': '#integracoes'
 };
 
 const alternarPainel = (targetId, atualizarHash = true) => {
-    const adminOnlyPanels = ['panel-rbac', 'panel-usuarios'];
+    const adminOnlyPanels = ['panel-rbac', 'panel-usuarios', 'panel-integracoes'];
     if (adminOnlyPanels.includes(targetId) && !isUsuarioAdmin()) {
         targetId = 'panel-perfil';
     }
@@ -89,6 +91,7 @@ const carregarMeuPerfil = async () => {
         const sidebarGroupAdmin = document.getElementById('sidebarGroupAdmin');
         const navItemRbac = document.getElementById('navItemRbac');
         const navItemUsuarios = document.getElementById('navItemUsuarios');
+        const navItemIntegracoes = document.getElementById('navItemIntegracoes');
         const btnNovoUsuario = document.getElementById('btnNovoUsuario');
 
         if (userNameEl) userNameEl.textContent = usuarioLogado.name;
@@ -122,6 +125,7 @@ const carregarMeuPerfil = async () => {
         if (sidebarGroupAdmin) sidebarGroupAdmin.style.display = admin ? 'flex' : 'none';
         if (navItemRbac) navItemRbac.style.display = admin ? 'flex' : 'none';
         if (navItemUsuarios) navItemUsuarios.style.display = admin ? 'flex' : 'none';
+        if (navItemIntegracoes) navItemIntegracoes.style.display = admin ? 'flex' : 'none';
         if (btnNovoUsuario) btnNovoUsuario.style.display = admin ? 'inline-flex' : 'none';
 
         if (!admin) {
@@ -1536,6 +1540,461 @@ const inicializarSeletorTema = () => {
     window.addEventListener('advdocs:theme-change', atualizarUIThemeSelector);
 };
 
+// --- 5. CERTIFICADO DIGITAL A1, CREDENCIAIS & MOTOR PROCESSUAL ---
+
+const formatarDataHoraPt = (valor) => {
+    if (!valor) return '—';
+    const d = new Date(valor);
+    if (Number.isNaN(d.getTime())) return '—';
+    return d.toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+};
+
+const lerArquivoComoBase64 = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+        const result = String(reader.result || '');
+        const idx = result.indexOf(',');
+        resolve(idx >= 0 ? result.slice(idx + 1) : result);
+    };
+    reader.onerror = () => reject(new Error('Não foi possível ler o arquivo selecionado.'));
+    reader.readAsDataURL(file);
+});
+
+const resolverStatusCredencialUI = (cred) => {
+    if (!cred.ativo) {
+        return { cls: 'is-inactive', label: 'Desativado' };
+    }
+    if (cred.status_credencial === 'EXPIRADA') {
+        return { cls: 'is-expired', label: 'Expirado' };
+    }
+    if (cred.status_credencial === 'ERRO_AUTENTICACAO') {
+        return { cls: 'is-error', label: 'Erro Auth' };
+    }
+    return { cls: 'is-valid', label: 'Ativo e Válido' };
+};
+
+const LABELS_TIPO_AUTH = {
+    CERTIFICADO_A1: 'Certificado A1 (.pfx / mTLS)',
+    CPF_SENHA: 'Login Portal (CPF + Senha)',
+    CPF_SENHA_TOTP: 'Login Portal (CPF + Senha + 2FA TOTP)'
+};
+
+const renderizarListaCredenciais = (lista) => {
+    const container = document.getElementById('credenciaisListContainer');
+    const badgeSidebar = document.getElementById('badgeCountCredenciais');
+    const totalLabel = document.getElementById('credenciaisTotalLabel');
+
+    const ativasCount = lista.filter(c => c.ativo).length;
+    if (badgeSidebar) badgeSidebar.textContent = String(ativasCount);
+    if (totalLabel) totalLabel.textContent = `${lista.length} ${lista.length === 1 ? 'cadastrada' : 'cadastradas'}`;
+
+    if (!container) return;
+
+    if (lista.length === 0) {
+        container.innerHTML = `
+            <div class="surface-box">
+                <span class="surface-box-helper">
+                    Nenhum certificado A1 ou acesso de portal cadastrado no cofre. Cadastre acima para habilitar consultas MNI 2.2.2 e fallback automatizado.
+                </span>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = lista.map((cred) => {
+        const st = resolverStatusCredencialUI(cred);
+        const isA1 = cred.tipo_autenticacao === 'CERTIFICADO_A1';
+        const iconCls = isA1 ? 'fa-shield-halved' : 'fa-key';
+        const tipoLabel = LABELS_TIPO_AUTH[cred.tipo_autenticacao] || cred.tipo_autenticacao;
+        const validadeTexto = isA1 ? `Validade: ${formatarDataHoraPt(cred.validade_certificado)}` : 'Credencial de Portal';
+
+        return `
+            <div class="credencial-item ${cred.ativo ? '' : 'is-inactive'}">
+                <div class="credencial-item-main">
+                    <div class="credencial-item-icon">
+                        <i class="fa-solid ${iconCls}"></i>
+                    </div>
+                    <div class="credencial-item-info">
+                        <div class="credencial-item-title-row">
+                            <strong>${escapeHtml(tipoLabel)}</strong>
+                            <span class="credencial-tribunal-badge">${escapeHtml(cred.tribunal_sigla)}</span>
+                            <span class="credencial-status-pill ${st.cls}">${escapeHtml(st.label)}</span>
+                        </div>
+                        <div class="credencial-meta-row">
+                            <span><i class="fa-solid fa-id-badge"></i> Titular: ${escapeHtml(cred.titular_mascarado || 'Não informado')}</span>
+                            <span><i class="fa-solid fa-calendar-check"></i> ${escapeHtml(validadeTexto)}</span>
+                            <span><i class="fa-solid fa-clock"></i> Último uso: ${escapeHtml(formatarDataHoraPt(cred.ultimo_uso_em))}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="credencial-item-actions">
+                    <button type="button" class="btn-cred-action" data-cred-toggle="${cred.id}" data-cred-ativo="${cred.ativo ? 'true' : 'false'}">
+                        <i class="fa-solid ${cred.ativo ? 'fa-pause' : 'fa-play'}"></i>
+                        ${cred.ativo ? 'Desativar' : 'Ativar'}
+                    </button>
+                    <button type="button" class="btn-cred-action is-danger" data-cred-delete="${cred.id}" data-cred-label="${escapeHtml(`${cred.tribunal_sigla} (${tipoLabel})`)}">
+                        <i class="fa-solid fa-trash-can"></i> Excluir
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    container.querySelectorAll('[data-cred-toggle]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+            const id = btn.dataset.credToggle;
+            const ativoAtual = btn.dataset.credAtivo === 'true';
+            btn.disabled = true;
+            try {
+                await apiFetch(`/api/credenciais/${encodeURIComponent(id)}/ativo`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ ativo: !ativoAtual })
+                });
+                mostrarToast(!ativoAtual ? 'Credencial ativada!' : 'Credencial desativada.', 'info');
+                await carregarPainelIntegracoes();
+            } catch (err) {
+                mostrarToast(err.data?.mensagem || 'Não foi possível atualizar a credencial.', 'error');
+                btn.disabled = false;
+            }
+        });
+    });
+
+    container.querySelectorAll('[data-cred-delete]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            confirmarExclusaoCredencial(btn.dataset.credDelete, btn.dataset.credLabel);
+        });
+    });
+};
+
+const confirmarExclusaoCredencial = (id, label) => {
+    const antigo = document.getElementById('modalConfirmDeleteCred');
+    if (antigo) antigo.remove();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay show';
+    overlay.id = 'modalConfirmDeleteCred';
+    overlay.innerHTML = `
+        <div class="modal-confirm-content">
+            <i class="fa-solid fa-triangle-exclamation modal-confirm-icon" style="color: var(--danger);"></i>
+            <h3>Remover Credencial do Cofre</h3>
+            <p>Deseja excluir permanentemente <strong>${escapeHtml(label)}</strong>? Processos que dependam dela voltarão ao fallback disponível.</p>
+            <div class="confirm-buttons-group">
+                <button type="button" class="btn-cancel-modal" id="btnCancelDelCred">Cancelar</button>
+                <button type="button" class="btn-confirm-del" id="btnConfirmDelCred">Excluir Credencial</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const fechar = () => {
+        overlay.classList.remove('show');
+        setTimeout(() => overlay.remove(), 250);
+    };
+
+    document.getElementById('btnCancelDelCred')?.addEventListener('click', fechar);
+    overlay.addEventListener('mousedown', (e) => { if (e.target === overlay) fechar(); });
+
+    document.getElementById('btnConfirmDelCred')?.addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        try {
+            await apiFetch(`/api/credenciais/${encodeURIComponent(id)}`, { method: 'DELETE' });
+            fechar();
+            mostrarToast('Credencial removida do cofre com sucesso.');
+            await carregarPainelIntegracoes();
+        } catch (err) {
+            mostrarToast(err.data?.mensagem || 'Erro ao remover credencial.', 'error');
+            btn.disabled = false;
+        }
+    });
+};
+
+const renderizarResumoMotor = (resumo) => {
+    const est = resumo?.estatisticas || {};
+    const elMon = document.getElementById('kpiMotorMonitorados');
+    const elAtu = document.getElementById('kpiMotorAtualizados');
+    const elFil = document.getElementById('kpiMotorEmFila');
+    const elErr = document.getElementById('kpiMotorErros');
+    const elCron = document.getElementById('kpiCronHorario');
+
+    if (elMon) elMon.textContent = String(est.monitorados ?? 0);
+    if (elAtu) elAtu.textContent = String(est.atualizados ?? 0);
+    if (elFil) elFil.textContent = String(est.em_fila ?? 0);
+    if (elErr) elErr.textContent = String(est.com_erro ?? 0);
+    if (elCron && resumo?.agendamento?.horario_cron) {
+        elCron.textContent = `Cron diário: ${resumo.agendamento.horario_cron}`;
+    }
+
+    const jobs = Array.isArray(resumo?.ultimos_jobs) ? resumo.ultimos_jobs : [];
+    const jobsLabel = document.getElementById('motorJobsTotalLabel');
+    const container = document.getElementById('motorJobsListContainer');
+    if (jobsLabel) jobsLabel.textContent = `${jobs.length} ${jobs.length === 1 ? 'recente' : 'recentes'}`;
+    if (!container) return;
+
+    if (jobs.length === 0) {
+        container.innerHTML = `
+            <div class="surface-box">
+                <span class="surface-box-helper">Nenhum job de sincronização registrado até o momento.</span>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = jobs.map((job) => {
+        const statusCls = job.status === 'SUCESSO'
+            ? 'is-valid'
+            : (job.status === 'FALHA_PERMANENTE' || job.status === 'FALHA_TEMPORARIA' ? 'is-error' : 'is-inactive');
+        const tempoTxt = job.tempo_execucao_ms ? `${job.tempo_execucao_ms}ms` : '—';
+        const erroHtml = job.mensagem_erro
+            ? `<div class="motor-job-meta" style="color: var(--danger);">${escapeHtml(job.mensagem_erro)}</div>`
+            : '';
+
+        return `
+            <div class="motor-job-item">
+                <div class="motor-job-left">
+                    <div class="motor-job-top">
+                        <code>${escapeHtml(job.numero_cnj_formatado || `#${job.processo_id}`)}</code>
+                        <span class="credencial-tribunal-badge">${escapeHtml(job.tribunal_sigla || '—')}</span>
+                        <span class="credencial-tribunal-badge">${escapeHtml(`${job.fonte_utilizada} • ${job.tipo_job}`)}</span>
+                        <span class="credencial-status-pill ${statusCls}">${escapeHtml(job.status)}</span>
+                    </div>
+                    <div class="motor-job-meta">
+                        Criado em ${escapeHtml(formatarDataHoraPt(job.criado_em))} • Tentativa ${job.tentativa_atual}/${job.max_tentativas} • +${job.novas_movimentacoes_inseridas || 0} mov(s) • ${escapeHtml(tempoTxt)}
+                    </div>
+                    ${erroHtml}
+                </div>
+            </div>
+        `;
+    }).join('');
+};
+
+const carregarPainelIntegracoes = async () => {
+    if (!isUsuarioAdmin()) return;
+
+    try {
+        const [credResp, motorResp] = await Promise.all([
+            apiFetch('/api/credenciais'),
+            apiFetch('/api/credenciais/resumo-motor')
+        ]);
+
+        renderizarListaCredenciais(Array.isArray(credResp?.credenciais) ? credResp.credenciais : []);
+        renderizarResumoMotor(motorResp);
+    } catch (err) {
+        if (err.status === 403) return;
+        console.error('Erro ao carregar painel de integrações:', err);
+        mostrarToast('Não foi possível carregar os dados do cofre de certificados.', 'error');
+    }
+};
+
+const inicializarPainelIntegracoes = () => {
+    const fileInput = document.getElementById('inputPfxArquivo');
+    const fileTrigger = document.getElementById('pfxFileTrigger');
+    const fileLabel = document.getElementById('pfxFileLabel');
+    const formA1 = document.getElementById('formCertificadoA1');
+    const feedbackA1 = document.getElementById('feedbackCertA1');
+    const formPortal = document.getElementById('formCredencialPortal');
+    const feedbackPortal = document.getElementById('feedbackPortalLogin');
+
+    document.querySelectorAll('.btn-toggle-pwd[data-toggle-target]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const target = document.getElementById(btn.dataset.toggleTarget);
+            if (!target) return;
+            const mostrar = target.type === 'password';
+            target.type = mostrar ? 'text' : 'password';
+            const icon = btn.querySelector('i');
+            if (icon) {
+                icon.className = mostrar ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+            }
+        });
+    });
+
+    fileInput?.addEventListener('change', () => {
+        const file = fileInput.files?.[0];
+        if (!file) {
+            fileTrigger?.classList.remove('has-file');
+            if (fileLabel) fileLabel.textContent = 'Clique para selecionar o arquivo .pfx / .p12';
+            return;
+        }
+        const sizeKb = Math.max(1, Math.round(file.size / 1024));
+        fileTrigger?.classList.add('has-file');
+        if (fileLabel) fileLabel.textContent = `${file.name} (${sizeKb} KB)`;
+    });
+
+    formA1?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (feedbackA1) {
+            feedbackA1.className = 'credencial-form-feedback';
+            feedbackA1.textContent = '';
+        }
+
+        const file = fileInput?.files?.[0];
+        const senhaInput = document.getElementById('inputPfxSenha');
+        const titularInput = document.getElementById('inputPfxTitular');
+        const tribunalSelect = document.getElementById('selectCertTribunal');
+        const btnSubmit = document.getElementById('btnSalvarCertificadoA1');
+
+        if (!file) {
+            if (feedbackA1) {
+                feedbackA1.className = 'credencial-form-feedback is-error';
+                feedbackA1.textContent = 'Selecione o arquivo .pfx ou .p12 do certificado digital A1.';
+            }
+            return;
+        }
+
+        if (!/\.(pfx|p12)$/i.test(file.name)) {
+            if (feedbackA1) {
+                feedbackA1.className = 'credencial-form-feedback is-error';
+                feedbackA1.textContent = 'Formato inválido. Selecione um arquivo com extensão .pfx ou .p12.';
+            }
+            return;
+        }
+
+        if (file.size > 3.5 * 1024 * 1024) {
+            if (feedbackA1) {
+                feedbackA1.className = 'credencial-form-feedback is-error';
+                feedbackA1.textContent = 'Arquivo .pfx excede o limite de 3,5 MB.';
+            }
+            return;
+        }
+
+        const senha = senhaInput?.value ?? '';
+        if (!senha) {
+            if (feedbackA1) {
+                feedbackA1.className = 'credencial-form-feedback is-error';
+                feedbackA1.textContent = 'Informe a senha do certificado digital.';
+            }
+            senhaInput?.focus();
+            return;
+        }
+
+        const originalHtml = btnSubmit.innerHTML;
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Validando em RAM...';
+
+        try {
+            const pfx_base64 = await lerArquivoComoBase64(file);
+            const resp = await apiFetch('/api/credenciais/certificado-a1', {
+                method: 'POST',
+                body: JSON.stringify({
+                    tribunal_sigla: tribunalSelect?.value || 'TRF3',
+                    pfx_base64,
+                    senha,
+                    titular_cpf_cnpj: titularInput?.value.trim() || null
+                })
+            });
+
+            if (fileInput) fileInput.value = '';
+            if (senhaInput) senhaInput.value = '';
+            if (titularInput) titularInput.value = '';
+            fileTrigger?.classList.remove('has-file');
+            if (fileLabel) fileLabel.textContent = 'Clique para selecionar o arquivo .pfx / .p12';
+
+            if (feedbackA1) {
+                feedbackA1.className = 'credencial-form-feedback is-success';
+                feedbackA1.textContent = resp?.mensagem || 'Certificado A1 armazenado com sucesso.';
+            }
+            mostrarToast('Certificado Digital A1 validado e salvo no cofre!');
+            await carregarPainelIntegracoes();
+        } catch (err) {
+            if (feedbackA1) {
+                feedbackA1.className = 'credencial-form-feedback is-error';
+                feedbackA1.textContent = err.data?.mensagem || err.message || 'Falha ao validar certificado .pfx.';
+            }
+        } finally {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = originalHtml;
+        }
+    });
+
+    formPortal?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (feedbackPortal) {
+            feedbackPortal.className = 'credencial-form-feedback';
+            feedbackPortal.textContent = '';
+        }
+
+        const tribunalSelect = document.getElementById('selectPortalTribunal');
+        const userInput = document.getElementById('inputPortalUsuario');
+        const senhaInput = document.getElementById('inputPortalSenha');
+        const totpInput = document.getElementById('inputPortalTotp');
+        const btnSubmit = document.getElementById('btnSalvarCredencialPortal');
+
+        const usuario = userInput?.value.trim() || '';
+        const senha = senhaInput?.value || '';
+        const totp_seed = totpInput?.value.trim() || null;
+
+        if (!usuario || !senha) {
+            if (feedbackPortal) {
+                feedbackPortal.className = 'credencial-form-feedback is-error';
+                feedbackPortal.textContent = 'Informe o CPF/usuário e a senha de acesso ao portal.';
+            }
+            return;
+        }
+
+        const originalHtml = btnSubmit.innerHTML;
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Criptografando...';
+
+        try {
+            const resp = await apiFetch('/api/credenciais/login-portal', {
+                method: 'POST',
+                body: JSON.stringify({
+                    tribunal_sigla: tribunalSelect?.value || 'TJSP',
+                    usuario,
+                    senha,
+                    totp_seed
+                })
+            });
+
+            if (userInput) userInput.value = '';
+            if (senhaInput) senhaInput.value = '';
+            if (totpInput) totpInput.value = '';
+
+            if (feedbackPortal) {
+                feedbackPortal.className = 'credencial-form-feedback is-success';
+                feedbackPortal.textContent = resp?.mensagem || 'Credencial salva com segurança.';
+            }
+            mostrarToast('Credencial de portal criptografada e salva!');
+            await carregarPainelIntegracoes();
+        } catch (err) {
+            if (feedbackPortal) {
+                feedbackPortal.className = 'credencial-form-feedback is-error';
+                feedbackPortal.textContent = err.data?.mensagem || 'Erro ao salvar credencial.';
+            }
+        } finally {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = originalHtml;
+        }
+    });
+
+    document.getElementById('btnAtualizarMotor')?.addEventListener('click', () => {
+        carregarPainelIntegracoes();
+    });
+
+    document.getElementById('btnVarreduraManual')?.addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enfileirando...';
+        try {
+            const resp = await apiFetch('/api/credenciais/varredura-manual', { method: 'POST' });
+            mostrarToast(resp?.mensagem || 'Varredura disparada com sucesso.', 'info');
+            await carregarPainelIntegracoes();
+        } catch (err) {
+            mostrarToast(err.data?.mensagem || 'Erro ao executar varredura manual.', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
+    });
+};
+
 // --- INICIALIZAÇÃO ---
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -1563,6 +2022,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (isUsuarioAdmin()) {
         await carregarDadosRBAC();
+        inicializarPainelIntegracoes();
+        await carregarPainelIntegracoes();
     }
     await carregarUsuariosConfig();
 

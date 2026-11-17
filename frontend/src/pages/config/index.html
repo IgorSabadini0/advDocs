@@ -99,6 +99,15 @@
                             </span>
                             <span class="sidebar-count-pill" id="badgeCountUsuarios">0</span>
                         </button>
+
+                        <button type="button" class="sidebar-nav-item" data-target="panel-integracoes" id="navItemIntegracoes" style="display: none;">
+                            <span class="nav-item-icon"><i class="fa-solid fa-certificate"></i></span>
+                            <span class="nav-item-text">
+                                <strong>Certificado & Motor</strong>
+                                <small>A1 (.pfx), portais e cron</small>
+                            </span>
+                            <span class="sidebar-count-pill" id="badgeCountCredenciais">0</span>
+                        </button>
                     </div>
                 </nav>
 
@@ -324,6 +333,175 @@
 
                         <div id="usuariosListContainer" class="users-list">
                             <!-- Lista de usuários carregada via JS -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PAINEL 5: CERTIFICADO DIGITAL A1 & MOTOR PROCESSUAL -->
+                <section class="settings-panel" id="panel-integracoes" data-admin-only="true">
+                    <header class="panel-header">
+                        <div class="panel-header-info">
+                            <h2><i class="fa-solid fa-certificate"></i> Certificado Digital & Motor Processual</h2>
+                            <p>Conecte certificados A1 (.pfx) para mTLS no TRF3 (MNI 2.2.2), credenciais de portal e monitore a fila e o cron diário.</p>
+                        </div>
+                        <div class="panel-header-actions">
+                            <button type="button" class="btn-panel-secondary" id="btnAtualizarMotor" title="Recarregar status do cofre e da fila">
+                                <i class="fa-solid fa-rotate"></i> Atualizar Painel
+                            </button>
+                            <button type="button" class="btn-panel-primary" id="btnVarreduraManual" title="Enfileirar processos monitorados há mais de 24h">
+                                <i class="fa-solid fa-bolt"></i> Executar Varredura Agora
+                            </button>
+                        </div>
+                    </header>
+
+                    <!-- KPIs do Motor Híbrido -->
+                    <div class="motor-kpis-grid" id="motorKpisGrid">
+                        <div class="motor-kpi-card">
+                            <span class="motor-kpi-label"><i class="fa-solid fa-satellite-dish"></i> Monitorados</span>
+                            <strong class="motor-kpi-value" id="kpiMotorMonitorados">0</strong>
+                            <small class="motor-kpi-sub" id="kpiCronHorario">Cron diário: 02:00</small>
+                        </div>
+                        <div class="motor-kpi-card is-success">
+                            <span class="motor-kpi-label"><i class="fa-solid fa-circle-check"></i> Atualizados</span>
+                            <strong class="motor-kpi-value" id="kpiMotorAtualizados">0</strong>
+                            <small class="motor-kpi-sub">Sincronização OK</small>
+                        </div>
+                        <div class="motor-kpi-card is-warning">
+                            <span class="motor-kpi-label"><i class="fa-solid fa-spinner"></i> Na Fila / Sync</span>
+                            <strong class="motor-kpi-value" id="kpiMotorEmFila">0</strong>
+                            <small class="motor-kpi-sub">Pendentes ou rodando</small>
+                        </div>
+                        <div class="motor-kpi-card is-danger">
+                            <span class="motor-kpi-label"><i class="fa-solid fa-triangle-exclamation"></i> Atenção / Erro</span>
+                            <strong class="motor-kpi-value" id="kpiMotorErros">0</strong>
+                            <small class="motor-kpi-sub">Falha ou sem credencial</small>
+                        </div>
+                    </div>
+
+                    <!-- Formulários do Cofre AES-256-GCM -->
+                    <div class="config-section">
+                        <div class="section-title-row">
+                            <h3><i class="fa-solid fa-vault"></i> Conectar Credenciais no Cofre Criptografado (AES-256-GCM)</h3>
+                            <span class="section-counter">Somente RAM + AES-GCM</span>
+                        </div>
+
+                        <div class="credenciais-forms-grid">
+                            <!-- Card 1: Certificado A1 (.pfx / .p12) -->
+                            <form class="surface-box credencial-form-card" id="formCertificadoA1" novalidate>
+                                <div class="credencial-form-header">
+                                    <h4><i class="fa-solid fa-shield-halved"></i> Certificado Digital A1 (.pfx / .p12)</h4>
+                                    <small>Habilita consulta MNI 2.2.2 com mTLS (teor completo e download de PDFs).</small>
+                                </div>
+
+                                <div class="credencial-field">
+                                    <label for="selectCertTribunal">Tribunal de Vínculo</label>
+                                    <select id="selectCertTribunal" class="credencial-input">
+                                        <option value="TRF3">TRF3 — PJe / MNI 2.2.2 (Recomendado)</option>
+                                        <option value="GLOBAL">GLOBAL — Uso Geral (Qualquer Tribunal)</option>
+                                        <option value="TJSP">TJSP</option>
+                                        <option value="TRF1">TRF1</option>
+                                        <option value="TRF2">TRF2</option>
+                                        <option value="TRF4">TRF4</option>
+                                    </select>
+                                </div>
+
+                                <div class="credencial-field">
+                                    <label for="inputPfxArquivo">Arquivo do Certificado (.pfx ou .p12)</label>
+                                    <label for="inputPfxArquivo" class="file-drop-trigger" id="pfxFileTrigger">
+                                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                                        <span id="pfxFileLabel">Clique para selecionar o arquivo .pfx / .p12</span>
+                                    </label>
+                                    <input type="file" id="inputPfxArquivo" accept=".pfx,.p12,application/x-pkcs12" hidden>
+                                </div>
+
+                                <div class="credencial-field-row">
+                                    <div class="credencial-field">
+                                        <label for="inputPfxSenha">Senha do Certificado</label>
+                                        <div class="password-toggle-wrap">
+                                            <input type="password" id="inputPfxSenha" class="credencial-input" placeholder="Senha do arquivo .pfx" autocomplete="new-password">
+                                            <button type="button" class="btn-toggle-pwd" data-toggle-target="inputPfxSenha" title="Mostrar/ocultar senha">
+                                                <i class="fa-solid fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="credencial-field">
+                                        <label for="inputPfxTitular">CPF/CNPJ Titular (opcional)</label>
+                                        <input type="text" id="inputPfxTitular" class="credencial-input" placeholder="Extraído automático do ICP-Brasil" maxlength="20">
+                                    </div>
+                                </div>
+
+                                <p class="credencial-form-feedback" id="feedbackCertA1" aria-live="polite"></p>
+
+                                <button type="submit" class="btn-panel-primary credencial-submit-btn" id="btnSalvarCertificadoA1">
+                                    <i class="fa-solid fa-shield-halved"></i> Validar e Salvar Certificado A1
+                                </button>
+                            </form>
+
+                            <!-- Card 2: Credencial Portal PJe / e-SAJ (+ TOTP 2FA) -->
+                            <form class="surface-box credencial-form-card" id="formCredencialPortal" novalidate>
+                                <div class="credencial-form-header">
+                                    <h4><i class="fa-solid fa-user-lock"></i> Login de Portal + 2FA TOTP (Fallback)</h4>
+                                    <small>Utilizado pelo scraper Playwright (e-SAJ TJSP / PJe) quando não há MNI.</small>
+                                </div>
+
+                                <div class="credencial-field">
+                                    <label for="selectPortalTribunal">Tribunal do Portal</label>
+                                    <select id="selectPortalTribunal" class="credencial-input">
+                                        <option value="TJSP">TJSP — e-SAJ</option>
+                                        <option value="TRF3">TRF3 — PJe</option>
+                                        <option value="GLOBAL">GLOBAL</option>
+                                    </select>
+                                </div>
+
+                                <div class="credencial-field">
+                                    <label for="inputPortalUsuario">CPF ou Usuário de Acesso</label>
+                                    <input type="text" id="inputPortalUsuario" class="credencial-input" placeholder="Ex.: 12345678900" maxlength="64" autocomplete="off">
+                                </div>
+
+                                <div class="credencial-field-row">
+                                    <div class="credencial-field">
+                                        <label for="inputPortalSenha">Senha do Portal</label>
+                                        <div class="password-toggle-wrap">
+                                            <input type="password" id="inputPortalSenha" class="credencial-input" placeholder="Senha do portal" autocomplete="new-password">
+                                            <button type="button" class="btn-toggle-pwd" data-toggle-target="inputPortalSenha" title="Mostrar/ocultar senha">
+                                                <i class="fa-solid fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="credencial-field">
+                                        <label for="inputPortalTotp">Seed TOTP 2FA (opcional)</label>
+                                        <input type="text" id="inputPortalTotp" class="credencial-input" placeholder="Chave Base32 (ex: JBSWY3DPEHPK3PXP)" autocomplete="off">
+                                    </div>
+                                </div>
+
+                                <p class="credencial-form-feedback" id="feedbackPortalLogin" aria-live="polite"></p>
+
+                                <button type="submit" class="btn-panel-secondary credencial-submit-btn" id="btnSalvarCredencialPortal">
+                                    <i class="fa-solid fa-key"></i> Salvar Credencial de Portal
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Lista de Certificados e Credenciais Cadastradas -->
+                    <div class="config-section">
+                        <div class="section-title-row">
+                            <h3><i class="fa-solid fa-lock"></i> Credenciais e Certificados no Cofre</h3>
+                            <span class="section-counter" id="credenciaisTotalLabel">0 cadastradas</span>
+                        </div>
+                        <div id="credenciaisListContainer" class="credenciais-list">
+                            <!-- Renderizado via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Histórico Recente da Fila / Workers -->
+                    <div class="config-section">
+                        <div class="section-title-row">
+                            <h3><i class="fa-solid fa-clock-rotate-left"></i> Últimas Sincronizações da Fila</h3>
+                            <span class="section-counter" id="motorJobsTotalLabel">0 recentes</span>
+                        </div>
+                        <div id="motorJobsListContainer" class="motor-jobs-list">
+                            <!-- Renderizado via JS -->
                         </div>
                     </div>
                 </section>
