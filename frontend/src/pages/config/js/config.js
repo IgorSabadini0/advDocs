@@ -176,6 +176,11 @@ const abrirModalEditarNome = () => {
     const btnSave = document.getElementById('btnSaveEditNome');
     const btnCancel = document.getElementById('btnCancelEditNome');
 
+    requestAnimationFrame(() => {
+        input?.focus();
+        input?.select();
+    });
+
     const fechar = () => {
         overlay.classList.remove('show');
         setTimeout(() => overlay.remove(), 250);
@@ -2018,16 +2023,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         alternarPainel(painelInicial, false);
     }
 
-    carregarTiposConfig();
-
-    if (isUsuarioAdmin()) {
-        await carregarDadosRBAC();
-        inicializarPainelIntegracoes();
-        await carregarPainelIntegracoes();
-    }
-    await carregarUsuariosConfig();
-
-    // Navegação da Barra Lateral (Sidebar)
+    // Ações do perfil e navegação já ficam ativas imediatamente após carregarMeuPerfil()
     document.querySelectorAll('.sidebar-nav-item').forEach(btn => {
         btn.addEventListener('click', () => {
             if (btn.dataset.target) {
@@ -2036,16 +2032,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
-    // Filtro de busca de usuários em tempo real
     document.getElementById('searchUsuariosInput')?.addEventListener('input', () => {
         renderizarListaUsuarios();
     });
 
-    // Ações do perfil
     document.getElementById('btnEditarNome')?.addEventListener('click', abrirModalEditarNome);
     document.getElementById('btnAbrirModalSenha')?.addEventListener('click', abrirModalAlterarSenha);
 
-    // Adicionar tipo
     document.getElementById('btnNovoTipoConfig')?.addEventListener('click', () => {
         abrirModalNovoTipo((novoNome) => {
             mostrarToast(`Categoria "${novoNome}" cadastrada com sucesso!`);
@@ -2053,8 +2046,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
-    // Ações RBAC e Usuários (restritas a Administradores)
     document.getElementById('btnNovoGrupo')?.addEventListener('click', () => abrirModalGrupo(null));
     document.getElementById('btnGerenciarPoliticas')?.addEventListener('click', abrirModalGerenciarPoliticas);
     document.getElementById('btnNovoUsuario')?.addEventListener('click', abrirModalNovoUsuario);
+
+    carregarTiposConfig();
+
+    if (isUsuarioAdmin()) {
+        await carregarDadosRBAC();
+        inicializarPainelIntegracoes();
+        await carregarPainelIntegracoes();
+    }
+    await carregarUsuariosConfig();
 });

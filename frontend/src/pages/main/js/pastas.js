@@ -52,7 +52,7 @@ const carregarPerfilNavbar = async () => {
 
         const navName = document.getElementById('navUserName');
         const navGroup = document.getElementById('navUserGroup');
-        if (navName) navName.textContent = user.nome || user.usuario || 'Usuário';
+        if (navName) navName.textContent = user.name || user.nome || user.user || user.usuario || 'Usuário';
         if (navGroup) navGroup.textContent = user.grupo_nome || (isAdmin ? 'Administrador' : 'Membro');
 
         const addButton = document.getElementById('addButton');
