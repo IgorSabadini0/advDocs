@@ -2,6 +2,7 @@ import { clienteModel } from '../models/clienteModel.js';
 import { tipoProcessoModel } from '../models/tipoProcessoModel.js';
 import { validateCliente } from '../validator/clientValidator.js';
 import { buscarProcesso } from '../services/datajudServices.js';
+import { agendarConsultaDatajud } from '../services/datajudBackgroundWorker.js';
 
 const listClientes = async (req, res) => {
     try {
@@ -148,35 +149,14 @@ const createCliente = async (req, res) => {
         } = req.body;
 
         const numeroProc = req.body.numero_processo ?? req.body.numeroProc;
-        let tribunal = req.body.tribunal;
-        let comarca_vara = req.body.comarca_vara;
+        const tribunal = req.body.tribunal;
+        const comarca_vara = req.body.comarca_vara;
         const parte_contraria = req.body.parte_contraria;
         const status = req.body.status_pasta ?? req.body.status ?? 'Ativo';
-        let descricao = req.body.observacoes ?? req.body.descricao;
+        const descricao = req.body.observacoes ?? req.body.descricao;
 
-        // Consulta DataJud ANTES de abrir transação no banco de dados para evitar lock prolongado e race conditions
-        let dadosProcesso = null;
-        if (consultarProcesso && numeroProc) {
-            try {
-                dadosProcesso = await buscarProcesso(numeroProc, tribunal || null);
-                if (dadosProcesso) {
-                    if ((!tribunal || String(tribunal).trim() === '') && dadosProcesso.tribunal) {
-                        tribunal = String(dadosProcesso.tribunal).trim().toUpperCase().slice(0, 20);
-                    }
-                    if ((!comarca_vara || String(comarca_vara).trim() === '') && dadosProcesso.orgaoJulgador && dadosProcesso.orgaoJulgador !== 'Não informado') {
-                        comarca_vara = String(dadosProcesso.orgaoJulgador).trim().slice(0, 100);
-                    }
-                    if (!descricao || String(descricao).trim() === '') {
-                        const ultimoMov = dadosProcesso.ultimaMovimentacao
-                            ? ` | Última mov.: ${dadosProcesso.ultimaMovimentacao.nome}`
-                            : '';
-                        descricao = `[DataJud ${dadosProcesso.tribunal}] Classe: ${dadosProcesso.classe} | Órgão: ${dadosProcesso.orgaoJulgador}${ultimoMov}`;
-                    }
-                }
-            } catch (errDatajud) {
-                console.warn(`Aviso na consulta DataJud durante cadastro: ${errDatajud.message}`);
-            }
-        }
+        const procLimpo = String(numeroProc || '').replace(/\D/g, '');
+        const deveConsultarDatajud = Boolean(consultarProcesso && procLimpo.length === 20);
 
         const resultado = await clienteModel.createWithCheck({
             acao,
@@ -192,7 +172,9 @@ const createCliente = async (req, res) => {
             comarca_vara,
             parte_contraria,
             status,
-            descricao
+            descricao,
+            datajud_status: deveConsultarDatajud ? 'pendente' : null,
+            datajud_mensagem: deveConsultarDatajud ? 'Consulta ao DataJud em andamento...' : null
         });
 
         if (resultado.conflito) {
@@ -202,10 +184,21 @@ const createCliente = async (req, res) => {
             return res.status(409).json({ mensagem: msg, campoConflito: resultado.campoConflito });
         }
 
+        if (deveConsultarDatajud) {
+            agendarConsultaDatajud({
+                clienteId: resultado.insertId,
+                usuarioId: req.usuarioId,
+                numeroProcesso: numeroProc,
+                tribunal
+            });
+        }
+
         return res.status(201).json({
-            mensagem: "Cliente cadastrado com sucesso!",
+            mensagem: deveConsultarDatajud
+                ? "Pasta cadastrada! A consulta ao DataJud foi iniciada em segundo plano."
+                : "Cliente cadastrado com sucesso!",
             id: resultado.insertId,
-            processo: dadosProcesso
+            datajud_status: deveConsultarDatajud ? 'pendente' : null
         });
     } catch (error) {
         console.error(`Erro ao registrar cadastro: ${error}`);
@@ -300,6 +293,9 @@ const updateCliente = async (req, res) => {
         const status = req.body.status_pasta ?? req.body.status ?? 'Ativo';
         const descricao = req.body.observacoes ?? req.body.descricao;
 
+        const procLimpo = String(numeroProc || '').replace(/\D/g, '');
+        const deveConsultarDatajud = Boolean(req.body.consultarProcesso && procLimpo.length === 20);
+
         const resultado = await clienteModel.updateWithCheck(parsedId, {
             acao,
             nome,
@@ -314,7 +310,10 @@ const updateCliente = async (req, res) => {
             comarca_vara,
             parte_contraria,
             status,
-            descricao
+            descricao,
+            ...(deveConsultarDatajud
+                ? { datajud_status: 'pendente', datajud_mensagem: 'Consulta ao DataJud em andamento...' }
+                : {})
         });
 
         if (resultado.naoEncontrado) {
@@ -328,7 +327,21 @@ const updateCliente = async (req, res) => {
             return res.status(409).json({ mensagem: msg, campoConflito: resultado.campoConflito });
         }
 
-        return res.status(200).json({ mensagem: "Cliente atualizado com sucesso!" });
+        if (deveConsultarDatajud) {
+            agendarConsultaDatajud({
+                clienteId: parsedId,
+                usuarioId: req.usuarioId,
+                numeroProcesso: numeroProc,
+                tribunal
+            });
+        }
+
+        return res.status(200).json({
+            mensagem: deveConsultarDatajud
+                ? "Pasta atualizada! A consulta ao DataJud foi iniciada em segundo plano."
+                : "Cliente atualizado com sucesso!",
+            datajud_status: deveConsultarDatajud ? 'pendente' : undefined
+        });
     } catch (error) {
         console.error(`Erro ao atualizar registro: ${error}`);
         return res.status(500).json({ mensagem: "Erro interno no servidor" });

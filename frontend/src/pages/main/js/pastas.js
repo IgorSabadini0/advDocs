@@ -20,6 +20,7 @@ import { viewItemModal, fecharModal } from '../components/modalComponent.js';
 import { confirmModal } from '../../../components/confirmModal.js';
 import { normalizeText, escapeHtml, apiFetch } from '../../../utils/utils.js';
 import { initThemeManager } from '../../../utils/themeManager.js';
+import { initNotificationsWidget } from '../../../utils/notificationsWidget.js';
 
 initThemeManager();
 
@@ -539,6 +540,46 @@ document.addEventListener('DOMContentLoaded', async () => {
         await carregarFiltrosDinamicos();
         atualizarEstatisticas();
         executarBuscaEFiltro();
+
+        initNotificationsWidget({
+            onToast: mostrarToast,
+            onDatajudUpdate: async () => {
+                try {
+                    await carregarDados();
+                    await carregarFiltrosDinamicos();
+                    atualizarEstatisticas();
+                    executarBuscaEFiltro();
+                } catch (err) {
+                    console.error('Erro ao atualizar painel após retorno do DataJud:', err);
+                }
+            },
+            onNotificationClick: async (notif) => {
+                if (notif.cliente_id) {
+                    let encontrado = clientes.find(c => String(c.id) === String(notif.cliente_id));
+                    if (!encontrado) {
+                        await carregarDados();
+                        atualizarEstatisticas();
+                        executarBuscaEFiltro();
+                        encontrado = clientes.find(c => String(c.id) === String(notif.cliente_id));
+                    }
+                    if (encontrado) {
+                        viewItem(encontrado.id, encontrado.tipo);
+                        return;
+                    }
+                }
+                if (notif.numero_processo) {
+                    window.location.href = `/pages/consult/?proc=${encodeURIComponent(notif.numero_processo)}`;
+                }
+            }
+        });
+
+        const openPastaId = new URLSearchParams(window.location.search).get('openPasta');
+        if (openPastaId) {
+            const pastaAlvo = clientes.find(c => String(c.id) === String(openPastaId));
+            if (pastaAlvo) {
+                viewItem(pastaAlvo.id, pastaAlvo.tipo);
+            }
+        }
     } catch (error) {
         console.error('Erro ao carregar dados iniciais:', error);
         showEmptyState('Erro ao carregar os dados. Verifique sua conexão e tente novamente.');

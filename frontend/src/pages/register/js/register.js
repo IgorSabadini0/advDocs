@@ -2,6 +2,7 @@ import { mascaraProcessoCNJ, mascaraCpfCnpj, mascaraTelefone, escapeHtml, apiFet
 import { extrairSegmentosCNJ } from '../../../utils/cnjParser.js';
 import { carregarTiposSelect, abrirModalNovoTipo } from '../../../utils/tiposService.js';
 import { initThemeManager } from '../../../utils/themeManager.js';
+import { initNotificationsWidget, notificarConsultaPendente } from '../../../utils/notificationsWidget.js';
 
 initThemeManager();
 
@@ -135,6 +136,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.location.href = '../auth/';
         return;
     }
+
+    initNotificationsWidget({ onToast: mostrarToast });
 
     const form = document.getElementById('registerForm');
     const inputProcesso = document.getElementById('numero_processo');
@@ -482,11 +485,11 @@ const salvarRegistro = async () => {
 
         await carregarMenorPastaDisponivel();
 
-        if (consultarProcesso && data.processo) {
-            const sufixoTempo = tempoDecorrido ? ` em ${tempoDecorrido}s` : '';
-            const msg = `✅ Pasta cadastrada! Dados sincronizados com o DataJud${sufixoTempo} (${data.processo.tribunal} - ${data.processo.classe}).`;
+        if (data.datajud_status === 'pendente') {
+            notificarConsultaPendente();
+            const msg = `✅ Pasta cadastrada imediatamente! A consulta ao DataJud foi iniciada em segundo plano — você será notificado ao concluir.`;
             exibirMensagemStatus(msg, 'success');
-            mostrarToast(`Pasta registrada e sincronizada com o DataJud${sufixoTempo}!`, 'success');
+            mostrarToast('Pasta salva! Consulta DataJud iniciada em segundo plano.', 'info');
         } else {
             exibirMensagemStatus('✅ Pasta registrada com sucesso!', 'success');
             mostrarToast('Pasta registrada com sucesso!', 'success');

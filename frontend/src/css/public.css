@@ -941,3 +941,381 @@ html:not([data-theme="dark"]) .logo img {
     border-color: var(--brand-gold);
     box-shadow: 0 0 0 4px var(--brand-gold-glow);
 }
+
+/* --------------------------------------------------------------------------
+   10. SISTEMA DE NOTIFICAÇÕES (SINO NO HEADER + DROPDOWN + TOAST GLOBAL)
+   -------------------------------------------------------------------------- */
+.toast-container {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+    max-width: 360px;
+}
+
+.toast-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--bg-surface-solid);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-md);
+    color: var(--text-primary);
+    font-size: 0.84rem;
+    font-weight: 500;
+    opacity: 0;
+    transform: translateX(20px);
+    transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: auto;
+}
+
+.toast-item.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast-item.toast-success {
+    border-left: 3px solid var(--success);
+}
+
+.toast-item.toast-success .toast-icon {
+    color: var(--success);
+}
+
+.toast-item.toast-error {
+    border-left: 3px solid var(--danger);
+}
+
+.toast-item.toast-error .toast-icon {
+    color: var(--danger);
+}
+
+.toast-item.toast-info {
+    border-left: 3px solid var(--brand-gold);
+}
+
+.toast-item.toast-info .toast-icon {
+    color: var(--brand-gold);
+}
+
+.toast-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.toast-text {
+    line-height: 1.35;
+}
+
+.notif-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-notif-nav {
+    position: relative;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-notif-nav i {
+    font-size: 1.1rem;
+}
+
+.btn-notif-nav:hover,
+.btn-notif-nav.active {
+    background: var(--bg-subtle-hover);
+    border-color: var(--brand-gold);
+    color: var(--brand-gold);
+}
+
+.notif-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    min-width: 19px;
+    height: 19px;
+    padding: 0 5px;
+    border-radius: 10px;
+    background: var(--danger);
+    color: #ffffff;
+    font-size: 0.68rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--bg-surface-solid);
+    box-shadow: 0 2px 6px var(--danger-glow);
+    pointer-events: none;
+}
+
+.notif-badge.is-pending {
+    animation: notifPulse 1.6s infinite;
+}
+
+@keyframes notifPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.12); }
+}
+
+.notif-dropdown {
+    position: absolute;
+    top: calc(100% + 12px);
+    right: 0;
+    width: 365px;
+    max-width: calc(100vw - 24px);
+    max-height: 470px;
+    background: var(--bg-surface-solid);
+    border: 1px solid var(--border-color);
+    border-top: 2px solid var(--brand-gold);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    z-index: 1200;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    animation: fadeInUp 0.2s ease forwards;
+}
+
+.notif-dropdown.open {
+    display: flex;
+}
+
+.notif-dropdown-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-subtle);
+}
+
+.notif-dropdown-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.notif-dropdown-title i {
+    color: var(--brand-gold);
+}
+
+.notif-mark-all-btn {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--brand-gold);
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: var(--transition-smooth);
+}
+
+.notif-mark-all-btn:hover {
+    background: var(--brand-gold-glow);
+    border-color: var(--brand-gold);
+}
+
+.notif-pending-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    background: var(--brand-gold-glow);
+    border-bottom: 1px solid var(--border-gold-subtle);
+    color: var(--brand-gold-hover);
+    font-size: 0.76rem;
+    font-weight: 600;
+}
+
+.notif-list {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    max-height: 360px;
+}
+
+.notif-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+    cursor: pointer;
+    text-align: left;
+    background: transparent;
+    border-left: 3px solid transparent;
+    border-right: none;
+    border-top: none;
+    width: 100%;
+    font-family: var(--font-body);
+    transition: var(--transition-smooth);
+}
+
+.notif-item:last-child {
+    border-bottom: none;
+}
+
+.notif-item:hover {
+    background: var(--bg-subtle-hover);
+}
+
+.notif-item.unread {
+    background: var(--bg-subtle);
+    border-left-color: var(--brand-gold);
+}
+
+.notif-item-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.notif-item-icon.sucesso {
+    background: var(--success-glow);
+    color: var(--success);
+}
+
+.notif-item-icon.erro {
+    background: var(--danger-glow);
+    color: var(--danger);
+}
+
+.notif-item-icon.info {
+    background: var(--brand-gold-glow);
+    color: var(--brand-gold);
+}
+
+.notif-item-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+}
+
+.notif-item-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.notif-item-title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.3;
+}
+
+.notif-unread-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--brand-gold);
+    flex-shrink: 0;
+    margin-top: 4px;
+}
+
+.notif-item-msg {
+    font-size: 0.76rem;
+    color: var(--text-secondary);
+    line-height: 1.38;
+}
+
+.notif-item-time {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 2px;
+}
+
+.notif-empty {
+    padding: 36px 20px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.84rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.notif-empty i {
+    font-size: 1.8rem;
+    opacity: 0.5;
+    color: var(--brand-gold);
+}
+
+/* Badges de status de sincronização DataJud em Cards e Modais */
+.datajud-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 9px;
+    border-radius: 12px;
+    width: fit-content;
+}
+
+.datajud-pill.pendente {
+    background: var(--brand-gold-glow);
+    border: 1px solid var(--border-gold-subtle);
+    color: var(--brand-gold-hover);
+}
+
+.datajud-pill.concluido {
+    background: var(--success-glow);
+    border: 1px solid rgba(16, 185, 129, 0.28);
+    color: var(--success);
+}
+
+.datajud-pill.erro {
+    background: var(--danger-glow);
+    border: 1px solid rgba(239, 68, 68, 0.28);
+    color: var(--danger);
+}
+
+@media (max-width: 520px) {
+    .notif-dropdown {
+        position: fixed;
+        top: 68px;
+        right: 12px;
+        left: 12px;
+        width: auto;
+        max-width: none;
+    }
+}

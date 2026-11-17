@@ -1,5 +1,6 @@
 import { escapeHtml, formatDate, formatDateTime, mascaraProcessoCNJ, normalizeText, apiFetch } from '../../../utils/utils.js';
 import { initThemeManager } from '../../../utils/themeManager.js';
+import { initNotificationsWidget } from '../../../utils/notificationsWidget.js';
 
 initThemeManager();
 
@@ -394,6 +395,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.location.href = '/pages/auth/';
         return;
     }
+
+    initNotificationsWidget();
 
     const inputProc = document.getElementById('numeroProcesso');
     const form = document.getElementById('consultForm');

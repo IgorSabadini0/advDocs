@@ -58,6 +58,30 @@
                     <i class="fa-solid fa-magnifying-glass"></i>
                     <span>Consultar Processo</span>
                 </button>
+                <div class="notif-wrapper" id="notifWrapper">
+                    <button type="button" class="btn-nav btn-notif-nav" id="notificationBellBtn" title="Notificações do Sistema" aria-haspopup="true" aria-expanded="false">
+                        <i class="fa-solid fa-bell"></i>
+                        <span class="notif-badge" id="notificationBadgeCount" style="display: none;">0</span>
+                    </button>
+                    <div class="notif-dropdown" id="notificationDropdown" role="region" aria-label="Central de Notificações">
+                        <div class="notif-dropdown-header">
+                            <span class="notif-dropdown-title"><i class="fa-solid fa-bell"></i> Notificações</span>
+                            <button type="button" class="notif-mark-all-btn" id="notifMarkAllBtn" style="display: none;">
+                                <i class="fa-solid fa-check-double"></i> Marcar todas como lidas
+                            </button>
+                        </div>
+                        <div class="notif-pending-banner" id="notifPendingBanner" style="display: none;">
+                            <i class="fa-solid fa-spinner fa-spin"></i>
+                            <span id="notifPendingText">Consultando DataJud em segundo plano...</span>
+                        </div>
+                        <div class="notif-list" id="notificationList">
+                            <div class="notif-empty">
+                                <i class="fa-regular fa-bell-slash"></i>
+                                <span>Nenhuma notificação no momento.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <button class="btn-nav btn-config-nav" id="configButton" title="Configurações do sistema">
                     <i class="fa-solid fa-sliders"></i>
                 </button>

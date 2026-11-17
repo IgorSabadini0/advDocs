@@ -60,6 +60,8 @@ const createResultCard = (item, index, onViewClick) => {
                 ${item.acao ? `<div class="info-item"><i class="fa-solid fa-gavel"></i><span><strong>Ação:</strong> ${escapeHtml(item.acao)}</span></div>` : ''}
                 ${item.numeroPasta ? `<div class="info-item"><i class="fa-solid fa-folder-open"></i><span><strong>Pasta:</strong> Nº ${escapeHtml(item.numeroPasta)}</span></div>` : ''}
                 ${item.numeroProc ? `<div class="info-item"><i class="fa-solid fa-scale-balanced"></i><span class="proc-mono">${escapeHtml(item.numeroProc)}</span></div>` : `<div class="info-item muted"><i class="fa-solid fa-scale-balanced"></i><span>Caso extrajudicial / sem processo</span></div>`}
+                ${item.datajud_status === 'pendente' ? `<div class="datajud-pill pendente"><i class="fa-solid fa-spinner fa-spin"></i> Consultando DataJud...</div>` : ''}
+                ${item.datajud_status === 'erro' ? `<div class="datajud-pill erro" title="${escapeHtml(item.datajud_mensagem || '')}"><i class="fa-solid fa-triangle-exclamation"></i> DataJud: falha na sincronização</div>` : ''}
             </div>
             ${item.descricao ? `<p class="card-desc">${escapeHtml(item.descricao)}</p>` : ''}
         </div>

@@ -80,6 +80,26 @@ const viewItemModal = (item, { tipoLegivel, onDelete, onEdit, canEdit = true, ca
                     </div>
                 </div>
 
+                ${(item.datajud_status || item.classe_processual || item.orgao_julgador) ? `
+                <div class="modal-section" style="margin-top: 20px;">
+                    <h3>Sincronização DataJud (CNJ)</h3>
+                    <div class="modal-info-grid">
+                        ${item.datajud_status ? `
+                        <div class="modal-info-item">
+                            <strong>Status da Consulta</strong>
+                            <span class="datajud-pill ${escapeHtml(item.datajud_status)}">
+                                <i class="fa-solid ${item.datajud_status === 'concluido' ? 'fa-circle-check' : item.datajud_status === 'erro' ? 'fa-triangle-exclamation' : 'fa-spinner fa-spin'}"></i>
+                                ${item.datajud_status === 'concluido' ? 'Sincronizado' : item.datajud_status === 'erro' ? 'Erro na Consulta' : 'Em andamento'}
+                            </span>
+                        </div>` : ''}
+                        ${item.classe_processual ? `<div class="modal-info-item"><strong>Classe Processual</strong> <span>${escapeHtml(item.classe_processual)}</span></div>` : ''}
+                        ${item.orgao_julgador ? `<div class="modal-info-item"><strong>Órgão Julgador</strong> <span>${escapeHtml(item.orgao_julgador)}</span></div>` : ''}
+                        ${item.assunto_principal ? `<div class="modal-info-item"><strong>Assunto(s)</strong> <span>${escapeHtml(item.assunto_principal)}</span></div>` : ''}
+                        ${item.data_ajuizamento ? `<div class="modal-info-item"><strong>Data de Ajuizamento</strong> <span>${escapeHtml(formatDate(item.data_ajuizamento) || item.data_ajuizamento)}</span></div>` : ''}
+                        ${item.datajud_mensagem && item.datajud_status === 'erro' ? `<div class="modal-info-item modal-info-proc"><strong>Detalhe</strong> <span>${escapeHtml(item.datajud_mensagem)}</span></div>` : ''}
+                    </div>
+                </div>` : ''}
+
                 ${item.descricao ? `
                 <div class="modal-section" style="margin-top: 20px;">
                     <h3>Descrição / Observações</h3>

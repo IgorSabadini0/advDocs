@@ -59,6 +59,8 @@ const resolverDadosCliente = async (dados, conn = db) => {
     const statusCandidate = String(dados.status_pasta ?? dados.status ?? 'Ativo').trim();
     const statusLimpo = STATUS_VALIDOS.has(statusCandidate) ? statusCandidate : 'Ativo';
     const descLimpa = limparTextoOpcional(dados.observacoes ?? dados.descricao);
+    const datajudStatusLimpo = limparTextoOpcional(dados.datajud_status);
+    const datajudMensagemLimpa = limparTextoOpcional(dados.datajud_mensagem);
 
     return {
         acaoLimpa,
@@ -74,14 +76,22 @@ const resolverDadosCliente = async (dados, conn = db) => {
         comarcaVaraLimpa,
         parteContrariaLimpa,
         statusLimpo,
-        descLimpa
+        descLimpa,
+        datajudStatusLimpo,
+        datajudMensagemLimpa
     };
 };
 
 const clienteModel = {
     list: async () => {
         const query = `
-            SELECT c.*, tp.nome AS tipo_processo_nome
+            SELECT c.id, c.acao, c.nome, c.cpf_cnpj, c.telefone, c.email,
+                   c.numeroPasta, c.tipo, c.tipo_processo_id, tp.nome AS tipo_processo_nome,
+                   c.numeroProc, c.tribunal, c.comarca_vara, c.parte_contraria,
+                   c.status, c.descricao,
+                   c.datajud_status, c.datajud_mensagem, c.classe_processual,
+                   c.assunto_principal, c.orgao_julgador, c.data_ajuizamento,
+                   c.datajud_atualizado_em
             FROM clientes c
             LEFT JOIN tipos_processo tp ON tp.id = c.tipo_processo_id
             ORDER BY c.numeroPasta ASC
@@ -165,8 +175,8 @@ const clienteModel = {
                 acao, nome, cpf_cnpj, telefone, email,
                 numeroPasta, tipo, tipo_processo_id,
                 numeroProc, tribunal, comarca_vara, parte_contraria,
-                status, descricao
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                status, descricao, datajud_status, datajud_mensagem
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
         const [resultado] = await conn.query(query, [
             parsed.acaoLimpa,
@@ -182,7 +192,9 @@ const clienteModel = {
             parsed.comarcaVaraLimpa,
             parsed.parteContrariaLimpa,
             parsed.statusLimpo,
-            parsed.descLimpa
+            parsed.descLimpa,
+            parsed.datajudStatusLimpo,
+            parsed.datajudMensagemLimpa
         ]);
         return resultado;
     },
@@ -224,7 +236,8 @@ const clienteModel = {
             SET acao = ?, nome = ?, cpf_cnpj = ?, telefone = ?, email = ?,
                 numeroPasta = ?, tipo = ?, tipo_processo_id = ?,
                 numeroProc = ?, tribunal = ?, comarca_vara = ?, parte_contraria = ?,
-                status = ?, descricao = ?
+                status = ?, descricao = ?,
+                datajud_status = ?, datajud_mensagem = ?
             WHERE id = ?
         `;
         const [resultado] = await conn.query(query, [
@@ -242,6 +255,8 @@ const clienteModel = {
             parsed.parteContrariaLimpa,
             parsed.statusLimpo,
             parsed.descLimpa,
+            parsed.datajudStatusLimpo,
+            parsed.datajudMensagemLimpa,
             Number(id)
         ]);
         return resultado;
@@ -277,7 +292,9 @@ const clienteModel = {
                 email: dados.email !== undefined ? dados.email : registroAtual.email,
                 tribunal: dados.tribunal !== undefined ? dados.tribunal : (procMudou ? null : registroAtual.tribunal),
                 comarca_vara: dados.comarca_vara !== undefined ? dados.comarca_vara : registroAtual.comarca_vara,
-                parte_contraria: dados.parte_contraria !== undefined ? dados.parte_contraria : registroAtual.parte_contraria
+                parte_contraria: dados.parte_contraria !== undefined ? dados.parte_contraria : registroAtual.parte_contraria,
+                datajud_status: dados.datajud_status !== undefined ? dados.datajud_status : registroAtual.datajud_status,
+                datajud_mensagem: dados.datajud_mensagem !== undefined ? dados.datajud_mensagem : registroAtual.datajud_mensagem
             };
 
             await clienteModel.update(id, dadosMesclados, conn);
@@ -292,6 +309,79 @@ const clienteModel = {
         } finally {
             conn.release();
         }
+    },
+
+    atualizarStatusDatajud: async (id, { status, mensagem = null, dadosProcesso = null }) => {
+        const [rows] = await db.query("SELECT * FROM clientes WHERE id = ? LIMIT 1", [Number(id)]);
+        const atual = rows[0];
+        if (!atual) return null;
+
+        if (dadosProcesso && status === 'concluido') {
+            const classe = limparTextoOpcional(dadosProcesso.classe)?.slice(0, 128) || null;
+            const assuntoPrincipal = Array.isArray(dadosProcesso.assuntos) && dadosProcesso.assuntos.length > 0
+                ? dadosProcesso.assuntos.join(', ').slice(0, 255)
+                : null;
+            const orgaoJulgador = limparTextoOpcional(dadosProcesso.orgaoJulgador)?.slice(0, 128) || null;
+            const dataAjuizamento = limparTextoOpcional(dadosProcesso.dataAjuizamento)?.slice(0, 32) || null;
+
+            const novoTribunal = (!atual.tribunal && dadosProcesso.tribunal)
+                ? String(dadosProcesso.tribunal).trim().toUpperCase().slice(0, 20)
+                : atual.tribunal;
+
+            const novaComarca = (!atual.comarca_vara && orgaoJulgador && orgaoJulgador !== 'Não informado')
+                ? orgaoJulgador.slice(0, 100)
+                : atual.comarca_vara;
+
+            let novaDescricao = atual.descricao;
+            if (!novaDescricao || String(novaDescricao).trim() === '') {
+                const ultimoMov = dadosProcesso.ultimaMovimentacao
+                    ? ` | Última mov.: ${dadosProcesso.ultimaMovimentacao.nome}`
+                    : '';
+                novaDescricao = `[DataJud ${dadosProcesso.tribunal}] Classe: ${dadosProcesso.classe} | Órgão: ${dadosProcesso.orgaoJulgador}${ultimoMov}`;
+            }
+
+            await db.query(`
+                UPDATE clientes
+                SET datajud_status = ?,
+                    datajud_mensagem = ?,
+                    classe_processual = ?,
+                    assunto_principal = ?,
+                    orgao_julgador = ?,
+                    data_ajuizamento = ?,
+                    datajud_payload = ?,
+                    datajud_atualizado_em = NOW(),
+                    tribunal = ?,
+                    comarca_vara = ?,
+                    descricao = ?
+                WHERE id = ?
+            `, [
+                status,
+                limparTextoOpcional(mensagem)?.slice(0, 255) || null,
+                classe,
+                assuntoPrincipal,
+                orgaoJulgador,
+                dataAjuizamento,
+                JSON.stringify(dadosProcesso),
+                novoTribunal,
+                novaComarca,
+                novaDescricao,
+                Number(id)
+            ]);
+        } else {
+            await db.query(`
+                UPDATE clientes
+                SET datajud_status = ?,
+                    datajud_mensagem = ?,
+                    datajud_atualizado_em = NOW()
+                WHERE id = ?
+            `, [
+                status,
+                limparTextoOpcional(mensagem)?.slice(0, 255) || null,
+                Number(id)
+            ]);
+        }
+
+        return clienteModel.findById(id);
     },
 
     delete: async (id) => {
