@@ -882,7 +882,18 @@ html:not([data-theme="dark"]) .logo img {
     }
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: none;
+    }
+}
+
+@keyframes notifDropIn {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
     }
 }
 
@@ -1021,10 +1032,13 @@ html:not([data-theme="dark"]) .logo img {
 
 .btn-notif-nav {
     position: relative;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    flex-shrink: 0;
     background: var(--bg-subtle);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
-    padding: 10px;
     border-radius: var(--radius-sm);
     cursor: pointer;
     transition: var(--transition-smooth);
@@ -1034,7 +1048,7 @@ html:not([data-theme="dark"]) .logo img {
 }
 
 .btn-notif-nav i {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
 }
 
 .btn-notif-nav:hover,
@@ -1074,22 +1088,20 @@ html:not([data-theme="dark"]) .logo img {
 }
 
 .notif-dropdown {
-    position: absolute;
-    top: calc(100% + 12px);
-    right: 0;
-    width: 365px;
+    position: fixed;
+    width: 385px;
     max-width: calc(100vw - 24px);
-    max-height: 470px;
+    max-height: min(470px, calc(100vh - 90px));
     background: var(--bg-surface-solid);
     border: 1px solid var(--border-color);
     border-top: 2px solid var(--brand-gold);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-lg);
-    z-index: 1200;
+    z-index: 9500;
     display: none;
     flex-direction: column;
     overflow: hidden;
-    animation: fadeInUp 0.2s ease forwards;
+    animation: notifDropIn 0.2s ease forwards;
 }
 
 .notif-dropdown.open {
@@ -1100,8 +1112,9 @@ html:not([data-theme="dark"]) .logo img {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 10px;
-    padding: 14px 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 13px 16px;
     border-bottom: 1px solid var(--border-color);
     background: var(--bg-subtle);
 }
@@ -1119,14 +1132,21 @@ html:not([data-theme="dark"]) .logo img {
     color: var(--brand-gold);
 }
 
-.notif-mark-all-btn {
+.notif-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.notif-mark-all-btn,
+.notif-clear-all-btn {
     background: transparent;
     border: 1px solid var(--border-color);
-    color: var(--brand-gold);
     font-family: var(--font-body);
     font-size: 0.72rem;
     font-weight: 600;
-    padding: 4px 10px;
+    padding: 4px 9px;
     border-radius: 6px;
     cursor: pointer;
     display: inline-flex;
@@ -1135,9 +1155,36 @@ html:not([data-theme="dark"]) .logo img {
     transition: var(--transition-smooth);
 }
 
-.notif-mark-all-btn:hover {
+.notif-mark-all-btn {
+    color: var(--brand-gold);
+}
+
+.notif-mark-all-btn:hover:not(:disabled) {
     background: var(--brand-gold-glow);
     border-color: var(--brand-gold);
+}
+
+.notif-clear-all-btn {
+    color: var(--text-secondary);
+}
+
+.notif-clear-all-btn:hover:not(:disabled) {
+    background: var(--danger-glow);
+    border-color: rgba(239, 68, 68, 0.35);
+    color: var(--danger);
+}
+
+.notif-clear-all-btn.is-confirming,
+.notif-clear-all-btn.is-confirming:hover:not(:disabled) {
+    background: var(--danger);
+    border-color: var(--danger);
+    color: #ffffff;
+}
+
+.notif-mark-all-btn:disabled,
+.notif-clear-all-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
 }
 
 .notif-pending-banner {
@@ -1162,17 +1209,12 @@ html:not([data-theme="dark"]) .logo img {
 .notif-item {
     display: flex;
     align-items: flex-start;
-    gap: 12px;
-    padding: 13px 16px;
+    gap: 8px;
+    padding: 12px 12px 12px 14px;
     border-bottom: 1px solid var(--border-subtle);
-    cursor: pointer;
-    text-align: left;
     background: transparent;
     border-left: 3px solid transparent;
-    border-right: none;
-    border-top: none;
     width: 100%;
-    font-family: var(--font-body);
     transition: var(--transition-smooth);
 }
 
@@ -1187,6 +1229,50 @@ html:not([data-theme="dark"]) .logo img {
 .notif-item.unread {
     background: var(--bg-subtle);
     border-left-color: var(--brand-gold);
+}
+
+.notif-item-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: transparent;
+    border: none;
+    padding: 0;
+    text-align: left;
+    cursor: pointer;
+    font-family: var(--font-body);
+    color: inherit;
+}
+
+.notif-item-delete {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    cursor: pointer;
+    font-size: 0.85rem;
+    margin-top: 2px;
+    transition: var(--transition-smooth);
+}
+
+.notif-item-delete:hover:not(:disabled),
+.notif-item-delete:focus-visible {
+    background: var(--danger-glow);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: var(--danger);
+}
+
+.notif-item-delete:disabled {
+    opacity: 0.45;
+    cursor: wait;
 }
 
 .notif-item-icon {
@@ -1309,13 +1395,157 @@ html:not([data-theme="dark"]) .logo img {
     color: var(--danger);
 }
 
-@media (max-width: 520px) {
-    .notif-dropdown {
-        position: fixed;
-        top: 68px;
+.datajud-modal-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.btn-resync-datajud {
+    padding: 8px 14px;
+    background: var(--brand-gold-glow);
+    border: 1px solid var(--border-gold-subtle);
+    color: var(--brand-gold-hover);
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: var(--transition-smooth);
+}
+
+.btn-resync-datajud:hover:not(:disabled) {
+    background: var(--brand-gold);
+    border-color: var(--brand-gold);
+    color: var(--text-on-gold);
+}
+
+.btn-resync-datajud:disabled {
+    opacity: 0.65;
+    cursor: wait;
+}
+
+/* Barra superior compartilhada nas páginas de formulário (register / edit) */
+.form-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.topbar-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    background: var(--bg-subtle);
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: var(--transition-smooth);
+}
+
+.topbar-back-btn:hover {
+    color: var(--brand-gold);
+    border-color: var(--border-gold-subtle);
+    background: var(--brand-gold-glow);
+}
+
+/* --------------------------------------------------------------------------
+   11. RESPONSIVIDADE GLOBAL PARA MODAIS, TOASTS E MOBILE PEQUENO
+   -------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+    .modal-content,
+    .modal-confirm-content {
+        width: calc(100vw - 24px);
+        max-height: calc(100vh - 28px);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .modal-confirm-content {
+        padding: 26px 20px;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        padding: 18px 20px;
+    }
+
+    .modal-title {
+        font-size: 1.15rem;
+    }
+
+    .modal-body {
+        padding: 18px 20px;
+        max-height: none;
+        flex: 1;
+    }
+
+    .modal-info-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .modal-footer {
+        padding: 16px 20px;
+        flex-direction: column-reverse;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .modal-footer .btn-view,
+    .modal-footer .btn-view-delete {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .confirm-buttons-group {
+        flex-direction: column-reverse;
+        gap: 8px;
+    }
+
+    .confirm-buttons-group button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .toast-container {
+        top: auto;
+        bottom: 16px;
         right: 12px;
         left: 12px;
-        width: auto;
         max-width: none;
+    }
+}
+
+@media (max-width: 420px) {
+    .notif-dropdown-header {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .notif-header-actions {
+        width: 100%;
+    }
+
+    .notif-header-actions button {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
+
+    .topbar-back-btn span {
+        font-size: 0.78rem;
     }
 }

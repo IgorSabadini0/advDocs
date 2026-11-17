@@ -18,9 +18,9 @@ import { deleteClienteApi, carregarDados } from '../api/clientsApi.js';
 import { createResultCard } from '../components/cardComponent.js';
 import { viewItemModal, fecharModal } from '../components/modalComponent.js';
 import { confirmModal } from '../../../components/confirmModal.js';
-import { normalizeText, escapeHtml, apiFetch } from '../../../utils/utils.js';
+import { normalizeText, escapeHtml, apiFetch, mostrarToast } from '../../../utils/utils.js';
 import { initThemeManager } from '../../../utils/themeManager.js';
-import { initNotificationsWidget } from '../../../utils/notificationsWidget.js';
+import { initNotificationsWidget, notificarConsultaPendente } from '../../../utils/notificationsWidget.js';
 
 initThemeManager();
 
@@ -39,34 +39,6 @@ const config = () => {
 
 const consultar = () => {
     window.location.href = '/pages/consult';
-};
-
-// --- NOTIFICAÇÕES TOAST ---
-const mostrarToast = (mensagem, tipo = 'success') => {
-    const container = document.getElementById('toastContainer');
-    if (!container) return;
-
-    const toast = document.createElement('div');
-    toast.className = `toast-item toast-${tipo}`;
-
-    const icone = tipo === 'error'
-        ? 'fa-circle-exclamation'
-        : tipo === 'info'
-            ? 'fa-circle-info'
-            : 'fa-circle-check';
-
-    toast.innerHTML = `
-        <i class="fa-solid ${icone} toast-icon"></i>
-        <span class="toast-text">${escapeHtml(mensagem)}</span>
-    `;
-
-    container.appendChild(toast);
-    requestAnimationFrame(() => toast.classList.add('show'));
-
-    setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 300);
-    }, 3500);
 };
 
 // --- PERFIL E RBAC NA NAVBAR ---
@@ -451,6 +423,27 @@ const deletarItem = (id) => {
     };
 };
 
+const resincronizarDatajudItem = async (item) => {
+    try {
+        await apiFetch(`/clientes/${encodeURIComponent(item.id)}/resincronizar-datajud`, {
+            method: 'POST'
+        });
+        item.datajud_status = 'pendente';
+        item.datajud_mensagem = 'Reconsulta ao DataJud em andamento...';
+        executarBuscaEFiltro();
+        notificarConsultaPendente();
+        mostrarToast('Sincronização com o DataJud iniciada em segundo plano!', 'info');
+        return true;
+    } catch (error) {
+        console.error('Erro ao re-sincronizar DataJud:', error);
+        if (error.message === 'UNAUTHORIZED' || error.message === 'TOKEN_MISSING') {
+            return false;
+        }
+        mostrarToast(error.data?.mensagem || 'Não foi possível iniciar a sincronização.', 'error');
+        return false;
+    }
+};
+
 const viewItem = (id, tipo) => {
     const item = clientes.find(c => String(c.id) === String(id));
 
@@ -464,6 +457,7 @@ const viewItem = (id, tipo) => {
         canEdit: temPolitica('edit_records'),
         canDelete: temPolitica('delete_records'),
         onToast: mostrarToast,
+        onResyncDatajud: resincronizarDatajudItem,
         onDelete: () => deletarItem(id),
         onEdit: () => editarItem(id)
     });
@@ -543,12 +537,34 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         initNotificationsWidget({
             onToast: mostrarToast,
-            onDatajudUpdate: async () => {
+            onDatajudUpdate: async (notif) => {
                 try {
-                    await carregarDados();
-                    await carregarFiltrosDinamicos();
+                    if (notif?.cliente_id) {
+                        const pastaAtualizada = await apiFetch(`/clientes/${encodeURIComponent(notif.cliente_id)}`);
+                        const idx = clientes.findIndex(c => String(c.id) === String(notif.cliente_id));
+                        if (idx >= 0) {
+                            const listaAtualizada = [...clientes];
+                            listaAtualizada[idx] = pastaAtualizada;
+                            setClientes(listaAtualizada);
+                        } else {
+                            await carregarDados();
+                            await carregarFiltrosDinamicos();
+                        }
+                    } else {
+                        await carregarDados();
+                        await carregarFiltrosDinamicos();
+                    }
+
                     atualizarEstatisticas();
                     executarBuscaEFiltro();
+
+                    const modalAberto = document.getElementById('itemModal');
+                    if (modalAberto && notif?.cliente_id && modalAberto.dataset.itemId === String(notif.cliente_id)) {
+                        const atualizado = clientes.find(c => String(c.id) === String(notif.cliente_id));
+                        if (atualizado) {
+                            viewItem(atualizado.id, atualizado.tipo);
+                        }
+                    }
                 } catch (err) {
                     console.error('Erro ao atualizar painel após retorno do DataJud:', err);
                 }

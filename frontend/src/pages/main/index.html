@@ -66,9 +66,14 @@
                     <div class="notif-dropdown" id="notificationDropdown" role="region" aria-label="Central de Notificações">
                         <div class="notif-dropdown-header">
                             <span class="notif-dropdown-title"><i class="fa-solid fa-bell"></i> Notificações</span>
-                            <button type="button" class="notif-mark-all-btn" id="notifMarkAllBtn" style="display: none;">
-                                <i class="fa-solid fa-check-double"></i> Marcar todas como lidas
-                            </button>
+                            <div class="notif-header-actions">
+                                <button type="button" class="notif-mark-all-btn" id="notifMarkAllBtn" title="Marcar todas como lidas" disabled>
+                                    <i class="fa-solid fa-check-double"></i> <span>Marcar lidas</span>
+                                </button>
+                                <button type="button" class="notif-clear-all-btn" id="notifDeleteAllBtn" title="Excluir todas as notificações" disabled>
+                                    <i class="fa-solid fa-trash-can"></i> <span>Excluir todas</span>
+                                </button>
+                            </div>
                         </div>
                         <div class="notif-pending-banner" id="notifPendingBanner" style="display: none;">
                             <i class="fa-solid fa-spinner fa-spin"></i>

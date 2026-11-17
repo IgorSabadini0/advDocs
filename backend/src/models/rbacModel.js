@@ -1,5 +1,28 @@
 import { db } from '../config/db.js';
 
+const vincularPoliticasEmLote = async (conn, grupoId, politicaIds = []) => {
+    const idsUnicos = [...new Set(
+        (Array.isArray(politicaIds) ? politicaIds : [])
+            .map(id => Number(id))
+            .filter(id => Number.isInteger(id) && id > 0)
+    )];
+
+    if (idsUnicos.length === 0) return;
+
+    const [politicasValidas] = await conn.query(
+        "SELECT id FROM politicas WHERE id IN (?)",
+        [idsUnicos]
+    );
+
+    if (politicasValidas.length === 0) return;
+
+    const valores = politicasValidas.map(pol => [Number(grupoId), pol.id]);
+    await conn.query(
+        "INSERT IGNORE INTO grupo_politicas (grupo_id, politica_id) VALUES ?",
+        [valores]
+    );
+};
+
 export const rbacModel = {
     // --- POLÍTICAS ---
     listPoliticas: async () => {
@@ -166,24 +189,7 @@ export const rbacModel = {
             );
             const grupoId = result.insertId;
 
-            const idsUnicos = [...new Set(
-                (Array.isArray(politicaIds) ? politicaIds : [])
-                    .map(id => Number(id))
-                    .filter(id => Number.isInteger(id) && id > 0)
-            )];
-
-            if (idsUnicos.length > 0) {
-                const [politicasValidas] = await conn.query(
-                    "SELECT id FROM politicas WHERE id IN (?)",
-                    [idsUnicos]
-                );
-                for (const pol of politicasValidas) {
-                    await conn.query(
-                        "INSERT IGNORE INTO grupo_politicas (grupo_id, politica_id) VALUES (?, ?)",
-                        [grupoId, pol.id]
-                    );
-                }
-            }
+            await vincularPoliticasEmLote(conn, grupoId, politicaIds);
 
             await conn.commit();
             return rbacModel.findGrupoById(grupoId);
@@ -210,25 +216,7 @@ export const rbacModel = {
 
             if (Array.isArray(politicaIds)) {
                 await conn.query("DELETE FROM grupo_politicas WHERE grupo_id = ?", [id]);
-
-                const idsUnicos = [...new Set(
-                    politicaIds
-                        .map(pid => Number(pid))
-                        .filter(pid => Number.isInteger(pid) && pid > 0)
-                )];
-
-                if (idsUnicos.length > 0) {
-                    const [politicasValidas] = await conn.query(
-                        "SELECT id FROM politicas WHERE id IN (?)",
-                        [idsUnicos]
-                    );
-                    for (const pol of politicasValidas) {
-                        await conn.query(
-                            "INSERT IGNORE INTO grupo_politicas (grupo_id, politica_id) VALUES (?, ?)",
-                            [id, pol.id]
-                        );
-                    }
-                }
+                await vincularPoliticasEmLote(conn, id, politicaIds);
             }
 
             await conn.commit();
@@ -247,25 +235,7 @@ export const rbacModel = {
             await conn.beginTransaction();
 
             await conn.query("DELETE FROM grupo_politicas WHERE grupo_id = ?", [grupoId]);
-
-            const idsUnicos = [...new Set(
-                (Array.isArray(politicaIds) ? politicaIds : [])
-                    .map(pid => Number(pid))
-                    .filter(pid => Number.isInteger(pid) && pid > 0)
-            )];
-
-            if (idsUnicos.length > 0) {
-                const [politicasValidas] = await conn.query(
-                    "SELECT id FROM politicas WHERE id IN (?)",
-                    [idsUnicos]
-                );
-                for (const pol of politicasValidas) {
-                    await conn.query(
-                        "INSERT IGNORE INTO grupo_politicas (grupo_id, politica_id) VALUES (?, ?)",
-                        [grupoId, pol.id]
-                    );
-                }
-            }
+            await vincularPoliticasEmLote(conn, grupoId, politicaIds);
 
             await conn.commit();
             return rbacModel.findGrupoById(grupoId);

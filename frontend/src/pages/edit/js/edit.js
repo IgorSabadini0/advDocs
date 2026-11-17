@@ -1,4 +1,4 @@
-import { mascaraProcessoCNJ, mascaraCpfCnpj, mascaraTelefone, escapeHtml, apiFetch } from '../../../utils/utils.js';
+import { mascaraProcessoCNJ, mascaraCpfCnpj, mascaraTelefone, escapeHtml, apiFetch, mostrarToast } from '../../../utils/utils.js';
 import { extrairSegmentosCNJ } from '../../../utils/cnjParser.js';
 import { carregarTiposSelect, abrirModalNovoTipo } from '../../../utils/tiposService.js';
 import { initThemeManager } from '../../../utils/themeManager.js';
@@ -10,33 +10,6 @@ let idEdicao = null;
 let procOriginalDigitos = '';
 let tribunalEditadoManualmente = false;
 let tribunalPreenchidoAutomaticamente = false;
-
-const mostrarToast = (mensagem, tipo = 'success') => {
-    const container = document.getElementById('toastContainer');
-    if (!container) return;
-
-    const toast = document.createElement('div');
-    toast.className = `toast-item toast-${tipo}`;
-
-    const icone = tipo === 'error'
-        ? 'fa-circle-exclamation'
-        : tipo === 'info'
-            ? 'fa-circle-info'
-            : 'fa-circle-check';
-
-    toast.innerHTML = `
-        <i class="fa-solid ${icone} toast-icon"></i>
-        <span class="toast-text">${escapeHtml(mensagem)}</span>
-    `;
-
-    container.appendChild(toast);
-    requestAnimationFrame(() => toast.classList.add('show'));
-
-    setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 300);
-    }, 3500);
-};
 
 const exibirMensagemStatus = (texto, tipo = 'info') => {
     const responseBox = document.getElementById('responseBox');

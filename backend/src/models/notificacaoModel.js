@@ -35,6 +35,15 @@ export const notificacaoModel = {
     listByUsuario: async (usuarioId, limit = 30) => {
         const lim = Math.min(Math.max(Number(limit) || 30, 1), 100);
 
+        // Expira consultas presas em 'pendente' (ex.: queda ou reinício do servidor) após 3 minutos
+        await db.query(`
+            UPDATE clientes
+            SET datajud_status = 'erro',
+                datajud_mensagem = 'Tempo limite da sincronização em segundo plano excedido. Tente sincronizar novamente.'
+            WHERE datajud_status = 'pendente'
+              AND (datajud_atualizado_em IS NULL OR datajud_atualizado_em < (NOW() - INTERVAL 3 MINUTE))
+        `);
+
         const [rows] = await db.query(`
             SELECT n.id, n.usuario_id, n.cliente_id, n.titulo, n.mensagem, n.tipo,
                    n.lida, n.criada_em,
@@ -79,6 +88,22 @@ export const notificacaoModel = {
     marcarTodasComoLidas: async (usuarioId) => {
         const [result] = await db.query(
             "UPDATE notificacoes SET lida = TRUE WHERE usuario_id = ? AND lida = FALSE",
+            [Number(usuarioId)]
+        );
+        return result;
+    },
+
+    excluirPorId: async (id, usuarioId) => {
+        const [result] = await db.query(
+            "DELETE FROM notificacoes WHERE id = ? AND usuario_id = ?",
+            [Number(id), Number(usuarioId)]
+        );
+        return result;
+    },
+
+    excluirTodasPorUsuario: async (usuarioId) => {
+        const [result] = await db.query(
+            "DELETE FROM notificacoes WHERE usuario_id = ?",
             [Number(usuarioId)]
         );
         return result;

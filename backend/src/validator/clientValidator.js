@@ -1,5 +1,10 @@
+import { extrairSegmentosCNJ } from '../utils/cnjParser.js';
+
 // Validador de dados de cliente/pasta para evitar dados malformados ou inválidos
 const STATUS_PASTA_VALIDOS = ['Ativo', 'Aguardando Documentos', 'Suspenso', 'Arquivado', 'Parado'];
+const MAX_MYSQL_INT = 2147483647;
+const MAX_DESCRICAO_LENGTH = 5000;
+const SEQUENCIA_REPETIDA_REGEX = /^(\d)\1+$/;
 
 const validateCliente = (data) => {
     if (!data || typeof data !== 'object') {
@@ -41,6 +46,9 @@ const validateCliente = (data) => {
         if (docDigits.length !== 11 && docDigits.length !== 14) {
             return { valido: false, mensagem: "CPF/CNPJ inválido (informe 11 dígitos para CPF ou 14 para CNPJ)." };
         }
+        if (SEQUENCIA_REPETIDA_REGEX.test(docDigits)) {
+            return { valido: false, mensagem: "CPF/CNPJ inválido (sequência numérica inválida)." };
+        }
     }
 
     if (telefone !== undefined && telefone !== null && String(telefone).trim() !== '') {
@@ -65,8 +73,8 @@ const validateCliente = (data) => {
     }
 
     const parsedPasta = Number(numeroPasta);
-    if (isNaN(parsedPasta) || !Number.isInteger(parsedPasta) || parsedPasta <= 0) {
-        return { valido: false, mensagem: "Número da pasta inválido (deve ser um número inteiro positivo)." };
+    if (isNaN(parsedPasta) || !Number.isInteger(parsedPasta) || parsedPasta <= 0 || parsedPasta > MAX_MYSQL_INT) {
+        return { valido: false, mensagem: "Número da pasta inválido (deve ser um inteiro positivo até 2.147.483.647)." };
     }
 
     const temTipoTexto = typeof tipo === 'string' && tipo.trim().length > 0 && tipo.trim().length <= 64;
@@ -90,6 +98,9 @@ const validateCliente = (data) => {
         const digits = numeroProc.replace(/\D/g, '');
         if (!/^\d{20}$/.test(digits)) {
             return { valido: false, mensagem: "Número do processo inválido (deve conter os 20 dígitos do padrão CNJ)." };
+        }
+        if (SEQUENCIA_REPETIDA_REGEX.test(digits) || !extrairSegmentosCNJ(digits).valido) {
+            return { valido: false, mensagem: "Número do processo CNJ inválido (código de ramo/tribunal J.TR desconhecido)." };
         }
     }
 
@@ -118,8 +129,13 @@ const validateCliente = (data) => {
         };
     }
 
-    if (descricao !== undefined && descricao !== null && typeof descricao !== 'string') {
-        return { valido: false, mensagem: "Observações/descrição inválidas." };
+    if (descricao !== undefined && descricao !== null) {
+        if (typeof descricao !== 'string') {
+            return { valido: false, mensagem: "Observações/descrição inválidas." };
+        }
+        if (descricao.trim().length > MAX_DESCRICAO_LENGTH) {
+            return { valido: false, mensagem: "Observações/descrição excedem o limite máximo de 5.000 caracteres." };
+        }
     }
 
     if (consultarProcesso !== undefined && consultarProcesso !== null && typeof consultarProcesso !== 'boolean') {

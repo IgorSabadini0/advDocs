@@ -1,6 +1,7 @@
 import { abrirModalNovoTipo } from '../../../utils/tiposService.js';
-import { escapeHtml, normalizeText, apiFetch } from '../../../utils/utils.js';
+import { escapeHtml, normalizeText, apiFetch, mostrarToast } from '../../../utils/utils.js';
 import { initThemeManager, getSavedTheme, applyTheme, resolveTheme } from '../../../utils/themeManager.js';
+import { initNotificationsWidget } from '../../../utils/notificationsWidget.js';
 
 initThemeManager();
 
@@ -17,33 +18,6 @@ const sair = () => {
 };
 
 // --- NOTIFICAÇÕES TOAST & UX HELPERS ---
-
-const mostrarToast = (mensagem, tipo = 'success') => {
-    const container = document.getElementById('toastContainer');
-    if (!container) return;
-
-    const toast = document.createElement('div');
-    toast.className = `toast-item toast-${tipo}`;
-
-    const icone = tipo === 'error'
-        ? 'fa-circle-exclamation'
-        : tipo === 'info'
-            ? 'fa-circle-info'
-            : 'fa-circle-check';
-
-    toast.innerHTML = `
-        <i class="fa-solid ${icone} toast-icon"></i>
-        <span class="toast-text">${escapeHtml(mensagem)}</span>
-    `;
-
-    container.appendChild(toast);
-    requestAnimationFrame(() => toast.classList.add('show'));
-
-    setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 300);
-    }, 3400);
-};
 
 const gerarSlugChave = (texto) => {
     return normalizeText(texto)
@@ -1573,6 +1547,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         sair();
         return;
     }
+
+    initNotificationsWidget({ onToast: mostrarToast });
 
     // Carrega perfil primeiro para determinar permissões RBAC
     await carregarMeuPerfil();

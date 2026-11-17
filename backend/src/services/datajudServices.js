@@ -1,24 +1,20 @@
 import axios from 'axios';
-import { paraAliasDatajud } from '../utils/cnjParser.js';
+import {
+    detectarTribunalCNJ,
+    paraAliasDatajud,
+    MAPA_TJ_ESTADUAL,
+    MAPA_TRE_ELEITORAL,
+    MAPA_MILITAR_ESTADUAL
+} from '../utils/cnjParser.js';
 
-const MAPA_JUSTICA_ESTADUAL = {
-    '01': 'tjac', '02': 'tjal', '03': 'tjap', '04': 'tjam', '05': 'tjba',
-    '06': 'tjce', '07': 'tjdft', '08': 'tjes', '09': 'tjgo', '10': 'tjma',
-    '11': 'tjmt', '12': 'tjms', '13': 'tjmg', '14': 'tjpa', '15': 'tjpb',
-    '16': 'tjpr', '17': 'tjpe', '18': 'tjpi', '19': 'tjrj', '20': 'tjrn',
-    '21': 'tjrs', '22': 'tjro', '23': 'tjrr', '24': 'tjsc', '25': 'tjse',
-    '26': 'tjsp', '27': 'tjto'
-};
-
-const MAPA_JUSTICA_FEDERAL = {
-    '01': 'trf1', '02': 'trf2', '03': 'trf3',
-    '04': 'trf4', '05': 'trf5', '06': 'trf6'
-};
+const ORGAOS_SEM_API_PUBLICA = new Set(['stf', 'cnj', 'cjf']);
 
 const TRIBUNAIS_PERMITIDOS = new Set([
-    ...Object.values(MAPA_JUSTICA_ESTADUAL),
-    ...Object.values(MAPA_JUSTICA_FEDERAL),
+    ...Object.values(MAPA_TJ_ESTADUAL).map(paraAliasDatajud),
+    ...Array.from({ length: 6 }, (_, i) => `trf${i + 1}`),
     ...Array.from({ length: 24 }, (_, i) => `trt${i + 1}`),
+    ...Object.values(MAPA_TRE_ELEITORAL).map(paraAliasDatajud),
+    ...Object.values(MAPA_MILITAR_ESTADUAL).map(paraAliasDatajud),
     'stj', 'tst', 'tse', 'stm'
 ]);
 
@@ -27,33 +23,13 @@ const TRIBUNAIS_PERMITIDOS = new Set([
  * Formato CNJ: NNNNNNN-DD.AAAA.J.TR.OOOO
  */
 export function identificarTribunalCNJ(numeroLimpo) {
-    if (!numeroLimpo || numeroLimpo.length !== 20) {
-        return 'tjsp';
+    const digits = String(numeroLimpo || '').replace(/\D/g, '');
+    if (digits.length !== 20) {
+        return null;
     }
 
-    const ramoJustica = numeroLimpo.substring(13, 14);
-    const codigoTribunal = numeroLimpo.substring(14, 16);
-
-    if (ramoJustica === '8' && MAPA_JUSTICA_ESTADUAL[codigoTribunal]) {
-        return MAPA_JUSTICA_ESTADUAL[codigoTribunal];
-    }
-
-    if (ramoJustica === '4' && MAPA_JUSTICA_FEDERAL[codigoTribunal]) {
-        return MAPA_JUSTICA_FEDERAL[codigoTribunal];
-    }
-
-    if (ramoJustica === '5') {
-        const trtNum = parseInt(codigoTribunal, 10);
-        if (trtNum >= 1 && trtNum <= 24) {
-            return `trt${trtNum}`;
-        }
-    }
-
-    if (ramoJustica === '3') {
-        return 'stj';
-    }
-
-    return 'tjsp';
+    const sigla = detectarTribunalCNJ(digits);
+    return sigla ? paraAliasDatajud(sigla) : null;
 }
 
 /**
@@ -168,8 +144,15 @@ export async function buscarProcesso(numeroProcesso, tribunalOverride = null) {
         ? paraAliasDatajud(tribunalOverride)
         : null;
     const tribunalAlias = tribunalOverrideLimpo || identificarTribunalCNJ(numeroLimpo);
-    if (!TRIBUNAIS_PERMITIDOS.has(tribunalAlias)) {
-        const erro = new Error('Tribunal informado é inválido ou não permitido.');
+
+    if (tribunalAlias && ORGAOS_SEM_API_PUBLICA.has(tribunalAlias)) {
+        const erro = new Error('O órgão/tribunal deste processo (STF/CNJ/CJF) não disponibiliza consulta pública na API do DataJud.');
+        erro.code = 'INVALID_COURT';
+        throw erro;
+    }
+
+    if (!tribunalAlias || !TRIBUNAIS_PERMITIDOS.has(tribunalAlias)) {
+        const erro = new Error('Tribunal informado ou código CNJ inválido/não suportado pelo DataJud.');
         erro.code = 'INVALID_COURT';
         throw erro;
     }

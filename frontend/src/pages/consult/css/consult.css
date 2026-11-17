@@ -49,6 +49,13 @@
     color: var(--text-primary);
 }
 
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
 .btn-back-nav {
     background: var(--bg-subtle);
     border: 1px solid var(--border-color);
@@ -556,15 +563,103 @@
 }
 
 @media (max-width: 768px) {
+    .container {
+        padding: 26px 16px 44px;
+    }
+
+    .nav-container {
+        padding: 12px 16px;
+        gap: 10px;
+    }
+
+    .brand-logo img {
+        height: 38px;
+    }
+
+    .brand-text {
+        font-size: 0.96rem;
+    }
+
+    .btn-back-nav {
+        padding: 9px 12px;
+        font-size: 0.84rem;
+    }
+
+    .consult-intro h1 {
+        font-size: 1.65rem;
+    }
+
+    .consult-panel,
+    .process-card,
+    .folder-banner {
+        padding: 20px 18px;
+    }
+
     .consult-inputs-grid {
         grid-template-columns: 1fr;
+        gap: 14px;
     }
 
     .consult-actions .btn-save {
         max-width: 100%;
     }
 
+    .process-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .process-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .timeline-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
     .timeline-search {
+        min-width: 0;
         width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .brand-text {
+        display: none;
+    }
+
+    .btn-back-nav span {
+        display: none;
+    }
+
+    .btn-back-nav {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        justify-content: center;
+    }
+
+    .consult-intro {
+        margin-bottom: 20px;
+    }
+
+    .consult-intro h1 {
+        font-size: 1.45rem;
+    }
+
+    .folder-banner {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .folder-banner .btn-view {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .process-title-group h2 {
+        font-size: 1.08rem;
+        word-break: break-word;
     }
 }

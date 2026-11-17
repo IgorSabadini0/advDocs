@@ -89,6 +89,43 @@ const mascaraTelefone = (valor) => {
 };
 
 /**
+ * Exibe notificação flutuante (Toast) reutilizável em todas as páginas.
+ */
+const mostrarToast = (mensagem, tipo = 'success', duracao = 3500) => {
+    let container = document.getElementById('toastContainer');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toastContainer';
+        container.className = 'toast-container';
+        container.setAttribute('aria-live', 'polite');
+        document.body.appendChild(container);
+    }
+
+    const tipoUi = tipo === 'sucesso' ? 'success' : tipo === 'erro' ? 'error' : tipo;
+    const toast = document.createElement('div');
+    toast.className = `toast-item toast-${tipoUi}`;
+
+    const icone = tipoUi === 'error'
+        ? 'fa-circle-exclamation'
+        : tipoUi === 'info'
+            ? 'fa-circle-info'
+            : 'fa-circle-check';
+
+    toast.innerHTML = `
+        <i class="fa-solid ${icone} toast-icon"></i>
+        <span class="toast-text">${escapeHtml(mensagem)}</span>
+    `;
+
+    container.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('show'));
+
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, duracao);
+};
+
+/**
  * Helper centralizado para requisições HTTP autenticadas à API.
  */
 const apiFetch = async (endpoint, options = {}) => {
@@ -101,15 +138,48 @@ const apiFetch = async (endpoint, options = {}) => {
     }
 
     const authHeader = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+    const { timeoutMs = 90000, signal: externalSignal, headers: customHeaders, ...fetchOptions } = options;
 
-    const response = await fetch(`${window.location.origin}${endpoint}`, {
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': authHeader,
-            ...(options.headers || {})
+    const controller = new AbortController();
+    let timeoutId = null;
+
+    if (externalSignal) {
+        if (externalSignal.aborted) {
+            controller.abort(externalSignal.reason);
+        } else {
+            externalSignal.addEventListener('abort', () => controller.abort(externalSignal.reason), { once: true });
         }
-    });
+    }
+
+    if (timeoutMs > 0) {
+        timeoutId = setTimeout(() => {
+            controller.abort(new Error('REQUEST_TIMEOUT'));
+        }, timeoutMs);
+    }
+
+    let response;
+    try {
+        response = await fetch(`${window.location.origin}${endpoint}`, {
+            ...fetchOptions,
+            signal: controller.signal,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': authHeader,
+                ...(customHeaders || {})
+            }
+        });
+    } catch (err) {
+        if (err?.name === 'AbortError' || err?.message === 'REQUEST_TIMEOUT') {
+            const timeoutErr = new Error('A requisição excedeu o tempo limite ou foi cancelada. Tente novamente.');
+            timeoutErr.status = 408;
+            timeoutErr.code = 'REQUEST_TIMEOUT';
+            timeoutErr.data = { mensagem: timeoutErr.message };
+            throw timeoutErr;
+        }
+        throw err;
+    } finally {
+        if (timeoutId) clearTimeout(timeoutId);
+    }
 
     if (response.status === 401) {
         localStorage.removeItem('token');
@@ -134,4 +204,4 @@ const apiFetch = async (endpoint, options = {}) => {
     return data;
 };
 
-export { escapeHtml, formatDate, formatDateTime, normalizeText, mascaraProcessoCNJ, mascaraCpfCnpj, mascaraTelefone, apiFetch };
+export { escapeHtml, formatDate, formatDateTime, normalizeText, mascaraProcessoCNJ, mascaraCpfCnpj, mascaraTelefone, mostrarToast, apiFetch };

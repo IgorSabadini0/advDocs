@@ -40,8 +40,42 @@ const marcarTodasLidas = async (req, res) => {
     }
 };
 
+const excluirNotificacao = async (req, res) => {
+    try {
+        const parsedId = Number(req.params.id);
+        if (isNaN(parsedId) || !Number.isInteger(parsedId) || parsedId <= 0) {
+            return res.status(400).json({ mensagem: 'ID de notificação inválido.' });
+        }
+
+        const result = await notificacaoModel.excluirPorId(parsedId, req.usuarioId);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ mensagem: 'Notificação não encontrada.' });
+        }
+
+        return res.status(200).json({ mensagem: 'Notificação excluída com sucesso.' });
+    } catch (error) {
+        console.error('Erro ao excluir notificação:', error);
+        return res.status(500).json({ mensagem: 'Erro interno ao excluir notificação.' });
+    }
+};
+
+const excluirTodasNotificacoes = async (req, res) => {
+    try {
+        const result = await notificacaoModel.excluirTodasPorUsuario(req.usuarioId);
+        return res.status(200).json({
+            mensagem: 'Todas as notificações foram excluídas.',
+            excluidas: result.affectedRows
+        });
+    } catch (error) {
+        console.error('Erro ao excluir todas as notificações:', error);
+        return res.status(500).json({ mensagem: 'Erro interno ao excluir notificações.' });
+    }
+};
+
 export const notificacaoController = {
     listarNotificacoes,
     marcarLida,
-    marcarTodasLidas
+    marcarTodasLidas,
+    excluirNotificacao,
+    excluirTodasNotificacoes
 };

@@ -8,7 +8,7 @@ const fecharModal = () => {
     }
 };
 
-const viewItemModal = (item, { tipoLegivel, onDelete, onEdit, canEdit = true, canDelete = true, onToast } = {}) => {
+const viewItemModal = (item, { tipoLegivel, onDelete, onEdit, onResyncDatajud, canEdit = true, canDelete = true, onToast } = {}) => {
     const modalExistente = document.getElementById('itemModal');
     if (modalExistente) {
         modalExistente.remove();
@@ -17,6 +17,7 @@ const viewItemModal = (item, { tipoLegivel, onDelete, onEdit, canEdit = true, ca
     const modal = document.createElement('div');
     modal.id = 'itemModal';
     modal.className = 'modal-overlay';
+    modal.dataset.itemId = String(item.id);
 
     const dataCriacao = item.created_at || item.data;
     const dataAtualizacao = item.updated_at;
@@ -80,24 +81,30 @@ const viewItemModal = (item, { tipoLegivel, onDelete, onEdit, canEdit = true, ca
                     </div>
                 </div>
 
-                ${(item.datajud_status || item.classe_processual || item.orgao_julgador) ? `
+                ${(item.numeroProc || item.datajud_status || item.classe_processual || item.orgao_julgador) ? `
                 <div class="modal-section" style="margin-top: 20px;">
                     <h3>Sincronização DataJud (CNJ)</h3>
                     <div class="modal-info-grid">
-                        ${item.datajud_status ? `
                         <div class="modal-info-item">
                             <strong>Status da Consulta</strong>
-                            <span class="datajud-pill ${escapeHtml(item.datajud_status)}">
-                                <i class="fa-solid ${item.datajud_status === 'concluido' ? 'fa-circle-check' : item.datajud_status === 'erro' ? 'fa-triangle-exclamation' : 'fa-spinner fa-spin'}"></i>
-                                ${item.datajud_status === 'concluido' ? 'Sincronizado' : item.datajud_status === 'erro' ? 'Erro na Consulta' : 'Em andamento'}
+                            <span id="modalDatajudStatusBadge" class="datajud-pill ${escapeHtml(item.datajud_status || 'nao-sincronizado')}">
+                                <i class="fa-solid ${item.datajud_status === 'concluido' ? 'fa-circle-check' : item.datajud_status === 'erro' ? 'fa-triangle-exclamation' : item.datajud_status === 'pendente' ? 'fa-spinner fa-spin' : 'fa-circle-minus'}"></i>
+                                ${item.datajud_status === 'concluido' ? 'Sincronizado' : item.datajud_status === 'erro' ? 'Erro na Consulta' : item.datajud_status === 'pendente' ? 'Em andamento' : 'Não sincronizado'}
                             </span>
-                        </div>` : ''}
+                        </div>
                         ${item.classe_processual ? `<div class="modal-info-item"><strong>Classe Processual</strong> <span>${escapeHtml(item.classe_processual)}</span></div>` : ''}
                         ${item.orgao_julgador ? `<div class="modal-info-item"><strong>Órgão Julgador</strong> <span>${escapeHtml(item.orgao_julgador)}</span></div>` : ''}
                         ${item.assunto_principal ? `<div class="modal-info-item"><strong>Assunto(s)</strong> <span>${escapeHtml(item.assunto_principal)}</span></div>` : ''}
                         ${item.data_ajuizamento ? `<div class="modal-info-item"><strong>Data de Ajuizamento</strong> <span>${escapeHtml(formatDate(item.data_ajuizamento) || item.data_ajuizamento)}</span></div>` : ''}
                         ${item.datajud_mensagem && item.datajud_status === 'erro' ? `<div class="modal-info-item modal-info-proc"><strong>Detalhe</strong> <span>${escapeHtml(item.datajud_mensagem)}</span></div>` : ''}
                     </div>
+                    ${(item.numeroProc && item.datajud_status !== 'pendente' && canEdit && typeof onResyncDatajud === 'function') ? `
+                    <div class="datajud-modal-actions">
+                        <button type="button" class="btn-resync-datajud" data-action="resync-datajud">
+                            <i class="fa-solid fa-arrows-rotate"></i>
+                            ${item.datajud_status === 'erro' ? 'Tentar sincronizar novamente' : item.datajud_status === 'concluido' ? 'Atualizar dados no DataJud' : 'Sincronizar agora com DataJud'}
+                        </button>
+                    </div>` : ''}
                 </div>` : ''}
 
                 ${item.descricao ? `
@@ -160,6 +167,28 @@ const viewItemModal = (item, { tipoLegivel, onDelete, onEdit, canEdit = true, ca
     if (consultBtn) {
         consultBtn.addEventListener('click', () => {
             window.location.href = `/pages/consult/?proc=${encodeURIComponent(item.numeroProc)}`;
+        });
+    }
+
+    const resyncBtn = modal.querySelector('[data-action="resync-datajud"]');
+    if (resyncBtn && typeof onResyncDatajud === 'function') {
+        resyncBtn.addEventListener('click', async () => {
+            const textoOriginal = resyncBtn.innerHTML;
+            resyncBtn.disabled = true;
+            resyncBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Iniciando...';
+
+            const ok = await onResyncDatajud(item);
+            if (ok) {
+                const badge = modal.querySelector('#modalDatajudStatusBadge');
+                if (badge) {
+                    badge.className = 'datajud-pill pendente';
+                    badge.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Em andamento';
+                }
+                resyncBtn.remove();
+            } else {
+                resyncBtn.disabled = false;
+                resyncBtn.innerHTML = textoOriginal;
+            }
         });
     }
 

@@ -1,9 +1,10 @@
-import { escapeHtml, apiFetch } from './utils.js';
+import { escapeHtml, apiFetch, mostrarToast } from './utils.js';
 
 const SEEN_STORAGE_KEY = 'advdocs_seen_notif_ids';
 const AWAITING_DATAJUD_KEY = 'advdocs_awaiting_datajud';
 
 let pollingTimer = null;
+let deleteConfirmTimer = null;
 let initialized = false;
 let notificationsCache = [];
 let callbacksRef = {
@@ -48,36 +49,17 @@ const formatarTempoRelativo = (dataIso) => {
     return data.toLocaleDateString('pt-BR');
 };
 
-const exibirToastFallback = (mensagem, tipo = 'info') => {
-    let container = document.getElementById('toastContainer');
-    if (!container) {
-        container = document.createElement('div');
-        container.id = 'toastContainer';
-        container.className = 'toast-container';
-        container.setAttribute('aria-live', 'polite');
-        document.body.appendChild(container);
+const resetDeleteAllConfirm = () => {
+    if (deleteConfirmTimer) {
+        clearTimeout(deleteConfirmTimer);
+        deleteConfirmTimer = null;
     }
-
-    const toast = document.createElement('div');
-    toast.className = `toast-item toast-${tipo}`;
-    const icone = tipo === 'error'
-        ? 'fa-circle-exclamation'
-        : tipo === 'success'
-            ? 'fa-circle-check'
-            : 'fa-circle-info';
-
-    toast.innerHTML = `
-        <i class="fa-solid ${icone} toast-icon"></i>
-        <span class="toast-text">${escapeHtml(mensagem)}</span>
-    `;
-
-    container.appendChild(toast);
-    requestAnimationFrame(() => toast.classList.add('show'));
-
-    setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 300);
-    }, 4500);
+    const deleteAllBtn = document.getElementById('notifDeleteAllBtn');
+    if (deleteAllBtn && deleteAllBtn.dataset.confirm === '1') {
+        delete deleteAllBtn.dataset.confirm;
+        deleteAllBtn.classList.remove('is-confirming');
+        deleteAllBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i> <span>Excluir todas</span>';
+    }
 };
 
 const emitirToast = (mensagem, tipo = 'info') => {
@@ -85,7 +67,7 @@ const emitirToast = (mensagem, tipo = 'info') => {
     if (typeof callbacksRef.onToast === 'function') {
         callbacksRef.onToast(mensagem, tipoUi);
     } else {
-        exibirToastFallback(mensagem, tipoUi);
+        mostrarToast(mensagem, tipoUi, 4500);
     }
 };
 
@@ -104,10 +86,109 @@ export const notificarConsultaPendente = () => {
     }
 };
 
+const HEADER_NOTIF_HTML = `
+    <span class="notif-dropdown-title"><i class="fa-solid fa-bell"></i> Notificações</span>
+    <div class="notif-header-actions">
+        <button type="button" class="notif-mark-all-btn" id="notifMarkAllBtn" title="Marcar todas como lidas" disabled>
+            <i class="fa-solid fa-check-double"></i> <span>Marcar lidas</span>
+        </button>
+        <button type="button" class="notif-clear-all-btn" id="notifDeleteAllBtn" title="Excluir todas as notificações" disabled>
+            <i class="fa-solid fa-trash-can"></i> <span>Excluir todas</span>
+        </button>
+    </div>
+`;
+
+/**
+ * Garante que o marcador `#notifWrapper` contenha o sino, badge e dropdown
+ * e move o dropdown para `document.body` (Portal) evitando cortes por overflow/backdrop-filter.
+ */
+const garantirEstruturaNotificacoes = () => {
+    const wrapper = document.getElementById('notifWrapper');
+    if (!wrapper) return null;
+
+    if (!document.getElementById('notificationBellBtn')) {
+        wrapper.innerHTML = `
+            <button type="button" class="btn-nav btn-notif-nav" id="notificationBellBtn" title="Notificações do Sistema" aria-haspopup="true" aria-expanded="false">
+                <i class="fa-solid fa-bell"></i>
+                <span class="notif-badge" id="notificationBadgeCount" style="display: none;">0</span>
+            </button>
+        `;
+    }
+
+    let dropdown = document.getElementById('notificationDropdown');
+    if (!dropdown) {
+        dropdown = document.createElement('div');
+        dropdown.className = 'notif-dropdown';
+        dropdown.id = 'notificationDropdown';
+        dropdown.setAttribute('role', 'region');
+        dropdown.setAttribute('aria-label', 'Central de Notificações');
+        dropdown.innerHTML = `
+            <div class="notif-dropdown-header">${HEADER_NOTIF_HTML}</div>
+            <div class="notif-pending-banner" id="notifPendingBanner" style="display: none;">
+                <i class="fa-solid fa-spinner fa-spin"></i>
+                <span id="notifPendingText">Consultando DataJud em segundo plano...</span>
+            </div>
+            <div class="notif-list" id="notificationList">
+                <div class="notif-empty">
+                    <i class="fa-regular fa-bell-slash"></i>
+                    <span>Nenhuma notificação no momento.</span>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(dropdown);
+    } else {
+        if (dropdown.parentElement !== document.body) {
+            document.body.appendChild(dropdown);
+        }
+        const headerEl = dropdown.querySelector('.notif-dropdown-header');
+        if (headerEl && !dropdown.querySelector('#notifDeleteAllBtn')) {
+            headerEl.innerHTML = HEADER_NOTIF_HTML;
+        }
+    }
+
+    return {
+        wrapper,
+        bellBtn: document.getElementById('notificationBellBtn'),
+        dropdown
+    };
+};
+
+/**
+ * Posiciona o dropdown em viewport fixa baseado nas coordenadas atuais do sino.
+ */
+const posicionarDropdown = () => {
+    const bellBtn = document.getElementById('notificationBellBtn');
+    const dropdown = document.getElementById('notificationDropdown');
+    if (!bellBtn || !dropdown || !dropdown.classList.contains('open')) return;
+
+    const rect = bellBtn.getBoundingClientRect();
+    const margin = 12;
+
+    if (window.innerWidth <= 560) {
+        const topMobile = Math.min(Math.max(rect.bottom + 10, margin), Math.max(margin, window.innerHeight - 360));
+        dropdown.style.top = `${topMobile}px`;
+        dropdown.style.left = `${margin}px`;
+        dropdown.style.right = `${margin}px`;
+        dropdown.style.width = 'auto';
+    } else {
+        const panelWidth = Math.min(385, window.innerWidth - margin * 2);
+        const maxLeft = window.innerWidth - panelWidth - margin;
+        const preferredLeft = rect.right - panelWidth;
+        const clampedLeft = Math.max(margin, Math.min(preferredLeft, maxLeft));
+        const topDesktop = Math.min(Math.max(rect.bottom + 10, margin), Math.max(margin, window.innerHeight - 240));
+
+        dropdown.style.width = `${panelWidth}px`;
+        dropdown.style.right = 'auto';
+        dropdown.style.left = `${clampedLeft}px`;
+        dropdown.style.top = `${topDesktop}px`;
+    }
+};
+
 const renderizarNotificacoes = (dados) => {
     const badge = document.getElementById('notificationBadgeCount');
     const bellBtn = document.getElementById('notificationBellBtn');
     const markAllBtn = document.getElementById('notifMarkAllBtn');
+    const deleteAllBtn = document.getElementById('notifDeleteAllBtn');
     const pendingBanner = document.getElementById('notifPendingBanner');
     const pendingText = document.getElementById('notifPendingText');
     const listEl = document.getElementById('notificationList');
@@ -127,7 +208,14 @@ const renderizarNotificacoes = (dados) => {
     }
 
     if (markAllBtn) {
-        markAllBtn.style.display = naoLidas > 0 ? 'inline-flex' : 'none';
+        markAllBtn.style.display = 'inline-flex';
+        markAllBtn.disabled = naoLidas === 0;
+    }
+
+    if (deleteAllBtn) {
+        resetDeleteAllConfirm();
+        deleteAllBtn.style.display = 'inline-flex';
+        deleteAllBtn.disabled = notificacoes.length === 0;
     }
 
     if (pendingBanner && pendingText) {
@@ -161,27 +249,33 @@ const renderizarNotificacoes = (dados) => {
                 : 'fa-circle-info';
 
         return `
-            <button type="button" class="notif-item ${n.lida ? '' : 'unread'}" data-notif-id="${n.id}">
-                <span class="notif-item-icon ${escapeHtml(n.tipo)}">
-                    <i class="fa-solid ${iconClass}"></i>
-                </span>
-                <span class="notif-item-content">
-                    <span class="notif-item-top">
-                        <strong class="notif-item-title">${escapeHtml(n.titulo)}</strong>
-                        ${n.lida ? '' : '<span class="notif-unread-dot" title="Não lida"></span>'}
+            <div class="notif-item ${n.lida ? '' : 'unread'}" data-notif-id="${n.id}">
+                <button type="button" class="notif-item-main" data-notif-id="${n.id}">
+                    <span class="notif-item-icon ${escapeHtml(n.tipo)}">
+                        <i class="fa-solid ${iconClass}"></i>
                     </span>
-                    <span class="notif-item-msg">${escapeHtml(n.mensagem)}</span>
-                    <span class="notif-item-time">
-                        <i class="fa-regular fa-clock"></i> ${escapeHtml(formatarTempoRelativo(n.criada_em))}
-                        ${n.pasta_numero ? ` &bull; Pasta Nº ${escapeHtml(n.pasta_numero)}` : ''}
+                    <span class="notif-item-content">
+                        <span class="notif-item-top">
+                            <strong class="notif-item-title">${escapeHtml(n.titulo)}</strong>
+                            ${n.lida ? '' : '<span class="notif-unread-dot" title="Não lida"></span>'}
+                        </span>
+                        <span class="notif-item-msg">${escapeHtml(n.mensagem)}</span>
+                        <span class="notif-item-time">
+                            <i class="fa-regular fa-clock"></i> ${escapeHtml(formatarTempoRelativo(n.criada_em))}
+                            ${n.pasta_numero ? ` &bull; Pasta Nº ${escapeHtml(n.pasta_numero)}` : ''}
+                        </span>
                     </span>
-                </span>
-            </button>
+                </button>
+                <button type="button" class="notif-item-delete" data-delete-id="${n.id}" title="Apagar notificação" aria-label="Apagar notificação">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
         `;
     }).join('');
 
-    listEl.querySelectorAll('.notif-item').forEach(btn => {
-        btn.addEventListener('click', async () => {
+    listEl.querySelectorAll('.notif-item-main').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
             const notifId = Number(btn.dataset.notifId);
             const notif = notificationsCache.find(item => Number(item.id) === notifId);
             if (!notif) return;
@@ -191,8 +285,8 @@ const renderizarNotificacoes = (dados) => {
                     await apiFetch(`/notificacoes/${notifId}/lida`, { method: 'PATCH' });
                     notif.lida = true;
                     await carregarNotificacoes(true);
-                } catch (e) {
-                    console.error('Erro ao marcar notificação como lida:', e);
+                } catch (err) {
+                    console.error('Erro ao marcar notificação como lida:', err);
                 }
             }
 
@@ -207,9 +301,31 @@ const renderizarNotificacoes = (dados) => {
             }
         });
     });
+
+    listEl.querySelectorAll('.notif-item-delete').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const notifId = Number(btn.dataset.deleteId);
+            if (!notifId || btn.disabled) return;
+
+            btn.disabled = true;
+            try {
+                await apiFetch(`/notificacoes/${notifId}`, { method: 'DELETE' });
+                await carregarNotificacoes(true);
+                emitirToast('Notificação removida.', 'info');
+            } catch (err) {
+                console.error('Erro ao excluir notificação:', err);
+                btn.disabled = false;
+                emitirToast(err.message || 'Erro ao excluir notificação.', 'error');
+            }
+        });
+    });
+
+    posicionarDropdown();
 };
 
 const fecharDropdown = () => {
+    resetDeleteAllConfirm();
     const dropdown = document.getElementById('notificationDropdown');
     const bellBtn = document.getElementById('notificationBellBtn');
     dropdown?.classList.remove('open');
@@ -294,6 +410,8 @@ export const initNotificationsWidget = (options = {}) => {
         ...options
     };
 
+    garantirEstruturaNotificacoes();
+
     if (initialized) {
         carregarNotificacoes(true);
         return;
@@ -303,6 +421,7 @@ export const initNotificationsWidget = (options = {}) => {
     const bellBtn = document.getElementById('notificationBellBtn');
     const dropdown = document.getElementById('notificationDropdown');
     const markAllBtn = document.getElementById('notifMarkAllBtn');
+    const deleteAllBtn = document.getElementById('notifDeleteAllBtn');
     const wrapper = document.getElementById('notifWrapper');
 
     if (bellBtn && dropdown) {
@@ -313,12 +432,15 @@ export const initNotificationsWidget = (options = {}) => {
             bellBtn.classList.toggle('active', vaiAbrir);
             bellBtn.setAttribute('aria-expanded', vaiAbrir ? 'true' : 'false');
             if (vaiAbrir) {
+                posicionarDropdown();
                 carregarNotificacoes(true);
             }
         });
 
         document.addEventListener('click', (e) => {
-            if (wrapper && !wrapper.contains(e.target)) {
+            const insideWrapper = wrapper && wrapper.contains(e.target);
+            const insideDropdown = dropdown && dropdown.contains(e.target);
+            if (!insideWrapper && !insideDropdown) {
                 fecharDropdown();
             }
         });
@@ -328,17 +450,53 @@ export const initNotificationsWidget = (options = {}) => {
                 fecharDropdown();
             }
         });
+
+        window.addEventListener('resize', posicionarDropdown);
+        window.addEventListener('scroll', posicionarDropdown, { passive: true });
     }
 
     if (markAllBtn) {
         markAllBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
+            if (markAllBtn.disabled) return;
+
+            markAllBtn.disabled = true;
             try {
                 await apiFetch('/notificacoes/ler-todas', { method: 'PATCH' });
                 await carregarNotificacoes(true);
                 emitirToast('Todas as notificações foram marcadas como lidas.', 'info');
             } catch (err) {
-                console.error('Erro ao marcar todas como lidas:', err);
+                console.error('Erro ao marcar todas as notificações como lidas:', err);
+                markAllBtn.disabled = false;
+                emitirToast(err.message || 'Erro ao marcar notificações como lidas.', 'error');
+            }
+        });
+    }
+
+    if (deleteAllBtn) {
+        deleteAllBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (deleteAllBtn.disabled) return;
+
+            if (deleteAllBtn.dataset.confirm !== '1') {
+                deleteAllBtn.dataset.confirm = '1';
+                deleteAllBtn.classList.add('is-confirming');
+                deleteAllBtn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> <span>Confirmar?</span>';
+                if (deleteConfirmTimer) clearTimeout(deleteConfirmTimer);
+                deleteConfirmTimer = setTimeout(resetDeleteAllConfirm, 3500);
+                return;
+            }
+
+            resetDeleteAllConfirm();
+            deleteAllBtn.disabled = true;
+            try {
+                await apiFetch('/notificacoes', { method: 'DELETE' });
+                await carregarNotificacoes(true);
+                emitirToast('Todas as notificações foram excluídas.', 'info');
+            } catch (err) {
+                console.error('Erro ao excluir todas as notificações:', err);
+                deleteAllBtn.disabled = false;
+                emitirToast(err.message || 'Erro ao excluir notificações.', 'error');
             }
         });
     }

@@ -9,6 +9,12 @@ const limparTextoOpcional = (valor) => {
     return texto !== '' ? texto : null;
 };
 
+const formatarProcessoCNJ = (digitos) => {
+    const d = String(digitos || '').replace(/\D/g, '');
+    if (d.length !== 20) return null;
+    return `${d.slice(0, 7)}-${d.slice(7, 9)}.${d.slice(9, 13)}.${d.slice(13, 14)}.${d.slice(14, 16)}.${d.slice(16, 20)}`;
+};
+
 const normalizarRegistroSaida = (row) => {
     if (!row) return null;
     return {
@@ -132,29 +138,46 @@ const clienteModel = {
         const numeroLimpo = String(numeroProc || '').replace(/\D/g, '');
         if (!numeroLimpo) return null;
 
+        const candidatos = [...new Set([
+            String(numeroProc || '').trim(),
+            formatarProcessoCNJ(numeroLimpo),
+            numeroLimpo
+        ].filter(Boolean))];
+
         const query = `
             SELECT c.*, tp.nome AS tipo_processo_nome
             FROM clientes c
             LEFT JOIN tipos_processo tp ON tp.id = c.tipo_processo_id
-            WHERE c.numeroProc = ? 
-               OR REPLACE(REPLACE(REPLACE(c.numeroProc, '-', ''), '.', ''), ' ', '') = ?
+            WHERE c.numeroProc IN (?)
             LIMIT 1
         `;
-        const [registro] = await db.query(query, [numeroProc, numeroLimpo]);
+        const [registro] = await db.query(query, [candidatos]);
         return normalizarRegistroSaida(registro[0] || null);
     },
 
     verificarExistencia: async (numeroProc, numeroPasta, idIgnorar = null, conn = db, lockForUpdate = false) => {
         const procLimpo = String(numeroProc || '').replace(/\D/g, '');
+        const candidatos = procLimpo
+            ? [...new Set([
+                String(numeroProc || '').trim(),
+                formatarProcessoCNJ(procLimpo),
+                procLimpo
+            ].filter(Boolean))]
+            : [];
+
+        const condicoes = ['numeroPasta = ?'];
+        const params = [Number(numeroPasta)];
+
+        if (candidatos.length > 0) {
+            condicoes.unshift('numeroProc IN (?)');
+            params.unshift(candidatos);
+        }
+
         let query = `
             SELECT id, numeroProc, numeroPasta
             FROM clientes
-            WHERE (
-                (? != '' AND REPLACE(REPLACE(REPLACE(numeroProc, '-', ''), '.', ''), ' ', '') = ?)
-                OR numeroPasta = ?
-            )
+            WHERE (${condicoes.join(' OR ')})
         `;
-        const params = [procLimpo, procLimpo, Number(numeroPasta)];
 
         if (idIgnorar) {
             query += " AND id != ?";
@@ -175,8 +198,8 @@ const clienteModel = {
                 acao, nome, cpf_cnpj, telefone, email,
                 numeroPasta, tipo, tipo_processo_id,
                 numeroProc, tribunal, comarca_vara, parte_contraria,
-                status, descricao, datajud_status, datajud_mensagem
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                status, descricao, datajud_status, datajud_mensagem, datajud_atualizado_em
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CASE WHEN ? = 'pendente' THEN NOW() ELSE NULL END)
         `;
         const [resultado] = await conn.query(query, [
             parsed.acaoLimpa,
@@ -194,7 +217,8 @@ const clienteModel = {
             parsed.statusLimpo,
             parsed.descLimpa,
             parsed.datajudStatusLimpo,
-            parsed.datajudMensagemLimpa
+            parsed.datajudMensagemLimpa,
+            parsed.datajudStatusLimpo
         ]);
         return resultado;
     },
@@ -237,7 +261,8 @@ const clienteModel = {
                 numeroPasta = ?, tipo = ?, tipo_processo_id = ?,
                 numeroProc = ?, tribunal = ?, comarca_vara = ?, parte_contraria = ?,
                 status = ?, descricao = ?,
-                datajud_status = ?, datajud_mensagem = ?
+                datajud_status = ?, datajud_mensagem = ?,
+                datajud_atualizado_em = CASE WHEN ? = 'pendente' THEN NOW() ELSE datajud_atualizado_em END
             WHERE id = ?
         `;
         const [resultado] = await conn.query(query, [
@@ -257,6 +282,7 @@ const clienteModel = {
             parsed.descLimpa,
             parsed.datajudStatusLimpo,
             parsed.datajudMensagemLimpa,
+            parsed.datajudStatusLimpo,
             Number(id)
         ]);
         return resultado;

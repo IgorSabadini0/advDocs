@@ -2,7 +2,7 @@ import { clienteModel } from '../models/clienteModel.js';
 import { tipoProcessoModel } from '../models/tipoProcessoModel.js';
 import { validateCliente } from '../validator/clientValidator.js';
 import { buscarProcesso } from '../services/datajudServices.js';
-import { agendarConsultaDatajud } from '../services/datajudBackgroundWorker.js';
+import { agendarConsultaDatajud, estaSincronizandoCliente } from '../services/datajudBackgroundWorker.js';
 
 const listClientes = async (req, res) => {
     try {
@@ -370,6 +370,54 @@ const deleteCliente = async (req, res) => {
     }
 };
 
+const resincronizarDatajudCliente = async (req, res) => {
+    try {
+        const parsedId = Number(req.params.id);
+        if (isNaN(parsedId) || !Number.isInteger(parsedId) || parsedId <= 0) {
+            return res.status(400).json({ mensagem: "ID do registro inválido." });
+        }
+
+        const cliente = await clienteModel.findById(parsedId);
+        if (!cliente) {
+            return res.status(404).json({ mensagem: "Pasta/cliente não encontrado." });
+        }
+
+        if (estaSincronizandoCliente(parsedId)) {
+            return res.status(409).json({
+                mensagem: "Esta pasta já possui uma sincronização com o DataJud em andamento."
+            });
+        }
+
+        const numeroProc = cliente.numeroProc || '';
+        const procLimpo = String(numeroProc).replace(/\D/g, '');
+        if (procLimpo.length !== 20) {
+            return res.status(400).json({
+                mensagem: "Esta pasta não possui um número de processo CNJ válido (20 dígitos) para sincronizar."
+            });
+        }
+
+        await clienteModel.atualizarStatusDatajud(parsedId, {
+            status: 'pendente',
+            mensagem: 'Reconsulta ao DataJud em andamento...'
+        });
+
+        agendarConsultaDatajud({
+            clienteId: parsedId,
+            usuarioId: req.usuarioId,
+            numeroProcesso: numeroProc,
+            tribunal: cliente.tribunal || null
+        });
+
+        return res.status(200).json({
+            mensagem: 'Sincronização com o DataJud iniciada em segundo plano!',
+            datajud_status: 'pendente'
+        });
+    } catch (error) {
+        console.error(`Erro ao re-sincronizar DataJud: ${error}`);
+        return res.status(500).json({ mensagem: "Erro interno no servidor" });
+    }
+};
+
 const clienteController = {
     listClientes,
     getClienteById,
@@ -381,7 +429,8 @@ const clienteController = {
     createCliente,
     consultarProcessoCliente,
     updateCliente,
-    deleteCliente
+    deleteCliente,
+    resincronizarDatajudCliente
 };
 
 export { clienteController };
