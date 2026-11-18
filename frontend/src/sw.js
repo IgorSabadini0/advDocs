@@ -1,20 +1,23 @@
 /**
  * Service Worker do advDocs (Palhares Ferreira Advocacia)
  *
- * REGRA CRÍTICA DE SEGURANÇA (Sistema Jurídico Autenticado):
+ * REGRAS DE SEGURANÇA E PERFORMANCE (PWA + iOS Safari/WebKit):
  * 1. NUNCA armazena em cache requisições de API (/api/*, /auth*, /clientes*, /users*, /rbac*, /notificacoes*),
  *    downloads/uploads de documentos jurídicos, certificados (.pfx/.p12) ou requisições com header Authorization.
  * 2. NUNCA intercepta métodos mutáveis (POST, PUT, PATCH, DELETE).
- * 3. Aplica estratégia Network-Only estrita para dados dinâmicos/autenticados,
- *    Network-First para documentos HTML de navegação e Stale-While-Revalidate apenas para
- *    assets estáticos públicos (CSS, JS de UI, SVG, PNG, fontes).
+ * 3. Network-Only estrita para dados dinâmicos/autenticados.
+ * 4. Network-First com timeout de 3s para documentos HTML de navegação (abertura rápida mesmo com rede lenta).
+ * 5. Cache-First instantânea para assets estáticos locais (.css, .js, .svg, .png, .woff2) e fontes/kits externos.
  */
 
-const CACHE_VERSION = 'v1.1.0';
+const CACHE_VERSION = 'v1.2.0';
 const STATIC_CACHE_NAME = `advdocs-static-${CACHE_VERSION}`;
 
-// Shell estático essencial pré-carregado na instalação
+// Precache completo das telas HTML, estilos e scripts essenciais na instalação
 const PRECACHE_ASSETS = [
+    '/',
+    '/index.html',
+    '/gateway.js',
     '/manifest.json',
     '/css/public.css',
     '/assets/logo.svg',
@@ -23,9 +26,39 @@ const PRECACHE_ASSETS = [
     '/icons/icon-192x192.png',
     '/icons/icon-512.png',
     '/icons/icon-512x512.png',
+    '/utils/utils.js',
+    '/utils/cnjParser.js',
     '/utils/themeManager.js',
     '/utils/pwaManager.js',
-    '/utils/pushManager.js'
+    '/utils/pushManager.js',
+    '/utils/notificationsWidget.js',
+    '/utils/tiposService.js',
+    '/pages/auth/',
+    '/pages/auth/index.html',
+    '/pages/auth/css/style.css',
+    '/pages/auth/js/script.js',
+    '/pages/main/',
+    '/pages/main/index.html',
+    '/pages/main/css/pastas.css',
+    '/pages/main/js/pastas.js',
+    '/pages/main/components/cardComponent.js',
+    '/pages/main/components/modalComponent.js',
+    '/pages/consult/',
+    '/pages/consult/index.html',
+    '/pages/consult/css/consult.css',
+    '/pages/consult/js/consult.js',
+    '/pages/register/',
+    '/pages/register/index.html',
+    '/pages/register/css/register.css',
+    '/pages/register/js/register.js',
+    '/pages/edit/',
+    '/pages/edit/index.html',
+    '/pages/edit/css/edit.css',
+    '/pages/edit/js/edit.js',
+    '/pages/config/',
+    '/pages/config/index.html',
+    '/pages/config/css/config.css',
+    '/pages/config/js/config.js'
 ];
 
 // Prefixos de rotas dinâmicas/API que NUNCA devem passar pelo Cache Storage
@@ -38,7 +71,15 @@ const NETWORK_ONLY_PREFIXES = [
     '/notificacoes'
 ];
 
-// Extensões de assets estáticos elegíveis para Stale-While-Revalidate
+// Origens externas estáticas permitidas no Cache-First (Google Fonts & FontAwesome)
+const CACHEABLE_EXTERNAL_ORIGINS = new Set([
+    'https://fonts.googleapis.com',
+    'https://fonts.gstatic.com',
+    'https://kit.fontawesome.com',
+    'https://ka-f.fontawesome.com'
+]);
+
+// Extensões de assets estáticos elegíveis para Cache-First
 const STATIC_EXTENSIONS = /\.(?:css|js|svg|png|jpg|jpeg|webp|ico|woff2?|ttf)$/i;
 
 /**
@@ -48,7 +89,7 @@ const STATIC_EXTENSIONS = /\.(?:css|js|svg|png|jpg|jpeg|webp|ico|woff2?|ttf)$/i;
  * @returns {boolean}
  */
 function isSensitiveOrDynamicRequest(url, request) {
-    // 1. Apenas requisições GET podem ser avaliadas para cache estático
+    // 1. Apenas requisições GET podem ser avaliadas para cache
     if (request.method !== 'GET') {
         return true;
     }
@@ -58,32 +99,48 @@ function isSensitiveOrDynamicRequest(url, request) {
         return true;
     }
 
-    // 3. Apenas recursos da mesma origem (ou fontes estáticas seguras)
-    if (url.origin !== self.location.origin) {
+    // 3. Apenas mesma origem ou CDNs de fontes/ícones explicitamente confiáveis
+    const isSameOrigin = url.origin === self.location.origin;
+    if (!isSameOrigin && !CACHEABLE_EXTERNAL_ORIGINS.has(url.origin)) {
         return true;
     }
 
     // 4. O próprio Service Worker nunca deve ser cacheado
-    if (url.pathname === '/sw.js') {
+    if (isSameOrigin && url.pathname === '/sw.js') {
         return true;
     }
 
     // 5. Qualquer rota de backend / API / autenticação / documentos
-    for (let i = 0; i < NETWORK_ONLY_PREFIXES.length; i++) {
-        const prefix = NETWORK_ONLY_PREFIXES[i];
-        // Exceção: /pages/auth/* são arquivos estáticos da tela de login, enquanto /auth é o endpoint POST/GET da API
-        if (url.pathname === prefix || (url.pathname.startsWith(prefix + '/') && !url.pathname.startsWith('/pages/'))) {
-            return true;
+    if (isSameOrigin) {
+        for (let i = 0; i < NETWORK_ONLY_PREFIXES.length; i++) {
+            const prefix = NETWORK_ONLY_PREFIXES[i];
+            if (url.pathname === prefix || (url.pathname.startsWith(prefix + '/') && !url.pathname.startsWith('/pages/'))) {
+                return true;
+            }
         }
     }
 
     return false;
 }
 
+/**
+ * Busca documento HTML na rede com timeout curto (3s) para não travar em conexões móveis lentas.
+ */
+function fetchWithTimeout(request, timeoutMs = 3000) {
+    if (typeof AbortController === 'undefined') {
+        return fetch(request);
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    return fetch(request, { signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(STATIC_CACHE_NAME)
-            .then((cache) => cache.addAll(PRECACHE_ASSETS))
+            .then((cache) => Promise.allSettled(
+                PRECACHE_ASSETS.map((assetUrl) => cache.add(assetUrl))
+            ))
             .then(() => self.skipWaiting())
             .catch(() => self.skipWaiting())
     );
@@ -111,51 +168,56 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Regra crítica: Network-Only para APIs, autenticação, métodos mutáveis e requests autenticadas
+    // Regra crítica: Network-Only estrita para APIs, autenticação, métodos mutáveis e requests autenticadas
     if (isSensitiveOrDynamicRequest(url, request)) {
         return;
     }
 
-    // Estratégia 1: Navegação HTML (Network-First para garantir código e CSP sempre atualizados)
-    if (request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html')) {
+    const isSameOrigin = url.origin === self.location.origin;
+
+    // Estratégia 1: Navegação HTML (Network-First com timeout curto de 3s + fallback para cache)
+    if (isSameOrigin && (request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html'))) {
         event.respondWith(
-            fetch(request)
+            fetchWithTimeout(request, 3000)
                 .then((networkResponse) => {
                     if (networkResponse && networkResponse.ok && networkResponse.type === 'basic') {
                         const copy = networkResponse.clone();
-                        caches.open(STATIC_CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
+                        caches.open(STATIC_CACHE_NAME).then((cache) => cache.put(url.pathname, copy)).catch(() => {});
                     }
                     return networkResponse;
                 })
                 .catch(async () => {
-                    const cached = await caches.match(request);
-                    if (cached) return cached;
+                    const cachedExact = await caches.match(request, { ignoreSearch: true });
+                    if (cachedExact) return cachedExact;
+                    const cachedPath = await caches.match(url.pathname);
+                    if (cachedPath) return cachedPath;
                     throw new Error('Sem conexão de rede.');
                 })
         );
         return;
     }
 
-    // Estratégia 2: Assets estáticos de interface (Stale-While-Revalidate)
-    if (STATIC_EXTENSIONS.test(url.pathname) || url.pathname === '/manifest.json') {
+    // Estratégia 2: Cache-First instantânea para assets estáticos locais e fontes/ícones externos
+    const isExternalStatic = CACHEABLE_EXTERNAL_ORIGINS.has(url.origin);
+    if (isExternalStatic || STATIC_EXTENSIONS.test(url.pathname) || url.pathname === '/manifest.json') {
         event.respondWith(
             caches.open(STATIC_CACHE_NAME).then(async (cache) => {
-                const cachedResponse = await cache.match(request);
-                const networkPromise = fetch(request)
-                    .then((networkResponse) => {
-                        if (
-                            networkResponse &&
-                            networkResponse.status === 200 &&
-                            networkResponse.type === 'basic' &&
-                            !networkResponse.headers.get('Cache-Control')?.includes('no-store')
-                        ) {
-                            cache.put(request, networkResponse.clone()).catch(() => {});
-                        }
-                        return networkResponse;
-                    })
-                    .catch(() => cachedResponse);
+                const cachedResponse = await cache.match(request, { ignoreSearch: false });
+                if (cachedResponse) {
+                    return cachedResponse;
+                }
 
-                return cachedResponse || networkPromise;
+                const networkResponse = await fetch(request);
+                const isCacheableResponse = networkResponse && (
+                    (networkResponse.status === 200 && (networkResponse.type === 'basic' || networkResponse.type === 'cors')) ||
+                    networkResponse.type === 'opaque'
+                );
+
+                if (isCacheableResponse && !networkResponse.headers.get('Cache-Control')?.includes('no-store')) {
+                    cache.put(request, networkResponse.clone()).catch(() => {});
+                }
+
+                return networkResponse;
             })
         );
     }

@@ -89,7 +89,16 @@ app.get('/manifest.json', (req, res) => {
     res.sendFile(path.join(staticPath, 'manifest.json'));
 });
 
-app.use(express.static(staticPath));
+app.use(express.static(staticPath, {
+    maxAge: '1d',
+    etag: true,
+    lastModified: true,
+    setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.html')) {
+            res.setHeader('Cache-Control', 'no-cache');
+        }
+    }
+}));
 
 // 4. Rota Raiz: entrega o gateway que valida se o usuário já possui sessão ativa no navegador
 app.get('/', (req, res) => {

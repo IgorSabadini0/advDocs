@@ -169,7 +169,83 @@ export const initIosInstallBanner = () => {
 };
 
 /**
- * Inicializa todos os recursos de PWA (Service Worker, Meta Theme-Color e Banner iOS).
+ * Realiza prefetch leve das rotas HTML internas ao tocar/passar o cursor e em idle,
+ * acelerando a transição entre telas no PWA standalone do iOS e desktop.
+ */
+const prefetchedUrls = new Set();
+
+const prefetchRouteDocument = (rawHref) => {
+    if (typeof window === 'undefined' || typeof document === 'undefined' || !rawHref) return;
+    let url;
+    try {
+        url = new URL(rawHref, window.location.href);
+    } catch (_) {
+        return;
+    }
+
+    if (url.origin !== window.location.origin) return;
+    if (!url.pathname.startsWith('/pages/') && url.pathname !== '/') return;
+
+    const cleanTarget = `${url.origin}${url.pathname}`;
+    if (prefetchedUrls.has(cleanTarget) || url.pathname === window.location.pathname) return;
+    prefetchedUrls.add(cleanTarget);
+
+    if (document.head) {
+        const link = document.createElement('link');
+        link.rel = 'prefetch';
+        link.as = 'document';
+        link.href = cleanTarget;
+        document.head.appendChild(link);
+    }
+
+    // No WebKit/iOS Safari, `<link rel="prefetch">` tem suporte limitado; um fetch de baixa prioridade aquece o cache do navegador/SW
+    if (typeof fetch === 'function') {
+        fetch(cleanTarget, {
+            method: 'GET',
+            credentials: 'same-origin',
+            priority: 'low',
+            headers: { Accept: 'text/html' }
+        }).catch(() => {});
+    }
+};
+
+export const initNavigationPrefetch = () => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
+    const handleIntent = (event) => {
+        const anchor = event.target?.closest?.('a[href]');
+        if (!anchor) return;
+        const href = anchor.getAttribute('href');
+        if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
+        prefetchRouteDocument(href);
+    };
+
+    document.addEventListener('touchstart', handleIntent, { passive: true });
+    document.addEventListener('pointerenter', handleIntent, { passive: true, capture: true });
+
+    // Em segundo plano após o carregamento inicial, aquece as rotas principais se autenticado
+    const warmUpMainRoutes = () => {
+        try {
+            if (!localStorage.getItem('token')) return;
+        } catch (_) {
+            return;
+        }
+
+        const routes = ['/pages/main/', '/pages/consult/', '/pages/register/', '/pages/config/'];
+        for (const r of routes) {
+            prefetchRouteDocument(r);
+        }
+    };
+
+    if (typeof window.requestIdleCallback === 'function') {
+        window.requestIdleCallback(warmUpMainRoutes, { timeout: 2500 });
+    } else {
+        setTimeout(warmUpMainRoutes, 1500);
+    }
+};
+
+/**
+ * Inicializa todos os recursos de PWA (Service Worker, Meta Theme-Color, Prefetch e Banner iOS).
  */
 export const initPwaManager = () => {
     if (typeof window === 'undefined') return;
@@ -185,4 +261,5 @@ export const initPwaManager = () => {
 
     registerServiceWorker();
     initIosInstallBanner();
+    initNavigationPrefetch();
 };

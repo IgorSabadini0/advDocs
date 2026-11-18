@@ -248,3 +248,16 @@ body {
         font-size: 1.05rem;
     }
 }
+
+@media (hover: none) and (pointer: coarse), (prefers-reduced-motion: reduce) {
+    .bg-mesh,
+    .logo img {
+        animation: none !important;
+    }
+
+    .login-card {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        background: var(--bg-surface-solid);
+    }
+}

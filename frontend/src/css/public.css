@@ -2447,3 +2447,111 @@ pre {
     gap: 10px;
     flex-wrap: wrap;
 }
+
+/* ==========================================================================
+   iOS Safari / WebKit Performance, Touch Delay Removal & GPU Scroll Boost
+   ========================================================================== */
+
+:root {
+    --brand-gold-soft: var(--brand-gold-glow);
+    --border-gold-strong: rgba(218, 176, 99, 0.52);
+}
+
+/* Elimina o atraso de 300ms no toque e bloqueia double-tap zoom acidental */
+html,
+body,
+a,
+button,
+input,
+select,
+textarea,
+label,
+[role="button"],
+[role="tab"],
+[role="radio"],
+.result-card,
+.stat-card,
+.filter-btn,
+.sidebar-nav-item,
+.nav-user-chip,
+.datajud-toggle-card,
+.btn-nav,
+.btn-action,
+.notif-item-main {
+    touch-action: manipulation;
+}
+
+body {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Isola fundo mesh fixo em camada dedicada de GPU para scroll sem repaints */
+.bg-mesh {
+    transform: translateZ(0);
+    will-change: transform;
+}
+
+/* Pula renderização de cards fora da tela em listagens longas */
+.result-card {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 210px;
+}
+
+/* Feedback tátil instantâneo no toque (sensação de app nativo) */
+a:active,
+button:not(:disabled):active,
+.btn-nav:active,
+.btn-save:active,
+.btn-submit:active,
+.btn-secondary-nav:active,
+.btn-back-nav:active,
+.topbar-back-btn:active,
+.sidebar-nav-item:active,
+.filter-btn:active,
+.stat-card:active,
+.result-card:active,
+.nav-user-chip:active,
+.theme-option-card:active,
+.notif-item-main:active {
+    transform: scale(0.98) !important;
+    opacity: 0.85;
+    transition: transform 0.08s ease, opacity 0.08s ease !important;
+}
+
+/* Reduz pressão de fill-rate da GPU no scroll em dispositivos touch / mobile */
+@media (max-width: 900px), (hover: none) and (pointer: coarse) {
+    .result-card,
+    .stat-card,
+    .control-panel,
+    .consult-panel,
+    .settings-layout,
+    .login-card,
+    .container,
+    .process-card,
+    .folder-banner {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        background: var(--bg-surface-solid);
+    }
+
+    .navbar,
+    .notif-dropdown,
+    .ios-pwa-banner {
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+
+    .result-card,
+    .stat-card,
+    .grupo-item,
+    .user-item {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
+        animation: none;
+    }
+
+    .result-card:hover,
+    .stat-card:hover {
+        transform: none;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
+    }
+}
