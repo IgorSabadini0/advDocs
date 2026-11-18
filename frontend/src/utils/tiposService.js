@@ -1,13 +1,49 @@
 import { escapeHtml, apiFetch, normalizeText } from './utils.js';
-import { FA_FULL_ICON_CATALOG } from './faFullCatalog.js';
 
 export const ICONE_PADRAO_TIPO = 'fa-solid fa-folder';
 
+const CATALOGO_BASE_INICIAL = [
+    { classe: 'fa-solid fa-scale-balanced', nome: 'Balança / Cível', estilo: 'solid', juridico: true, tags: 'balanca justica civel civil direito' },
+    { classe: 'fa-solid fa-gavel', nome: 'Martelo / Juízo', estilo: 'solid', juridico: true, tags: 'martelo juizo audiencia acao decisao' },
+    { classe: 'fa-solid fa-folder', nome: 'Pasta Padrão', estilo: 'solid', juridico: true, tags: 'pasta padrao arquivo dossie geral' },
+    { classe: 'fa-solid fa-file-contract', nome: 'Contrato / Acordo', estilo: 'solid', juridico: true, tags: 'contrato acordo extrajudicial documento' },
+    { classe: 'fa-solid fa-building-columns', nome: 'Tribunal / Justiça', estilo: 'solid', juridico: true, tags: 'tribunal justica predio corte trf tjsp' },
+    { classe: 'fa-solid fa-briefcase', nome: 'Trabalhista / Empresarial', estilo: 'solid', juridico: true, tags: 'trabalhista trabalho empresa clt pasta' },
+    { classe: 'fa-solid fa-person-cane', nome: 'Previdenciário / INSS', estilo: 'solid', juridico: true, tags: 'previdenciario inss aposentadoria idoso auxilio' },
+    { classe: 'fa-solid fa-people-roof', nome: 'Família / Sucessões', estilo: 'solid', juridico: true, tags: 'familia divorcio guarda pensao lar' },
+    { classe: 'fa-solid fa-handcuffs', nome: 'Criminal / Penal', estilo: 'solid', juridico: true, tags: 'criminal penal algema crime defesa' },
+    { classe: 'fa-solid fa-hospital', nome: 'Saúde / Santa Casa', estilo: 'solid', juridico: true, tags: 'saude hospital santa casa plano medicamento' },
+    { classe: 'fa-solid fa-hand-holding-dollar', nome: 'Justiça Gratuita / Alvará', estilo: 'solid', juridico: true, tags: 'justica gratuita alvara credito dinheiro' },
+    { classe: 'fa-solid fa-box-archive', nome: 'Arquivado / Baixado', estilo: 'solid', juridico: true, tags: 'arquivado baixado caixa arquivo morto' }
+];
+
+let catalogoCompletoCache = null;
+let catalogoCompletoPromise = null;
+
 /**
- * Biblioteca completa externa FontAwesome 6 Free (2.060 ícones em solid, regular e brands),
- * priorizando ícones jurídicos e administrativos no topo com tags bilíngues PT/EN.
+ * Carrega sob demanda (lazy import) os 2.060 ícones do FontAwesome 6 Free,
+ * evitando baixar 366 KB no carregamento inicial das páginas principais.
  */
-export const CATALOGO_ICONES_PROCESSO = FA_FULL_ICON_CATALOG;
+export const carregarCatalogoCompletoIcones = async () => {
+    if (catalogoCompletoCache) return catalogoCompletoCache;
+    if (!catalogoCompletoPromise) {
+        catalogoCompletoPromise = import('./faFullCatalog.js')
+            .then((mod) => {
+                catalogoCompletoCache = Array.isArray(mod?.FA_FULL_ICON_CATALOG)
+                    ? mod.FA_FULL_ICON_CATALOG
+                    : CATALOGO_BASE_INICIAL;
+                return catalogoCompletoCache;
+            })
+            .catch((err) => {
+                console.warn('Falha ao carregar catálogo completo de ícones, mantendo base inicial:', err);
+                catalogoCompletoPromise = null;
+                return CATALOGO_BASE_INICIAL;
+            });
+    }
+    return catalogoCompletoPromise;
+};
+
+export const CATALOGO_ICONES_PROCESSO = CATALOGO_BASE_INICIAL;
 
 const FALLBACK_POR_NOME = {
     'civil': 'fa-solid fa-scale-balanced',
@@ -198,10 +234,15 @@ const abrirModalFormTipo = ({ modo = 'create', tipoInicial = null, onSuccess } =
         ? resolverIconeTipo(tipoInicial.nome, tipoInicial.icone)
         : CATALOGO_ICONES_PROCESSO[0].classe;
 
-    const iconeEstaNoCatalogo = CATALOGO_ICONES_PROCESSO.some(i => i.classe === iconeSelecionado);
-    const catalogoRenderizado = iconeEstaNoCatalogo
-        ? CATALOGO_ICONES_PROCESSO
-        : [{ classe: iconeSelecionado, nome: 'Ícone Atual', estilo: 'solid', juridico: true, tags: 'atual personalizado' }, ...CATALOGO_ICONES_PROCESSO];
+    const baseInicial = catalogoCompletoCache || CATALOGO_BASE_INICIAL;
+    const montarCatalogo = (lista) => {
+        const iconeEstaNoCatalogo = lista.some(i => i.classe === iconeSelecionado);
+        return iconeEstaNoCatalogo
+            ? lista
+            : [{ classe: iconeSelecionado, nome: 'Ícone Atual', estilo: 'solid', juridico: true, tags: 'atual personalizado' }, ...lista];
+    };
+
+    let catalogoRenderizado = montarCatalogo(baseInicial);
 
     const totalJuridicos = catalogoRenderizado.filter(i => i.juridico).length;
     const totalSolid = catalogoRenderizado.filter(i => i.estilo === 'solid').length;
@@ -377,6 +418,30 @@ const abrirModalFormTipo = ({ modo = 'create', tipoInicial = null, onSuccess } =
 
     atualizarSelecaoIcone(iconeSelecionado);
     aplicarFiltroERenderizar();
+
+    if (!catalogoCompletoCache) {
+        if (countLabel) {
+            countLabel.textContent = 'Carregando biblioteca completa (2.060 ícones)...';
+        }
+        carregarCatalogoCompletoIcones().then((completo) => {
+            if (!document.body.contains(overlay)) return;
+            catalogoRenderizado = montarCatalogo(completo);
+            const labelBib = overlay.querySelector('label[for="inputFiltroIconeTipo"]');
+            if (labelBib) labelBib.textContent = `Biblioteca (${catalogoRenderizado.length.toLocaleString('pt-BR')} ícones)`;
+            const tabAll = overlay.querySelector('[data-tab="all"]');
+            const tabJur = overlay.querySelector('[data-tab="juridico"]');
+            const tabSol = overlay.querySelector('[data-tab="solid"]');
+            const tabReg = overlay.querySelector('[data-tab="regular"]');
+            const tabBra = overlay.querySelector('[data-tab="brands"]');
+            if (tabAll) tabAll.textContent = `Todos (${catalogoRenderizado.length.toLocaleString('pt-BR')})`;
+            if (tabJur) tabJur.textContent = `Jurídicos (${catalogoRenderizado.filter(i => i.juridico).length})`;
+            if (tabSol) tabSol.textContent = `Sólidos (${catalogoRenderizado.filter(i => i.estilo === 'solid').length})`;
+            if (tabReg) tabReg.textContent = `Regulares (${catalogoRenderizado.filter(i => i.estilo === 'regular').length})`;
+            if (tabBra) tabBra.textContent = `Marcas (${catalogoRenderizado.filter(i => i.estilo === 'brands').length})`;
+            atualizarSelecaoIcone(iconeSelecionado);
+            aplicarFiltroERenderizar();
+        });
+    }
 
     input?.addEventListener('input', () => {
         if (previewNome) {
