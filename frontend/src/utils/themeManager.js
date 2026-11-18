@@ -3,6 +3,8 @@
  * Suporta: 'light' (Modo Claro), 'dark' (Modo Escuro) e 'system' (Conforme o Sistema)
  */
 
+import { initPwaManager } from './pwaManager.js';
+
 export const THEME_STORAGE_KEY = 'advdocs-theme';
 const VALID_PREFERENCES = ['light', 'dark', 'system'];
 
@@ -125,6 +127,8 @@ export const initThemeManager = () => {
             enableTransitions();
         }
     }
+
+    initPwaManager();
 
     return state;
 };

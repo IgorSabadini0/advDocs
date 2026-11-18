@@ -70,8 +70,24 @@ app.use('/api/credenciais', verifyToken, requireAdmin, express.json({ limit: '5m
 app.use('/api/webhooks', webhooksRouter);
 app.use(express.json({ limit: '16kb' }));
 
-// 3. Servir arquivos estáticos do frontend
+// 3. Servir arquivos estáticos do frontend e endpoints críticos do PWA com headers dedicados
 const staticPath = path.join(__dirname, '../../frontend/src');
+
+app.get('/sw.js', (req, res) => {
+    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('Service-Worker-Allowed', '/');
+    res.sendFile(path.join(staticPath, 'sw.js'));
+});
+
+app.get('/manifest.json', (req, res) => {
+    res.setHeader('Content-Type', 'application/manifest+json; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.sendFile(path.join(staticPath, 'manifest.json'));
+});
+
 app.use(express.static(staticPath));
 
 // 4. Rota Raiz: entrega o gateway que valida se o usuário já possui sessão ativa no navegador
