@@ -1,4 +1,5 @@
 import { db } from '../config/db.js';
+import { sendPushToUser } from '../services/pushNotificationService.js';
 
 const TIPOS_VALIDOS = new Set(['sucesso', 'erro', 'info']);
 
@@ -20,6 +21,14 @@ export const notificacaoModel = {
             mensagemLimpa,
             tipoLimpo
         ]);
+
+        // Dispara notificação Web Push em segundo plano sem bloquear o retorno HTTP/worker
+        sendPushToUser(Number(usuario_id), {
+            title: tituloLimpo,
+            body: mensagemLimpa,
+            url: clienteIdVal ? `/pages/main/?openPasta=${clienteIdVal}` : '/pages/main/',
+            tag: `advdocs-notif-${result.insertId}`
+        }).catch(() => {});
 
         return {
             id: result.insertId,

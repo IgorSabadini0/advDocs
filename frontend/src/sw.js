@@ -10,7 +10,7 @@
  *    assets estáticos públicos (CSS, JS de UI, SVG, PNG, fontes).
  */
 
-const CACHE_VERSION = 'v1.0.0';
+const CACHE_VERSION = 'v1.1.0';
 const STATIC_CACHE_NAME = `advdocs-static-${CACHE_VERSION}`;
 
 // Shell estático essencial pré-carregado na instalação
@@ -20,9 +20,12 @@ const PRECACHE_ASSETS = [
     '/assets/logo.svg',
     '/icons/apple-touch-icon.png',
     '/icons/icon-192.png',
+    '/icons/icon-192x192.png',
     '/icons/icon-512.png',
+    '/icons/icon-512x512.png',
     '/utils/themeManager.js',
-    '/utils/pwaManager.js'
+    '/utils/pwaManager.js',
+    '/utils/pushManager.js'
 ];
 
 // Prefixos de rotas dinâmicas/API que NUNCA devem passar pelo Cache Storage
@@ -166,4 +169,84 @@ self.addEventListener('message', (event) => {
     } else if (event.data.type === 'CLEAR_STATIC_CACHE') {
         caches.keys().then((names) => Promise.all(names.map((n) => caches.delete(n)))).catch(() => {});
     }
+});
+
+// ==========================================================================
+// Web Push API (RFC 8030 / VAPID) — Compatível com APNs iOS 16.4+ & FCM
+// Regra crítica APNs: todo evento `push` DEVE exibir uma notificação visível.
+// ==========================================================================
+self.addEventListener('push', (event) => {
+    let payload = {
+        title: 'advDocs — Alerta Jurídico',
+        body: 'Você possui uma nova atualização processual no sistema.',
+        icon: '/icons/icon-192x192.png',
+        badge: '/icons/apple-touch-icon.png',
+        tag: 'advdocs-notification',
+        url: '/pages/main/'
+    };
+
+    if (event.data) {
+        try {
+            const parsed = event.data.json();
+            if (parsed && typeof parsed === 'object') {
+                payload = { ...payload, ...parsed };
+            }
+        } catch (_) {
+            try {
+                const text = event.data.text();
+                if (text) payload.body = text;
+            } catch (_) {}
+        }
+    }
+
+    const targetUrl = payload.url || (payload.data && payload.data.url) || '/pages/main/';
+    const options = {
+        body: payload.body || 'Você possui uma nova atualização processual no sistema.',
+        icon: payload.icon || '/icons/icon-192x192.png',
+        badge: payload.badge || '/icons/apple-touch-icon.png',
+        tag: payload.tag || 'advdocs-notification',
+        renotify: true,
+        data: {
+            ...(payload.data && typeof payload.data === 'object' ? payload.data : {}),
+            url: targetUrl
+        }
+    };
+
+    event.waitUntil(
+        self.registration.showNotification(payload.title || 'advDocs — Alerta Jurídico', options)
+    );
+});
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    const rawUrl = event.notification.data?.url || '/pages/main/';
+    let targetUrl;
+    try {
+        targetUrl = new URL(rawUrl, self.location.origin).href;
+    } catch (_) {
+        targetUrl = `${self.location.origin}/pages/main/`;
+    }
+
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async (windowClients) => {
+            for (let i = 0; i < windowClients.length; i++) {
+                const client = windowClients[i];
+                if (client.url && client.url.startsWith(self.location.origin)) {
+                    if ('navigate' in client) {
+                        try {
+                            await client.navigate(targetUrl);
+                        } catch (_) {}
+                    }
+                    if ('focus' in client) {
+                        return client.focus();
+                    }
+                }
+            }
+
+            if (clients.openWindow) {
+                return clients.openWindow(targetUrl);
+            }
+            return null;
+        })
+    );
 });

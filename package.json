@@ -12,7 +12,8 @@
     "express-rate-limit": "^8.5.2",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
-    "mysql2": "^3.18.1"
+    "mysql2": "^3.18.1",
+    "web-push": "^4.0.0"
   },
   "type": "module",
   "devDependencies": {

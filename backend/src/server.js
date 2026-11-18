@@ -17,6 +17,7 @@ import notificacoesRouter from './routes/notificacoes.js';
 import processosRouter from './routes/processos.js';
 import credenciaisRouter from './routes/credenciais.js';
 import webhooksRouter from './routes/webhooks.js';
+import pushRouter from './routes/push.js';
 import { iniciarAgendadorMonitoramentoDiario } from './services/processMonitorScheduler.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -102,6 +103,7 @@ app.use('/users', verifyToken, usersRouter);
 app.use('/rbac', verifyToken, rbacRouter);
 app.use('/notificacoes', verifyToken, notificacoesRouter);
 app.use('/api/processos', verifyToken, processosRouter);
+app.use('/api/push', verifyToken, pushRouter);
 
 // 6. Middleware Centralizado de Tratamento de Erros
 app.use((err, req, res, next) => {

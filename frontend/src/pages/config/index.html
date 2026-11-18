@@ -236,6 +236,35 @@
 
                     <div class="config-section">
                         <div class="section-title-row">
+                            <h3><i class="fa-solid fa-bell"></i> Notificações Push no Dispositivo</h3>
+                            <span class="section-counter" id="pushStatusCounter">Verificando...</span>
+                        </div>
+                        <div class="surface-box push-config-card">
+                            <p class="surface-box-helper" id="pushConfigHelperText">
+                                Receba alertas nativos em tempo real no iPhone (Tela de Início) ou navegador quando houver novas movimentações processuais e prazos.
+                            </p>
+                            <div class="push-config-row">
+                                <div class="push-status-pill" id="pushStatusPill">
+                                    <i class="fa-solid fa-circle-notch fa-spin"></i>
+                                    <span id="pushStatusLabel">Verificando suporte...</span>
+                                </div>
+                                <div class="push-config-actions" id="pushConfigActions">
+                                    <button type="button" class="btn-panel-primary" id="btnPushAtivar" style="display: none;">
+                                        <i class="fa-solid fa-bell"></i> Ativar Notificações
+                                    </button>
+                                    <button type="button" class="btn-panel-secondary" id="btnPushTestar" style="display: none;">
+                                        <i class="fa-solid fa-paper-plane"></i> Enviar Teste
+                                    </button>
+                                    <button type="button" class="btn-profile-action" id="btnPushDesativar" style="display: none;">
+                                        <i class="fa-solid fa-bell-slash"></i> Desativar neste Aparelho
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="config-section">
+                        <div class="section-title-row">
                             <h3><i class="fa-solid fa-user-shield"></i> Políticas Ativas no Meu Grupo</h3>
                             <span class="section-counter" id="minhasPoliticasCount">0 políticas</span>
                         </div>

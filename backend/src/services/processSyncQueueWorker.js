@@ -3,6 +3,7 @@ import { ProcessPersistenceService } from './processPersistenceService.js';
 import { DatajudProvider } from './datajudProvider.js';
 import { MniTrf3Provider } from './mniTrf3Provider.js';
 import { CourtScraperProvider } from './courtScraperProvider.js';
+import { sendPushToAllSubscribedUsers } from './pushNotificationService.js';
 
 export const MAX_CONCORRENCIA_POR_TRIBUNAL = 2;
 
@@ -213,6 +214,15 @@ const executarJobSincronizacao = async (job) => {
                 WHERE id = ?
             `, [statusFinalProcesso, job.processo_id]);
         });
+
+        if (novasMovimentacoes > 0) {
+            sendPushToAllSubscribedUsers({
+                title: `Nova Movimentação (${job.tribunal_sigla})`,
+                body: `${novasMovimentacoes} nova(s) movimentação(ões) detectada(s) no processo ${job.numero_cnj}.`,
+                url: `/pages/consult/?proc=${encodeURIComponent(job.numero_cnj)}`,
+                tag: `advdocs-proc-${job.processo_id}`
+            }).catch(() => {});
+        }
     } catch (error) {
         const tempoExecucaoMs = Math.max(1, Date.now() - inicioMs);
         const tentativaAtual = Number(job.tentativa_atual || 1);

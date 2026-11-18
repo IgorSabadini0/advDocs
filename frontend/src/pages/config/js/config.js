@@ -7,6 +7,12 @@ import {
 import { escapeHtml, normalizeText, apiFetch, mostrarToast } from '../../../utils/utils.js';
 import { initThemeManager, getSavedTheme, applyTheme, resolveTheme } from '../../../utils/themeManager.js';
 import { initNotificationsWidget } from '../../../utils/notificationsWidget.js';
+import {
+    getPushPermissionState,
+    subscribeUserToPush,
+    unsubscribeUserFromPush,
+    sendTestPushNotification
+} from '../../../utils/pushManager.js';
 
 initThemeManager();
 
@@ -2077,10 +2083,118 @@ const inicializarPainelIntegracoes = () => {
     });
 };
 
+const inicializarPainelPushConfig = () => {
+    const counterEl = document.getElementById('pushStatusCounter');
+    const pillEl = document.getElementById('pushStatusPill');
+    const labelEl = document.getElementById('pushStatusLabel');
+    const helperEl = document.getElementById('pushConfigHelperText');
+    const btnAtivar = document.getElementById('btnPushAtivar');
+    const btnTestar = document.getElementById('btnPushTestar');
+    const btnDesativar = document.getElementById('btnPushDesativar');
+
+    if (!pillEl || !btnAtivar) return;
+
+    const atualizarUI = async () => {
+        const { state } = await getPushPermissionState();
+
+        btnAtivar.style.display = 'none';
+        if (btnTestar) btnTestar.style.display = 'none';
+        if (btnDesativar) btnDesativar.style.display = 'none';
+
+        if (state === 'subscribed') {
+            if (counterEl) counterEl.textContent = 'Ativo';
+            pillEl.className = 'push-status-pill is-active';
+            pillEl.innerHTML = '<i class="fa-solid fa-circle-check"></i><span>Notificações Ativas</span>';
+            if (helperEl) {
+                helperEl.textContent = 'Este aparelho está inscrito para receber alertas nativos em tempo real de novas movimentações e retornos do DataJud.';
+            }
+            if (btnTestar) btnTestar.style.display = 'inline-flex';
+            if (btnDesativar) btnDesativar.style.display = 'inline-flex';
+        } else if (state === 'denied') {
+            if (counterEl) counterEl.textContent = 'Bloqueado';
+            pillEl.className = 'push-status-pill is-blocked';
+            pillEl.innerHTML = '<i class="fa-solid fa-ban"></i><span>Bloqueado no navegador</span>';
+            if (helperEl) {
+                helperEl.textContent = 'Você bloqueou as permissões de notificação. Para reativar, libere as notificações nas configurações do navegador ou do iPhone (Ajustes > Notificações).';
+            }
+        } else if (state === 'ios-requires-install') {
+            if (counterEl) counterEl.textContent = 'Instalar PWA';
+            pillEl.className = 'push-status-pill is-warning';
+            pillEl.innerHTML = '<i class="fa-solid fa-mobile-screen-button"></i><span>Abra pela Tela de Início (iPhone)</span>';
+            if (helperEl) {
+                helperEl.textContent = 'No iPhone/iPad (Safari 16.4+), toque em Compartilhar e selecione "Adicionar à Tela de Início". Depois, abra o aplicativo pelo ícone criado para ativar as notificações.';
+            }
+        } else if (state === 'unsupported') {
+            if (counterEl) counterEl.textContent = 'Indisponível';
+            pillEl.className = 'push-status-pill is-muted';
+            pillEl.innerHTML = '<i class="fa-solid fa-circle-info"></i><span>Não suportado neste navegador/protocolo</span>';
+        } else {
+            if (counterEl) counterEl.textContent = 'Desativado';
+            pillEl.className = 'push-status-pill';
+            pillEl.innerHTML = '<i class="fa-regular fa-bell"></i><span>Pronto para ativar</span>';
+            if (helperEl) {
+                helperEl.textContent = 'Receba alertas nativos em tempo real no iPhone (Tela de Início) ou navegador quando houver novas movimentações processuais e prazos.';
+            }
+            btnAtivar.style.display = 'inline-flex';
+        }
+    };
+
+    btnAtivar.addEventListener('click', async () => {
+        btnAtivar.disabled = true;
+        const originalHtml = btnAtivar.innerHTML;
+        btnAtivar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Ativando...';
+        try {
+            const res = await subscribeUserToPush();
+            mostrarToast(res.mensagem || 'Notificações Push atualizadas.', res.ok ? 'success' : 'error');
+        } catch (err) {
+            mostrarToast(err?.data?.mensagem || err?.message || 'Falha ao ativar notificações Push.', 'error');
+        } finally {
+            btnAtivar.disabled = false;
+            btnAtivar.innerHTML = originalHtml;
+            await atualizarUI();
+        }
+    });
+
+    btnTestar?.addEventListener('click', async () => {
+        btnTestar.disabled = true;
+        const originalHtml = btnTestar.innerHTML;
+        btnTestar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
+        try {
+            const res = await sendTestPushNotification();
+            mostrarToast(res?.mensagem || 'Notificação de teste enviada!');
+        } catch (err) {
+            mostrarToast(err?.data?.mensagem || err?.message || 'Erro ao enviar notificação de teste.', 'error');
+        } finally {
+            btnTestar.disabled = false;
+            btnTestar.innerHTML = originalHtml;
+        }
+    });
+
+    btnDesativar?.addEventListener('click', async () => {
+        btnDesativar.disabled = true;
+        try {
+            const res = await unsubscribeUserFromPush();
+            mostrarToast(res?.mensagem || 'Notificações Push desativadas.', 'info');
+        } catch (err) {
+            mostrarToast(err?.message || 'Erro ao desativar notificações.', 'error');
+        } finally {
+            btnDesativar.disabled = false;
+            await atualizarUI();
+        }
+    });
+
+    window.addEventListener('advdocs:push-state-change', () => {
+        atualizarUI();
+    });
+
+    atualizarUI();
+};
+
 // --- INICIALIZAÇÃO ---
 
 document.addEventListener('DOMContentLoaded', async () => {
     inicializarSeletorTema();
+    inicializarPainelPushConfig();
     document.getElementById('logoutButton').addEventListener('click', sair);
     const token = localStorage.getItem('token');
 

@@ -1,4 +1,10 @@
 import { escapeHtml, apiFetch, mostrarToast } from './utils.js';
+import {
+    getPushPermissionState,
+    subscribeUserToPush,
+    unsubscribeUserFromPush,
+    sendTestPushNotification
+} from './pushManager.js';
 
 const SEEN_STORAGE_KEY = 'advdocs_seen_notif_ids';
 const AWAITING_DATAJUD_KEY = 'advdocs_awaiting_datajud';
@@ -124,6 +130,7 @@ const garantirEstruturaNotificacoes = () => {
         dropdown.setAttribute('aria-label', 'Central de Notificações');
         dropdown.innerHTML = `
             <div class="notif-dropdown-header">${HEADER_NOTIF_HTML}</div>
+            <div class="notif-push-bar" id="notifPushBar"></div>
             <div class="notif-pending-banner" id="notifPendingBanner" style="display: none;">
                 <i class="fa-solid fa-spinner fa-spin"></i>
                 <span id="notifPendingText">Consultando DataJud em segundo plano...</span>
@@ -144,6 +151,12 @@ const garantirEstruturaNotificacoes = () => {
         if (headerEl && !dropdown.querySelector('#notifDeleteAllBtn')) {
             headerEl.innerHTML = HEADER_NOTIF_HTML;
         }
+        if (headerEl && !dropdown.querySelector('#notifPushBar')) {
+            const bar = document.createElement('div');
+            bar.className = 'notif-push-bar';
+            bar.id = 'notifPushBar';
+            headerEl.insertAdjacentElement('afterend', bar);
+        }
     }
 
     return {
@@ -151,6 +164,113 @@ const garantirEstruturaNotificacoes = () => {
         bellBtn: document.getElementById('notificationBellBtn'),
         dropdown
     };
+};
+
+const atualizarBarraPushDropdown = async () => {
+    const bar = document.getElementById('notifPushBar');
+    if (!bar) return;
+
+    const { state } = await getPushPermissionState();
+
+    if (state === 'ios-requires-install') {
+        bar.className = 'notif-push-bar is-ios-tip';
+        bar.innerHTML = `
+            <span class="notif-push-status">
+                <i class="fa-solid fa-mobile-screen"></i>
+                <span>No iPhone, instale na <strong>Tela de Início</strong> para receber Push.</span>
+            </span>
+        `;
+        return;
+    }
+
+    if (state === 'unsupported') {
+        bar.style.display = 'none';
+        return;
+    }
+    bar.style.display = 'flex';
+
+    if (state === 'denied') {
+        bar.className = 'notif-push-bar is-blocked';
+        bar.innerHTML = `
+            <span class="notif-push-status">
+                <i class="fa-solid fa-bell-slash"></i>
+                <span>Push bloqueado nas permissões do navegador</span>
+            </span>
+        `;
+        return;
+    }
+
+    if (state === 'subscribed') {
+        bar.className = 'notif-push-bar is-active';
+        bar.innerHTML = `
+            <span class="notif-push-status">
+                <i class="fa-solid fa-circle-check"></i>
+                <span>Notificações Push ativas</span>
+            </span>
+            <div class="notif-push-actions">
+                <button type="button" class="notif-push-mini-btn" id="notifPushTestBtn" title="Enviar alerta de teste">
+                    <i class="fa-solid fa-paper-plane"></i> Testar
+                </button>
+                <button type="button" class="notif-push-mini-btn is-muted" id="notifPushOffBtn" title="Desativar neste aparelho">
+                    Desativar
+                </button>
+            </div>
+        `;
+    } else {
+        bar.className = 'notif-push-bar';
+        bar.innerHTML = `
+            <span class="notif-push-status">
+                <i class="fa-regular fa-bell"></i>
+                <span>Alertas nativos neste aparelho</span>
+            </span>
+            <button type="button" class="notif-push-enable-btn" id="notifPushEnableBtn">
+                <i class="fa-solid fa-bolt"></i> Ativar Notificações
+            </button>
+        `;
+    }
+
+    bar.querySelector('#notifPushEnableBtn')?.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Ativando...';
+        try {
+            const res = await subscribeUserToPush();
+            emitirToast(res.mensagem || 'Push configurado.', res.ok ? 'sucesso' : 'erro');
+        } catch (err) {
+            emitirToast(err?.data?.mensagem || err?.message || 'Erro ao ativar notificações Push.', 'erro');
+        } finally {
+            await atualizarBarraPushDropdown();
+        }
+    });
+
+    bar.querySelector('#notifPushTestBtn')?.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        try {
+            const res = await sendTestPushNotification();
+            emitirToast(res?.mensagem || 'Notificação de teste enviada!', 'sucesso');
+        } catch (err) {
+            emitirToast(err?.data?.mensagem || err?.message || 'Erro ao enviar teste.', 'erro');
+        } finally {
+            btn.disabled = false;
+        }
+    });
+
+    bar.querySelector('#notifPushOffBtn')?.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        try {
+            const res = await unsubscribeUserFromPush();
+            emitirToast(res?.mensagem || 'Notificações Push desativadas.', 'info');
+        } catch (err) {
+            emitirToast(err?.message || 'Erro ao desativar notificações.', 'erro');
+        } finally {
+            await atualizarBarraPushDropdown();
+        }
+    });
 };
 
 /**
@@ -411,12 +531,17 @@ export const initNotificationsWidget = (options = {}) => {
     };
 
     garantirEstruturaNotificacoes();
+    atualizarBarraPushDropdown();
 
     if (initialized) {
         carregarNotificacoes(true);
         return;
     }
     initialized = true;
+
+    window.addEventListener('advdocs:push-state-change', () => {
+        atualizarBarraPushDropdown();
+    });
 
     const bellBtn = document.getElementById('notificationBellBtn');
     const dropdown = document.getElementById('notificationDropdown');
