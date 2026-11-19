@@ -10,7 +10,7 @@
  * 5. Cache-First instantânea para assets estáticos locais (.css, .js, .svg, .png, .woff2) e fontes/kits externos.
  */
 
-const CACHE_VERSION = 'v1.3.0';
+const CACHE_VERSION = 'v1.3.1';
 const STATIC_CACHE_NAME = `advdocs-static-${CACHE_VERSION}`;
 
 // Precache completo das telas HTML, estilos e scripts essenciais na instalação

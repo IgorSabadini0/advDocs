@@ -122,11 +122,23 @@ export const sendTest = async (req, res) => {
     }
 };
 
+export const reportClientError = (req, res) => {
+    const { name, message, swState, isBrave } = req.body || {};
+    const ua = String(req.headers?.['user-agent'] || '').slice(0, 180);
+    console.warn(
+        `[PushClientError] user=${req.usuarioId} name=${String(name || 'Unknown').slice(0, 60)} ` +
+        `message=${String(message || '').slice(0, 300)} swState=${String(swState || '')} ` +
+        `isBrave=${Boolean(isBrave)} ua="${ua}"`
+    );
+    return res.status(200).json({ ok: true });
+};
+
 export const pushController = {
     getPublicKey,
     subscribe,
     unsubscribe,
-    sendTest
+    sendTest,
+    reportClientError
 };
 
 export default pushController;

@@ -63,16 +63,118 @@ const emitPushStateChange = (state) => {
     }
 };
 
+const esperarSwAtivo = async (registration, timeoutMs = 4000) => {
+    if (!registration) return null;
+
+    if (registration.waiting) {
+        try {
+            registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        } catch (_) {}
+    }
+
+    const activeWorker = registration.active;
+    if (activeWorker && activeWorker.state === 'activated') {
+        return registration;
+    }
+
+    const candidato = registration.installing || registration.waiting || registration.active;
+    if (!candidato) {
+        return registration;
+    }
+
+    await new Promise((resolve) => {
+        if (candidato.state === 'activated') {
+            resolve();
+            return;
+        }
+        let finished = false;
+        const done = () => {
+            if (finished) return;
+            finished = true;
+            candidato.removeEventListener('statechange', onStateChange);
+            clearTimeout(timer);
+            resolve();
+        };
+        const onStateChange = () => {
+            if (candidato.state === 'activated' || candidato.state === 'redundant') {
+                done();
+            }
+        };
+        const timer = setTimeout(done, timeoutMs);
+        candidato.addEventListener('statechange', onStateChange);
+    });
+
+    return registration;
+};
+
 const obterRegistrationAtivo = async () => {
     if (!('serviceWorker' in navigator)) {
         throw new Error('Service Worker não suportado neste navegador.');
     }
 
-    const existing = await navigator.serviceWorker.getRegistration('/');
-    if (!existing) {
-        await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+    let reg = await navigator.serviceWorker.getRegistration('/');
+    if (!reg) {
+        reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
     }
-    return navigator.serviceWorker.ready;
+
+    const readyReg = await navigator.serviceWorker.ready;
+    return esperarSwAtivo(readyReg || reg);
+};
+
+const keysMatch = (existingKeyBuffer, expectedUint8) => {
+    if (!existingKeyBuffer || !(expectedUint8 instanceof Uint8Array)) return false;
+    try {
+        const current = new Uint8Array(existingKeyBuffer);
+        if (current.length !== expectedUint8.length) return false;
+        for (let i = 0; i < current.length; i++) {
+            if (current[i] !== expectedUint8[i]) return false;
+        }
+        return true;
+    } catch (_) {
+        return false;
+    }
+};
+
+const detectarBrave = async () => {
+    try {
+        if (navigator.brave && typeof navigator.brave.isBrave === 'function') {
+            return await navigator.brave.isBrave();
+        }
+    } catch (_) {}
+    return false;
+};
+
+const reportarErroPushAoServidor = (payload) => {
+    try {
+        apiFetch('/api/push/client-error', {
+            method: 'POST',
+            timeoutMs: 5000,
+            body: JSON.stringify(payload)
+        }).catch(() => {});
+    } catch (_) {}
+};
+
+const traduzirErroPush = (err, { isBrave = false } = {}) => {
+    const name = String(err?.name || '');
+    const msg = String(err?.message || '');
+    const lower = msg.toLowerCase();
+
+    if (name === 'NotAllowedError' || lower.includes('permission') || lower.includes('denied')) {
+        return 'Permissão de notificação bloqueada pelo navegador ou modo anônimo. Libere nas configurações do site e tente novamente.';
+    }
+
+    if (name === 'AbortError' || lower.includes('push service error') || lower.includes('registration failed')) {
+        if (isBrave) {
+            return 'No navegador Brave, ative "Usar serviços do Google para mensagens push" em brave://settings/privacy para habilitar notificações.';
+        }
+        return 'O navegador não conseguiu registrar o dispositivo no serviço de Push (FCM/WNS). Verifique se não está em guia anônima ou se há firewall/VPN bloqueando o serviço de Push do navegador.';
+    }
+
+    if (name === 'InvalidStateError') {
+        return 'O Service Worker ainda estava atualizando. Aguarde 2 segundos ou recarregue a página (F5) e tente ativar novamente.';
+    }
+
+    return msg ? `Falha ao ativar Push (${name || 'Erro'}): ${msg}` : 'Não foi possível concluir a inscrição de notificações.';
 };
 
 /**
@@ -162,14 +264,51 @@ export const subscribeUserToPush = async () => {
         throw new Error('Chave pública VAPID não retornada pelo servidor.');
     }
 
-    // 3. Registra ou recupera inscrição no PushManager
-    const registration = await obterRegistrationAtivo();
+    // 3. Registra ou recupera inscrição no PushManager com auto-recuperação
+    const applicationServerKey = urlBase64ToUint8Array(publicKey);
+    let registration = await obterRegistrationAtivo();
     let subscription = await registration.pushManager.getSubscription();
+
+    // Se existir inscrição prévia gerada com chave VAPID antiga/diferente, limpa antes de renovar
+    if (subscription && subscription.options?.applicationServerKey && !keysMatch(subscription.options.applicationServerKey, applicationServerKey)) {
+        try {
+            await subscription.unsubscribe();
+        } catch (_) {}
+        subscription = null;
+    }
+
     if (!subscription) {
-        subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(publicKey)
-        });
+        try {
+            subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey
+            });
+        } catch (firstErr) {
+            // Tentativa de recuperação: remove inscrição órfã, garante SW ativo e tenta 1x novamente
+            try {
+                const lingering = await registration.pushManager.getSubscription();
+                if (lingering) {
+                    await lingering.unsubscribe();
+                }
+                registration = await obterRegistrationAtivo();
+                subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey
+                });
+            } catch (retryErr) {
+                const finalErr = retryErr || firstErr;
+                const isBrave = await detectarBrave();
+                reportarErroPushAoServidor({
+                    name: finalErr?.name || 'Error',
+                    message: finalErr?.message || String(finalErr),
+                    swState: registration?.active?.state || registration?.installing?.state || registration?.waiting?.state || 'none',
+                    isBrave
+                });
+                const amigavel = new Error(traduzirErroPush(finalErr, { isBrave }));
+                amigavel.originalError = finalErr;
+                throw amigavel;
+            }
+        }
     }
 
     const subJson = typeof subscription.toJSON === 'function' ? subscription.toJSON() : subscription;

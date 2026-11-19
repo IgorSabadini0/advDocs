@@ -7,5 +7,6 @@ router.get('/vapid-public-key', pushController.getPublicKey);
 router.post('/subscribe', pushController.subscribe);
 router.delete('/unsubscribe', pushController.unsubscribe);
 router.post('/test', pushController.sendTest);
+router.post('/client-error', pushController.reportClientError);
 
 export default router;
