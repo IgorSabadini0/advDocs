@@ -26,20 +26,20 @@ import { initNotificationsWidget, notificarConsultaPendente } from '../../../uti
 initThemeManager();
 
 const adicionar = () => {
-    window.location.href = '/pages/register';
+    window.location.href = '/pages/register/';
 };
 
 const sair = () => {
     localStorage.removeItem('token');
-    window.location.href = '/pages/auth';
+    window.location.href = '/pages/auth/';
 };
 
 const config = () => {
-    window.location.href = '/pages/config';
+    window.location.href = '/pages/config/';
 };
 
 const consultar = () => {
-    window.location.href = '/pages/consult';
+    window.location.href = '/pages/consult/';
 };
 
 // --- PERFIL E RBAC NA NAVBAR ---

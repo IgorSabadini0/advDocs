@@ -26,7 +26,7 @@ const isUsuarioAdmin = () => Boolean(usuarioLogado && (usuarioLogado.is_admin ||
 
 const sair = () => {
     localStorage.removeItem('token');
-    window.location.href = '../auth';
+    window.location.href = '../auth/';
 };
 
 // --- NOTIFICAÇÕES TOAST & UX HELPERS ---

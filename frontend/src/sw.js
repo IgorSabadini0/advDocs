@@ -10,7 +10,7 @@
  * 5. Cache-First instantânea para assets estáticos locais (.css, .js, .svg, .png, .woff2) e fontes/kits externos.
  */
 
-const CACHE_VERSION = 'v1.2.0';
+const CACHE_VERSION = 'v1.3.0';
 const STATIC_CACHE_NAME = `advdocs-static-${CACHE_VERSION}`;
 
 // Precache completo das telas HTML, estilos e scripts essenciais na instalação
@@ -33,6 +33,7 @@ const PRECACHE_ASSETS = [
     '/utils/pushManager.js',
     '/utils/notificationsWidget.js',
     '/utils/tiposService.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css',
     '/pages/auth/',
     '/pages/auth/index.html',
     '/pages/auth/css/style.css',
@@ -71,10 +72,11 @@ const NETWORK_ONLY_PREFIXES = [
     '/notificacoes'
 ];
 
-// Origens externas estáticas permitidas no Cache-First (Google Fonts & FontAwesome)
+// Origens externas estáticas permitidas no Cache-First (Google Fonts & FontAwesome CDN)
 const CACHEABLE_EXTERNAL_ORIGINS = new Set([
     'https://fonts.googleapis.com',
     'https://fonts.gstatic.com',
+    'https://cdnjs.cloudflare.com',
     'https://kit.fontawesome.com',
     'https://ka-f.fontawesome.com'
 ]);
@@ -124,15 +126,19 @@ function isSensitiveOrDynamicRequest(url, request) {
 }
 
 /**
- * Busca documento HTML na rede com timeout curto (3s) para não travar em conexões móveis lentas.
+ * Busca documento HTML na rede com timeout curto (3.5s) via Promise.race,
+ * evitando passar `{ signal }` para `fetch(request)` com `mode: 'navigate'` (que lança TypeError no Chromium/WebKit).
  */
-function fetchWithTimeout(request, timeoutMs = 3000) {
-    if (typeof AbortController === 'undefined') {
-        return fetch(request);
-    }
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    return fetch(request, { signal: controller.signal }).finally(() => clearTimeout(timer));
+function fetchWithTimeout(request, timeoutMs = 3500) {
+    let timerId;
+    const timeoutPromise = new Promise((_, reject) => {
+        timerId = setTimeout(() => reject(new Error('Network timeout')), timeoutMs);
+    });
+
+    return Promise.race([
+        fetch(request),
+        timeoutPromise
+    ]).finally(() => clearTimeout(timerId));
 }
 
 self.addEventListener('install', (event) => {
@@ -175,12 +181,17 @@ self.addEventListener('fetch', (event) => {
 
     const isSameOrigin = url.origin === self.location.origin;
 
-    // Estratégia 1: Navegação HTML (Network-First com timeout curto de 3s + fallback para cache)
+    // Estratégia 1: Navegação HTML (Network-First com timeout curto + fallback para cache)
     if (isSameOrigin && (request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html'))) {
         event.respondWith(
-            fetchWithTimeout(request, 3000)
+            fetchWithTimeout(request, 3500)
                 .then((networkResponse) => {
-                    if (networkResponse && networkResponse.ok && networkResponse.type === 'basic') {
+                    if (
+                        networkResponse &&
+                        networkResponse.ok &&
+                        !networkResponse.redirected &&
+                        networkResponse.type === 'basic'
+                    ) {
                         const copy = networkResponse.clone();
                         caches.open(STATIC_CACHE_NAME).then((cache) => cache.put(url.pathname, copy)).catch(() => {});
                     }
@@ -202,22 +213,28 @@ self.addEventListener('fetch', (event) => {
     if (isExternalStatic || STATIC_EXTENSIONS.test(url.pathname) || url.pathname === '/manifest.json') {
         event.respondWith(
             caches.open(STATIC_CACHE_NAME).then(async (cache) => {
-                const cachedResponse = await cache.match(request, { ignoreSearch: false });
+                const cachedResponse =
+                    (await cache.match(request, { ignoreVary: true })) ||
+                    (await cache.match(url.href, { ignoreVary: true }));
                 if (cachedResponse) {
                     return cachedResponse;
                 }
 
-                const networkResponse = await fetch(request);
-                const isCacheableResponse = networkResponse && (
-                    (networkResponse.status === 200 && (networkResponse.type === 'basic' || networkResponse.type === 'cors')) ||
-                    networkResponse.type === 'opaque'
-                );
+                try {
+                    const networkResponse = await fetch(request);
+                    const isCacheableResponse = networkResponse && (
+                        (networkResponse.status === 200 && (networkResponse.type === 'basic' || networkResponse.type === 'cors')) ||
+                        networkResponse.type === 'opaque'
+                    );
 
-                if (isCacheableResponse && !networkResponse.headers.get('Cache-Control')?.includes('no-store')) {
-                    cache.put(request, networkResponse.clone()).catch(() => {});
+                    if (isCacheableResponse && !networkResponse.headers.get('Cache-Control')?.includes('no-store')) {
+                        cache.put(request, networkResponse.clone()).catch(() => {});
+                    }
+
+                    return networkResponse;
+                } catch (err) {
+                    throw err;
                 }
-
-                return networkResponse;
             })
         );
     }

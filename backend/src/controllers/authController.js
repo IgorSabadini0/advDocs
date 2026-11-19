@@ -42,7 +42,7 @@ export const authController = {
 
             return res.status(200).json({
                 mensagem: 'Login efetuado com sucesso',
-                redirectUrl: '/pages/main',
+                redirectUrl: '/pages/main/',
                 token: token,
                 usuario: {
                     id: usuario.id,
